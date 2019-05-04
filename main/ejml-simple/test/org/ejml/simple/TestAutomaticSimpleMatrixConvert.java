@@ -41,9 +41,12 @@ public class TestAutomaticSimpleMatrixConvert {
         SimpleMatrix b = SimpleMatrix.wrap(new FMatrixRMaj(1,1));
 
         alg.specify(a,b);
+        
+        SimpleMatrix ca = alg.convert(a);
+        SimpleMatrix cb = alg.convert(b);
 
-        assertTrue(a==alg.convert(a));
-        assertFalse(b==alg.convert(b));
+        assertTrue(a==ca);
+        assertFalse(b==cb);
         assertTrue(alg.convert(b).getType()== MatrixType.DDRM);
     }
 }

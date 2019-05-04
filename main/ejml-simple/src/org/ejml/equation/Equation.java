@@ -241,10 +241,12 @@ public class Equation {
     // storage for a single word in the tokenizer
     char storage[] = new char[1024];
 
-    ManagerFunctions functions = new ManagerFunctions();
-    ManagerTempVariables managerTemp = new ManagerTempVariables();
+    ManagerFunctions functions;
+    ManagerTempVariables managerTemp;
 
     public Equation() {
+    	functions = new ManagerFunctions();
+    	managerTemp = new ManagerTempVariables();
         alias(Math.PI,"pi");
         alias(Math.E,"e");
     }
@@ -487,13 +489,13 @@ public class Equation {
         if (range == null) {
             // no range, so copy results into the entire output matrix
             sequence.output = createVariableInferred(t0, variableRight);
-            sequence.addOperation(Operation.copy(variableRight, sequence.output));
+            sequence.addOperation(functions.getFactory().copy(variableRight, sequence.output));
         } else {
             // a sub-matrix range is specified.  Copy into that inner part
             if (t0.getType() == Type.WORD) {
                 throw new ParseError("Can't do lazy variable initialization with submatrices. " + t0.getWord());
             }
-            sequence.addOperation(Operation.copy(variableRight, t0.getVariable(), range));
+            sequence.addOperation(functions.getFactory().copy(variableRight, t0.getVariable(), range));
         }
     }
 
@@ -1134,7 +1136,7 @@ public class Equation {
                 MatrixConstructor constructor = constructMatrix(bracketLet);
 
                 // define the matrix op and inject into token list
-                Operation.Info info = Operation.matrixConstructor(constructor);
+                Operation.Info info = functions.getFactory().matrixConstructor(constructor);
                 sequence.addOperation(info.op);
 
                 tokens.insert(start.previous, new TokenList.Token(info.output));
@@ -1202,7 +1204,7 @@ public class Equation {
                     throw new RuntimeException("Crap bug rethink this function");
 
                 // create the operation
-                Operation.Info info = Operation.neg(token.next.getVariable(),functions.getManagerTemp());
+                Operation.Info info = functions.getFactory().neg(token.next.getVariable(),functions.getManagerTemp());
                 // add the operation to the sequence
                 sequence.addOperation(info.op);
                 // update the token list

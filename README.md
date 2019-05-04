@@ -70,7 +70,11 @@ cd ejml
 ./gradlew autogenerate
 ./gradlew install
 ```
-After invoking those commands EJML will build and be in your local maven repo and can be included by other applications. Below is a list of custom Gradle commands that might be of use to you.
+After invoking those commands EJML will build and be in your local maven repo and can be included by other applications. 
+
+Importing the projects into Eclipse may result in build cycle errors.  This [https://stackoverflow.com/questions/1084866/a-cycle-was-detected-in-the-build-path-of-project-xxx-build-path-problem](https://stackoverflow.com/questions/1084866/a-cycle-was-detected-in-the-build-path-of-project-xxx-build-path-problem "StackExchange") topic will be helpful
+
+Below is a list of custom Gradle commands that might be of use to you.
 
 * createLibraryDirectory : To build all the modules as jars and save them in ejml/libraries
 * oneJar : To compile all the modules into a single jar at ejml/EJML.jar

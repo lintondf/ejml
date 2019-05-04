@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class ManagerFunctions {
 	
-	IOperationFactory factory = new OperationExecuteFactory();
+	IOperationFactory factory;
 
     // List of functions which take in N inputs
     Map<String,Input1> input1 = new HashMap<>();
@@ -40,10 +40,20 @@ public class ManagerFunctions {
     protected ManagerTempVariables managerTemp;
 
     public ManagerFunctions() {
+    	factory = new OperationExecuteFactory();
         addBuiltIn();
     }
 
-    /**
+    public ManagerFunctions(IOperationFactory factory) {
+    	this.factory = factory;
+        addBuiltIn();
+    }
+
+    public IOperationFactory getFactory() {
+		return factory;
+	}
+
+	/**
      * Returns true if the string matches the name of a function
      */
     public boolean isFunctionName( String s ) {
