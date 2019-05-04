@@ -61,4 +61,19 @@ public class ManagerTempVariables {
     public VariableIntegerSequence createIntegerSequence( IntegerSequence sequence ) {
         return new VariableIntegerSequence(sequence);
     }
+    
+    /**
+     * If the variable is a local temporary variable it will be resized so that the operation can complete.  If not
+     * temporary then it will not be reshaped
+     * @param mat Variable containing the matrix
+     * @param numRows Desired number of rows
+     * @param numCols Desired number of columns
+     */
+    public void resize( VariableMatrix mat , int numRows , int numCols ) {
+        if( mat.isTemp() ) {
+            mat.matrix.reshape(numRows,numCols);
+        }
+    }
+
+    
 }

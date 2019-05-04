@@ -29,6 +29,8 @@ import java.util.Map;
  * @author Peter Abeles
  */
 public class ManagerFunctions {
+	
+	IOperationFactory factory = new OperationExecuteFactory();
 
     // List of functions which take in N inputs
     Map<String,Input1> input1 = new HashMap<>();
@@ -88,7 +90,7 @@ public class ManagerFunctions {
     public Operation.Info create( char op , Variable input ) {
         switch( op ) {
             case '\'':
-                return Operation.transpose(input, managerTemp);
+                return factory.transpose(input, managerTemp);
 
             default:
                 throw new RuntimeException("Unknown operation " + op);
@@ -105,31 +107,31 @@ public class ManagerFunctions {
     public Operation.Info create( Symbol op , Variable left , Variable right ) {
         switch( op ) {
             case PLUS:
-                return Operation.add(left, right, managerTemp);
+                return factory.add(left, right, managerTemp);
 
             case MINUS:
-                return Operation.subtract(left, right, managerTemp);
+                return factory.subtract(left, right, managerTemp);
 
             case TIMES:
-                return Operation.multiply(left, right, managerTemp);
+                return factory.multiply(left, right, managerTemp);
 
             case RDIVIDE:
-                return Operation.divide(left, right, managerTemp);
+                return factory.divide(left, right, managerTemp);
 
             case LDIVIDE:
-                return Operation.divide(right, left, managerTemp);
+                return factory.divide(right, left, managerTemp);
 
             case POWER:
-                return Operation.pow(left, right, managerTemp);
+                return factory.pow(left, right, managerTemp);
 
             case ELEMENT_DIVIDE:
-                return Operation.elementDivision(left, right, managerTemp);
+                return factory.elementDivision(left, right, managerTemp);
 
             case ELEMENT_TIMES:
-                return Operation.elementMult(left, right, managerTemp);
+                return factory.elementMult(left, right, managerTemp);
 
             case ELEMENT_POWER:
-                return Operation.elementPow(left, right, managerTemp);
+                return factory.elementPow(left, right, managerTemp);
 
             default:
                 throw new RuntimeException("Unknown operation " + op);
@@ -167,95 +169,95 @@ public class ManagerFunctions {
      * Adds built in functions
      */
     private void addBuiltIn( ) {
-        input1.put("inv", Operation::inv);
-        input1.put("pinv", Operation::pinv);
-        input1.put("rref", Operation::rref);
-        input1.put("eye", Operation::eye);
-        input1.put("det", Operation::det);
-        input1.put("normF", Operation::normF);
-        input1.put("sum", Operation::sum_one);
-        input1.put("trace", Operation::trace);
-        input1.put("diag", Operation::diag);
-        input1.put("min", Operation::min);
-        input1.put("max", Operation::max);
-        input1.put("abs", Operation::abs);
-        input1.put("sin", Operation::sin);
-        input1.put("cos", Operation::cos);
-        input1.put("atan", Operation::atan);
-        input1.put("exp", Operation::exp);
-        input1.put("log", Operation::log);
-        input1.put("sqrt", Operation::sqrt);
-        input1.put("rng", Operation::rng);
+        input1.put("inv", factory::inv);
+        input1.put("pinv", factory::pinv);
+        input1.put("rref", factory::rref);
+        input1.put("eye", factory::eye);
+        input1.put("det", factory::det);
+        input1.put("normF", factory::normF);
+        input1.put("sum", factory::sum_one);
+        input1.put("trace", factory::trace);
+        input1.put("diag", factory::diag);
+        input1.put("min", factory::min);
+        input1.put("max", factory::max);
+        input1.put("abs", factory::abs);
+        input1.put("sin", factory::sin);
+        input1.put("cos", factory::cos);
+        input1.put("atan", factory::atan);
+        input1.put("exp", factory::exp);
+        input1.put("log", factory::log);
+        input1.put("sqrt", factory::sqrt);
+        input1.put("rng", factory::rng);
 
         inputN.put("normP", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.normP(inputs.get(0), inputs.get(1), manager);
+            return factory.normP(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("max", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("One or two inputs expected");
-            return Operation.max_two(inputs.get(0), inputs.get(1), manager);
+            return factory.max_two(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("min", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("One or two inputs expected");
-            return Operation.min_two(inputs.get(0), inputs.get(1), manager);
+            return factory.min_two(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("sum", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("One or two inputs expected");
-            return Operation.sum_two(inputs.get(0), inputs.get(1), manager);
+            return factory.sum_two(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("zeros", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.zeros(inputs.get(0), inputs.get(1), manager);
+            return factory.zeros(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("ones", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.ones(inputs.get(0), inputs.get(1), manager);
+            return factory.ones(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("rand", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.rand(inputs.get(0), inputs.get(1), manager);
+            return factory.rand(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("randn", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.randn(inputs.get(0), inputs.get(1), manager);
+            return factory.randn(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("kron", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.kron(inputs.get(0), inputs.get(1), manager);
+            return factory.kron(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("dot", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.dot(inputs.get(0), inputs.get(1), manager);
+            return factory.dot(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("pow", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.pow(inputs.get(0), inputs.get(1), manager);
+            return factory.pow(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("atan2", (inputs, manager) -> {
             if (inputs.size() != 2) throw new RuntimeException("Two inputs expected");
-            return Operation.atan2(inputs.get(0), inputs.get(1), manager);
+            return factory.atan2(inputs.get(0), inputs.get(1), manager);
         });
 
         inputN.put("solve", (inputs, manager) -> {
             if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return Operation.solve(inputs.get(0), inputs.get(1), manager);
+            return factory.solve(inputs.get(0), inputs.get(1), manager);
         });
 
-        inputN.put("extract", Operation::extract);
+        inputN.put("extract", factory::extract) ; //Operation::extract);
         inputN.put("extractScalar", (inputs, manager) -> {
             if( inputs.size() != 2 && inputs.size() != 3 ) throw new RuntimeException("Two or three inputs expected");
-            return Operation.extractScalar(inputs, manager);
+            return factory.extractScalar(inputs, manager);
         });
     }
 
