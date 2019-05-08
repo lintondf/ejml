@@ -25,8 +25,8 @@ package org.ejml.equation;
  */
 public class VariableIntegerSequence extends Variable {
     IntegerSequence sequence;
-    protected VariableIntegerSequence(IntegerSequence sequence) {
-        super(VariableType.INTEGER_SEQUENCE);
+    protected VariableIntegerSequence(IntegerSequence sequence, String name) {
+        super(VariableType.INTEGER_SEQUENCE, name);
         this.sequence = sequence;
     }
 }

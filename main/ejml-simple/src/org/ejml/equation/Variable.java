@@ -25,9 +25,23 @@ package org.ejml.equation;
  */
 public class Variable {
     public VariableType type;
+    public String       name;
+	/**
+	 * If true then the matrix is dynamically resized to match the output of a function
+	 */
+	public boolean temp;
 
-    protected Variable(VariableType type) {
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	protected Variable(VariableType type, String name) {
         this.type = type;
+        this.name = name;
     }
 
     public VariableType getType() {
@@ -35,6 +49,14 @@ public class Variable {
     }
 
     public String toString() {
-        return "VAR_"  + type;
+        return name + " : VAR_"  + type;
     }
+
+	public boolean isTemp() {
+	    return temp;
+	}
+
+	public void setTemp(boolean temp) {
+	    this.temp = temp;
+	}
 }

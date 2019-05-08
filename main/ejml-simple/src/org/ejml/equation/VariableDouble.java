@@ -26,8 +26,8 @@ package org.ejml.equation;
 public class VariableDouble extends VariableScalar {
     public double value;
 
-    public VariableDouble(double value) {
-        super( Type.DOUBLE );
+    public VariableDouble(double value, String name) {
+        super( Type.DOUBLE, name );
         this.value = value;
     }
 

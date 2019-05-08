@@ -29,31 +29,18 @@ public class VariableMatrix extends Variable {
     public DMatrixRMaj matrix;
 
     /**
-     * If true then the matrix is dynamically resized to match the output of a function
-     */
-    public boolean temp;
-
-    /**
      * Initializes the matrix variable.  If null then the variable will be a reference one.  If not null then
      * it will be assignment.
      * @param matrix Matrix.
      */
-    public VariableMatrix(DMatrixRMaj matrix) {
-        super(VariableType.MATRIX);
+    public VariableMatrix(DMatrixRMaj matrix, String name) {
+        super(VariableType.MATRIX, name);
         this.matrix = matrix;
     }
 
     public static VariableMatrix createTemp() {
-        VariableMatrix ret = new VariableMatrix(new DMatrixRMaj(1,1));
+        VariableMatrix ret = new VariableMatrix(new DMatrixRMaj(1,1), "tm");
         ret.setTemp(true);
         return ret;
-    }
-
-    public boolean isTemp() {
-        return temp;
-    }
-
-    public void setTemp(boolean temp) {
-        this.temp = temp;
     }
 }

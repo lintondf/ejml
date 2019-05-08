@@ -27,8 +27,8 @@ public abstract class VariableScalar extends Variable {
 
     Type type;
 
-    public VariableScalar(Type type) {
-        super(VariableType.SCALAR);
+    public VariableScalar(Type type, String name) {
+        super(VariableType.SCALAR, name);
         this.type = type;
     }
 
@@ -38,13 +38,13 @@ public abstract class VariableScalar extends Variable {
     public String toString() {
         switch( type ) {
             case INTEGER:
-                return "ScalarI";
+                return name + " : ScalarI";
             case DOUBLE:
-                return "ScalarD";
+                return name + " : ScalarD";
             case COMPLEX:
-                return "ScalarC";
+                return name + " : ScalarC";
             default:
-                return "ScalarUnknown";
+                return name + " : ScalarUnknown";
         }
     }
 
@@ -57,4 +57,14 @@ public abstract class VariableScalar extends Variable {
         DOUBLE,
         COMPLEX
     }
+
+	public Object getOperand() {
+		if (this.getName().endsWith("}")) {
+			int i = this.getName().indexOf('{');
+			int j = this.getName().indexOf('}');
+			return this.getName().substring(i+1, j);
+		} else {
+			return this.getName();
+		}
+	}
 }

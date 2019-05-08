@@ -40,7 +40,6 @@ public class OperationExecuteFactory implements IOperationFactory {
 	 * 
 	 */
 	public OperationExecuteFactory() {
-		// TODO Auto-generated constructor stub
 	}
 
     public static class Extents
@@ -419,7 +418,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                 }
             };
         } else if( A instanceof VariableMatrix  ) {
-            final VariableMatrix output = manager.createMatrix();
+            final Variable output = manager.createMatrix();
             ret.output = output;
             ret.op = new Operation("exp-m") {
                 @Override
@@ -454,7 +453,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                 }
             };
         } else if( A instanceof VariableMatrix  ) {
-            final VariableMatrix output = manager.createMatrix();
+            final Variable output = manager.createMatrix();
             ret.output = output;
             ret.op = new Operation("log-m") {
                 @Override
@@ -497,7 +496,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                 }
             };
         } else if( A instanceof VariableInteger && B instanceof VariableInteger ) {
-            final VariableInteger output = manager.createInteger(0);
+            final VariableInteger output = manager.createInteger();
             ret.output = output;
             ret.op = new Operation("add-ii") {
                 @Override
@@ -579,7 +578,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                 }
             };
         } else if( A instanceof VariableInteger && B instanceof VariableInteger ) {
-            final VariableInteger output = manager.createInteger(0);
+            final VariableInteger output = manager.createInteger();
             ret.output = output;
             ret.op = new Operation("subtract-ii") {
                 @Override

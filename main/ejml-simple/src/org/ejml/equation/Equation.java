@@ -236,16 +236,30 @@ import static org.ejml.equation.TokenList.Type;
 // TODO intelligently handle identity matrices
 public class Equation {
     HashMap<String,Variable> variables = new HashMap<String, Variable>();
-    HashMap<String,Macro> macros = new HashMap<String, Macro>();
+    
+    public HashMap<String, Variable> getVariables() {
+		return variables;
+	}
+
+	HashMap<String,Macro> macros = new HashMap<String, Macro>();
 
     // storage for a single word in the tokenizer
     char storage[] = new char[1024];
 
-    ManagerFunctions functions;
-    ManagerTempVariables managerTemp;
+    ManagerFunctions managerFunctions;
+    
+    public ManagerFunctions getManagerFunctions() {
+		return managerFunctions;
+	}
+
+	public void setManagerFunctions(ManagerFunctions managerFunctions) {
+		this.managerFunctions = managerFunctions;
+	}
+
+	ManagerTempVariables managerTemp;
 
     public Equation() {
-    	functions = new ManagerFunctions();
+    	managerFunctions = new ManagerFunctions();
     	managerTemp = new ManagerTempVariables();
         alias(Math.PI,"pi");
         alias(Math.E,"e");
@@ -268,14 +282,14 @@ public class Equation {
      * @param seed New seed for random number generator
      */
     public void setSeed( long seed ) {
-        functions.managerTemp.getRandom().setSeed(seed);
+        managerFunctions.managerTemp.getRandom().setSeed(seed);
     }
 
     /**
      * Sets the random seed using a seed based on the current time
      */
     public void setSeed() {
-        functions.managerTemp.rand = new Random();
+        managerFunctions.managerTemp.rand = new Random();
     }
 
     /**
@@ -292,7 +306,7 @@ public class Equation {
             throw new RuntimeException("Reserved word or contains a reserved character");
         VariableMatrix old = (VariableMatrix)variables.get(name);
         if( old == null ) {
-            variables.put(name, new VariableMatrix(variable));
+            variables.put(name, new VariableMatrix(variable, name));
         }else {
             old.matrix = variable;
         }
@@ -325,7 +339,7 @@ public class Equation {
 
         VariableDouble old = (VariableDouble)variables.get(name);
         if( old == null ) {
-            variables.put(name, new VariableDouble(value));
+            variables.put(name, new VariableDouble(value, name));
         }else {
             old.value = value;
         }
@@ -342,7 +356,7 @@ public class Equation {
 
         VariableInteger old = (VariableInteger)variables.get(name);
         if( old == null ) {
-            variables.put(name, new VariableInteger(value));
+            variables.put(name, new VariableInteger(value, name));
         }else {
             old.value = value;
         }
@@ -354,7 +368,7 @@ public class Equation {
 
         VariableIntegerSequence old = (VariableIntegerSequence)variables.get(name);
         if( old == null ) {
-            variables.put(name, new VariableIntegerSequence(sequence));
+            variables.put(name, new VariableIntegerSequence(sequence, name));
         }else {
             old.sequence = sequence;
         }
@@ -417,7 +431,7 @@ public class Equation {
      */
     public Sequence compile( String equation , boolean assignment, boolean debug ) {
 
-        functions.setManagerTemp(managerTemp);
+        managerFunctions.setManagerTemp(managerTemp);
 
         Sequence sequence = new Sequence();
         TokenList tokens = extractTokens(equation,managerTemp);
@@ -489,13 +503,13 @@ public class Equation {
         if (range == null) {
             // no range, so copy results into the entire output matrix
             sequence.output = createVariableInferred(t0, variableRight);
-            sequence.addOperation(functions.getFactory().copy(variableRight, sequence.output));
+            sequence.addOperation(managerFunctions.getFactory().copy(variableRight, sequence.output));
         } else {
             // a sub-matrix range is specified.  Copy into that inner part
             if (t0.getType() == Type.WORD) {
                 throw new ParseError("Can't do lazy variable initialization with submatrices. " + t0.getWord());
             }
-            sequence.addOperation(functions.getFactory().copy(variableRight, t0.getVariable(), range));
+            sequence.addOperation(managerFunctions.getFactory().copy(variableRight, t0.getVariable(), range));
         }
     }
 
@@ -805,18 +819,18 @@ public class Equation {
         if( inputs.size() == 1 ) {
             Variable varA = variables.get(1);
             if( varA.getType() == VariableType.SCALAR ) {
-                info = functions.create("extractScalar", variables);
+                info = managerFunctions.create("extractScalar", variables);
             } else {
-                info = functions.create("extract", variables);
+                info = managerFunctions.create("extract", variables);
             }
         } else if( inputs.size() == 2 ) {
             Variable varA = variables.get(1);
             Variable varB = variables.get(2);
 
             if( varA.getType() == VariableType.SCALAR && varB.getType() == VariableType.SCALAR) {
-                info = functions.create("extractScalar", variables);
+                info = managerFunctions.create("extractScalar", variables);
             } else {
-                info = functions.create("extract", variables);
+                info = managerFunctions.create("extract", variables);
             }
         } else {
             throw new ParseError("Expected 2 inputs to sub-matrix");
@@ -939,7 +953,7 @@ public class Equation {
                 } else if( t != null && t.getSymbol() == Symbol.COLON ) {
                     // If it starts with a colon then it must be 'all'  or a type-o
                     IntegerSequence range = new IntegerSequence.Range(null,null);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(range);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(range);
                     TokenList.Token n = new TokenList.Token(varSequence);
                     tokens.insert(t.previous, n);
                     tokens.remove(t);
@@ -952,7 +966,7 @@ public class Equation {
                 } else {
                     // array range
                     IntegerSequence range = new IntegerSequence.Range(start,null);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(range);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(range);
                     replaceSequence(tokens, varSequence, start, prev);
                     state = 0;
                 }
@@ -964,7 +978,7 @@ public class Equation {
                 } else {
                     // create for sequence with start and stop elements only
                     IntegerSequence numbers = new IntegerSequence.For(start,null,prev);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(numbers);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(numbers);
                     replaceSequence(tokens, varSequence, start, prev );
                     if( t != null )
                         t = t.previous;
@@ -975,12 +989,12 @@ public class Equation {
                 if( isVariableInteger(t) ) {
                     // create 'for' sequence with three variables
                     IntegerSequence numbers = new IntegerSequence.For(start,middle,t);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(numbers);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(numbers);
                     t = replaceSequence(tokens, varSequence, start, t);
                 } else {
                     // array range with 2 elements
                     IntegerSequence numbers = new IntegerSequence.Range(start,middle);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(numbers);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(numbers);
                     replaceSequence(tokens, varSequence, start, prev);
                 }
                 state = 0;
@@ -1033,7 +1047,7 @@ public class Equation {
                 if( !isVariableInteger(t) ) {
                     // create explicit list sequence
                     IntegerSequence sequence = new IntegerSequence.Explicit(start,prev);
-                    VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(sequence);
+                    VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(sequence);
                     replaceSequence(tokens, varSequence, start, prev);
                     state = 0;
                 }
@@ -1075,7 +1089,7 @@ public class Equation {
                 }
             } else if( numFound > 1 ) {
                 IntegerSequence sequence = new IntegerSequence.Combined(start,end);
-                VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(sequence);
+                VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(sequence);
                 replaceSequence(tokens, varSequence, start, end);
                 numFound = 0;
             } else {
@@ -1086,7 +1100,7 @@ public class Equation {
 
         if( numFound > 1 ) {
             IntegerSequence sequence = new IntegerSequence.Combined(start,end);
-            VariableIntegerSequence varSequence = functions.getManagerTemp().createIntegerSequence(sequence);
+            VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(sequence);
             replaceSequence(tokens, varSequence, start, end);
         }
     }
@@ -1136,7 +1150,7 @@ public class Equation {
                 MatrixConstructor constructor = constructMatrix(bracketLet);
 
                 // define the matrix op and inject into token list
-                Operation.Info info = functions.getFactory().matrixConstructor(constructor);
+                Operation.Info info = managerFunctions.getFactory().matrixConstructor(constructor);
                 sequence.addOperation(info.op);
 
                 tokens.insert(start.previous, new TokenList.Token(info.output));
@@ -1155,7 +1169,7 @@ public class Equation {
 
     private MatrixConstructor constructMatrix(TokenList bracketLet) {
         // Go through the bracket and construct the matrix
-        MatrixConstructor constructor = new MatrixConstructor(functions.getManagerTemp());
+        MatrixConstructor constructor = new MatrixConstructor(managerFunctions.getManagerTemp());
 
         TokenList.Token n = bracketLet.first;
 
@@ -1204,7 +1218,7 @@ public class Equation {
                     throw new RuntimeException("Crap bug rethink this function");
 
                 // create the operation
-                Operation.Info info = functions.getFactory().neg(token.next.getVariable(),functions.getManagerTemp());
+                Operation.Info info = managerFunctions.getFactory().neg(token.next.getVariable(),managerFunctions.getManagerTemp());
                 // add the operation to the sequence
                 sequence.addOperation(info.op);
                 // update the token list
@@ -1294,7 +1308,7 @@ public class Equation {
     protected TokenList.Token insertTranspose( TokenList.Token variable ,
                                                TokenList tokens , Sequence sequence )
     {
-        Operation.Info info = functions.create('\'',variable.getVariable());
+        Operation.Info info = managerFunctions.create('\'',variable.getVariable());
 
         sequence.addOperation(info.op);
 
@@ -1315,7 +1329,7 @@ public class Equation {
     protected TokenList.Token createOp( TokenList.Token left , TokenList.Token op , TokenList.Token right ,
                                       TokenList tokens , Sequence sequence )
     {
-        Operation.Info info = functions.create(op.symbol, left.getVariable(), right.getVariable());
+        Operation.Info info = managerFunctions.create(op.symbol, left.getVariable(), right.getVariable());
 
         sequence.addOperation(info.op);
 
@@ -1336,13 +1350,13 @@ public class Equation {
     {
         Operation.Info info;
         if( inputs.size() == 1 )
-            info = functions.create(name.getFunction().getName(),inputs.get(0).getVariable());
+            info = managerFunctions.create(name.getFunction().getName(),inputs.get(0).getVariable());
         else {
             List<Variable> vars = new ArrayList<Variable>();
             for (int i = 0; i < inputs.size(); i++) {
                 vars.add(inputs.get(i).getVariable());
             }
-            info = functions.create(name.getFunction().getName(), vars );
+            info = managerFunctions.create(name.getFunction().getName(), vars );
         }
 
         sequence.addOperation(info.op);
@@ -1439,8 +1453,9 @@ public class Equation {
                 } else if( Character.isDigit(c) ) {
                     storage[length++] = c;
                 } else if( isSymbol(c) || Character.isWhitespace(c) ) {
-                    int value = Integer.parseInt( new String(storage, 0, length));
-                    tokens.add(managerTemp.createInteger(value));
+                	String representation = new String(storage, 0, length);
+                    int value = Integer.parseInt(representation);
+                    tokens.add(managerTemp.createInteger(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process unexpected character a second time
                 } else {
@@ -1455,8 +1470,9 @@ public class Equation {
                 } else if( Character.isDigit(c) ) {
                     storage[length++] = c;
                 } else if( isSymbol(c) || Character.isWhitespace(c) ) {
-                    double value = Double.parseDouble( new String(storage, 0, length));
-                    tokens.add(managerTemp.createDouble(value));
+                	String representation = new String(storage, 0, length);
+                    double value = Double.parseDouble( representation );
+                    tokens.add(managerTemp.createDouble(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process unexpected character a second time
                 } else {
@@ -1480,8 +1496,9 @@ public class Equation {
                 }
 
                 if( end ) {
-                    double value = Double.parseDouble( new String(storage, 0, length));
-                    tokens.add(managerTemp.createDouble(value));
+                	String representation = new String(storage, 0, length);
+                    double value = Double.parseDouble(representation);
+                    tokens.add(managerTemp.createDouble(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process the current character again since it was unexpected
                 }
@@ -1544,7 +1561,7 @@ public class Equation {
                 if (v != null) {
                     t.variable = v;
                     t.word = null;
-                } else if (functions.isFunctionName(t.word)) {
+                } else if (managerFunctions.isFunctionName(t.word)) {
                     t.function = (new Function(t.word));
                     t.word = null;
                 }
@@ -1644,7 +1661,7 @@ public class Equation {
      * or if it contains a restricted character.
      */
     protected boolean isReserved( String name ) {
-        if( functions.isFunctionName(name))
+        if( managerFunctions.isFunctionName(name))
             return true;
 
         for (int i = 0; i < name.length(); i++) {
@@ -1699,6 +1716,6 @@ public class Equation {
      * Returns the functions manager
      */
     public ManagerFunctions getFunctions() {
-        return functions;
+        return managerFunctions;
     }
 }

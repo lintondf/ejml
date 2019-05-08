@@ -209,7 +209,7 @@ public class TestTokenList {
 
     @Test
     public void Token_getType() {
-        assertTrue(new Token(new VariableMatrix(null)).getType() == TokenList.Type.VARIABLE);
+        assertTrue(new Token(new VariableMatrix(null, "")).getType() == TokenList.Type.VARIABLE);
         assertTrue(new Token(Symbol.PLUS).getType() == TokenList.Type.SYMBOL);
         assertTrue(new Token(new Function("foo")).getType() == TokenList.Type.FUNCTION);
     }

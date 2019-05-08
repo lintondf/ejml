@@ -27,15 +27,39 @@ import org.junit.Test;
 import java.util.Random;
 
 import static org.ejml.equation.TokenList.Type;
+import static java.lang.Math.exp;
+import static org.ejml.dense.row.CommonOps_DDRM.*;
+//import static org.ejml.dense.row.CommonOps_DDRM.mult;
+//import static org.ejml.dense.row.CommonOps_DDRM.scale;
+//import static org.ejml.dense.row.CommonOps_DDRM.subtract;
 import static org.junit.Assert.*;
 
 /**
  * @author Peter Abeles
  */
-public class TestEquation {
+public class TestCompiled {
 
     Random rand = new Random(234);
 
+	// A=B+C*D-B
+	 public DMatrixRMaj test(  DMatrixRMaj B,  DMatrixRMaj C,  DMatrixRMaj D) {
+
+		DMatrixRMaj	A = new DMatrixRMaj(1,1);
+		double    	e = Math.E;
+		double    	pi = Math.PI;
+
+		A.reshape(C.numRows,D.numCols);
+		mult(C, D, A);
+		System.out.println(A);
+		A.reshape(B.numRows,A.numCols);
+		add(B, A, A);
+		A.reshape(B.numRows,B.numCols);
+		subtract(A, B, A);
+		System.out.println(A);
+
+		return A;
+	}
+    
     /**
      * Basic test which checks ability parse basic operators and order of operation
      */
@@ -55,8 +79,13 @@ public class TestEquation {
 
         Sequence sequence = eq.compile("A=B+C*D-B");
         SimpleMatrix expected = C.mult(D);
+        System.out.println( expected );
         sequence.perform();
         assertTrue(expected.isIdentical(A,1e-15));
+        
+        DMatrixRMaj Z = test( B.getDDRM(), C.getDDRM(), D.getDDRM());
+        SimpleMatrix AZ = new SimpleMatrix(Z);
+        assertTrue(expected.isIdentical(AZ,1e-15));
     }
 
     /**

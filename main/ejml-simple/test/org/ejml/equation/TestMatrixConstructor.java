@@ -47,10 +47,10 @@ public class TestMatrixConstructor {
 
         MatrixConstructor alg = new MatrixConstructor(new ManagerTempVariables());
 
-        alg.addToRow(new VariableMatrix(B));
-        alg.addToRow(new VariableMatrix(C));
+        alg.addToRow(new VariableMatrix(B,"B"));
+        alg.addToRow(new VariableMatrix(C,"C"));
         alg.endRow();
-        alg.addToRow(new VariableMatrix(D));
+        alg.addToRow(new VariableMatrix(D,"D"));
 
         alg.construct();
 
@@ -62,10 +62,10 @@ public class TestMatrixConstructor {
     public void setToRequiredSize_matrix() {
         MatrixConstructor alg = new MatrixConstructor(new ManagerTempVariables());
 
-        alg.addToRow(new VariableMatrix(new DMatrixRMaj(2, 3)));
-        alg.addToRow(new VariableMatrix(new DMatrixRMaj(2, 4)));
+        alg.addToRow(new VariableMatrix(new DMatrixRMaj(2, 3), ""));
+        alg.addToRow(new VariableMatrix(new DMatrixRMaj(2, 4), ""));
         alg.endRow();
-        alg.addToRow(new VariableMatrix(new DMatrixRMaj(1, 7)));
+        alg.addToRow(new VariableMatrix(new DMatrixRMaj(1, 7), ""));
         alg.endRow();
 
         DMatrixRMaj a = new DMatrixRMaj(1,1);
@@ -80,8 +80,8 @@ public class TestMatrixConstructor {
     public void setToRequiredSize_scalar() {
         MatrixConstructor alg = new MatrixConstructor(new ManagerTempVariables());
 
-        alg.addToRow(new VariableDouble(123));
-        alg.addToRow(new VariableDouble(1));
+        alg.addToRow(new VariableDouble(123, ""));
+        alg.addToRow(new VariableDouble(1, ""));
         alg.endRow();
 
         DMatrixRMaj a = new DMatrixRMaj(1,1);

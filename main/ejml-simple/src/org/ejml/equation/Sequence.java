@@ -31,7 +31,15 @@ public class Sequence {
     // List of in sequence operations which the equation string described
     List<Operation> operations = new ArrayList<>();
 
-    // Variable containing the output of the sequence
+    public List<Operation> getOperations() {
+		return operations;
+	}
+
+	public Variable getOutput() {
+		return output;
+	}
+
+	// Variable containing the output of the sequence
     Variable output;
 
     public void addOperation( Operation operation ) {

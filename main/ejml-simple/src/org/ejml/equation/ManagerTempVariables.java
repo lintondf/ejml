@@ -28,6 +28,8 @@ import java.util.Random;
  */
 // TODO add function to purge temporary variables.  basicaly resize and redeclare their array to size 1
 public class ManagerTempVariables {
+	
+	private long sequence = 1;
 
     /**
      * Set random seed to a constant value by default for repeatable results.
@@ -39,27 +41,34 @@ public class ManagerTempVariables {
     }
 
     public VariableMatrix createMatrix() {
-        return VariableMatrix.createTemp();
+    	VariableMatrix ret = VariableMatrix.createTemp();
+    	String name = String.format("tm%d", sequence++ );
+    	ret.setName(name);
+        return ret;
     }
 
     public VariableDouble createDouble() {
-        return new VariableDouble(0);
+    	VariableDouble ret = new VariableDouble(0, String.format("td%d", sequence++));
+    	ret.setTemp(true);
+    	return ret;
     }
 
-    public VariableDouble createDouble( double value ) {
-        return new VariableDouble(value);
+    public VariableDouble createDouble( double value, String representation ) {
+        return new VariableDouble(value, String.format("DOUBLE{%s}", representation));
     }
 
     public VariableInteger createInteger() {
-        return createInteger(0);
+    	VariableInteger ret = createInteger(0, String.format("ti%d", sequence++));
+    	ret.setTemp(true);
+    	return ret;
     }
 
-    public VariableInteger createInteger( int value ) {
-        return new VariableInteger(value);
+    public VariableInteger createInteger( int value, String representation ) {
+        return new VariableInteger(value, String.format("INTEGER{%s}", representation));
     }
 
     public VariableIntegerSequence createIntegerSequence( IntegerSequence sequence ) {
-        return new VariableIntegerSequence(sequence);
+        return new VariableIntegerSequence(sequence, String.format("SEQUENCE{%s}", sequence.toString())) ;
     }
     
     /**

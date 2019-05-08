@@ -26,8 +26,8 @@ package org.ejml.equation;
 public class VariableInteger extends VariableScalar {
     public int value;
 
-    public VariableInteger(int value) {
-        super( Type.INTEGER );
+    public VariableInteger(int value, String name) {
+        super( Type.INTEGER, name );
         this.value = value;
     }
 
