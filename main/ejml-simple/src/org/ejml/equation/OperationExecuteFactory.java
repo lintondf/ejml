@@ -1100,7 +1100,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                 @Override
                 public void process() {
                     VariableMatrix mA = (VariableMatrix)A;
-                    output.value= CommonOps_DDRM.trace(mA.matrix);
+                    output.value = CommonOps_DDRM.trace(mA.matrix);
                 }
             };
         } else {
@@ -1129,7 +1129,7 @@ public class OperationExecuteFactory implements IOperationFactory {
             ret.op = new Operation("normF-m") {
                 @Override
                 public void process() {
-                    output.value= NormOps_DDRM.normF(((VariableMatrix) A).matrix);
+                    output.value = NormOps_DDRM.normF(((VariableMatrix) A).matrix);
                 }
             };
         } else {
@@ -1162,7 +1162,7 @@ public class OperationExecuteFactory implements IOperationFactory {
         ret.op = new Operation("normP") {
             @Override
             public void process() {
-                output.value= NormOps_DDRM.normP(varA.matrix,valueP);
+                output.value = NormOps_DDRM.normP(varA.matrix,valueP);
             }
         };
 
