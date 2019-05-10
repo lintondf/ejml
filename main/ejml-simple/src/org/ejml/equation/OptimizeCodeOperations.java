@@ -536,6 +536,22 @@ is
     		return false;    		
     	}
     	
+    	protected boolean codeManagerReshape( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		//(\w+)(\.matrix)?\.reshape\(\s*([^,]*),\s*(.*)\);
+    		final Pattern pattern = Pattern.compile("(\\w+)(\\.matrix)?\\.reshape\\(\\s*([^,]*),\\s*(.*)\\);");
+    		Matcher matcher = pattern.matcher(line);
+    		if (matcher.find()) {
+    			//groups: 1-variable, 2 - null|.matrix, 3-row expression, 4-col expression
+    			sb.append(prefix);
+    			String code = "sb.append( String.format(formatReshape, %s.getName(), %s.getName(), %s.getName()) );"; 
+    			sb.append(String.format(code, renames.get(matcher.group(1)), renames.get(matcher.group(3)), renames.get(matcher.group(4))));
+    			sb.append("\n");
+    			return true;
+    		}
+    		return false;
+    	}
+    	
+    	
     	protected boolean codeCommonOps( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
     		final Pattern pattern3Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.[^,]+)?,\\s*(\\w+)(\\.matrix)?\\s*\\);");
     		final Pattern pattern2Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
@@ -551,21 +567,52 @@ is
     				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), output.getName()) );"; 
     				sb.append(String.format(code, matcher.group(1), renames.get(matcher.group(2)), renames.get(matcher.group(4))));
     			} else {
-            		System.out.println(matcher.group(3)+","+matcher.group(5) + ": " + line);    				
+            		System.out.println("cCO3: " + matcher.group(3)+","+matcher.group(5) + ": " + line);    				
     			}
     			sb.append("\n");
     			return true;
     		}
     		matcher = pattern2Args.matcher(line);
     		if (matcher.find()) {
+    			System.out.println("cCO2: " + line);
     			return true;
     		}
     		matcher = pattern1Arg.matcher(line);
     		if (matcher.find()) {
+    			System.out.println("cCO1: " + line);
     			return true;
     		}
-    		System.out.println("?"+line);
+    		System.out.println("?cCO: "+line);
     		return false;
+    	}
+    	
+    	protected boolean codeOutputValue( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		//(\w+)\.value
+    		final Pattern patternNoCast = Pattern.compile("(\\w+)\\.value");
+    		//	\(\((\w+)\)\s*(\w+)\)\.value
+    		final Pattern patternCast = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.value");
+    		boolean success = false;
+    		Matcher matcher = patternNoCast.matcher(line);
+    		while (matcher.find()) {
+    			line = matcher.replaceFirst(rename(renames, matcher.group(1)));
+    			success = true;
+    			matcher = patternNoCast.matcher(line);
+    		}
+    		matcher = patternCast.matcher(line);
+    		while (matcher.find()) {
+    			line = matcher.replaceFirst(rename(renames, matcher.group(2)));
+    			success = true;
+    			matcher = patternCast.matcher(line);
+    		}
+    		System.out.println("-> " + line);
+    		return success;
+    	}
+    	
+    	protected String rename(Map<String, String> renames, String name) {
+    		String r = renames.get(name);
+    		if (r != null)
+    			return r;
+    		return name;
     	}
     	
     	// writes code that will write code
@@ -596,20 +643,14 @@ is
     			} else if (line.startsWith("manager.resize(output")) {
     				success = success && codeManagerResize( sb, prefix, renames, line );
     			} else if (line.startsWith("output.matrix.reshape(")) {
-    				sb.append(prefix);
-    				sb.append(line);
-    				sb.append("\n");
+    				success = success && codeManagerReshape( sb, prefix, renames, line );
     			} else if (line.startsWith("out.reshape(")) {
-    				sb.append(prefix);
-    				sb.append(line);
-    				sb.append("\n");
+    				success = success && codeManagerReshape( sb, prefix, renames, line );
     			} else if (line.startsWith("CommonOps_DDRM.")) {
-    				//System.out.println(line);
     				success = success && codeCommonOps( sb, prefix, renames, line );
     			} else if (line.startsWith("output.value = ")) {
-    				sb.append(prefix);
-    				sb.append(line);
-    				sb.append("\n");
+    				System.out.println(line);
+    				success = success && codeOutputValue( sb, prefix, renames, line );
     			} else {
     				sb.append("?");
     				sb.append(line);
