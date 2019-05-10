@@ -487,6 +487,7 @@ is
     	}
     	
     	protected boolean codeVariableScalar( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		System.out.println(line);
     		final Pattern pattern = Pattern.compile("VariableScalar\\s*(\\w+)\\s*=\\s*\\(VariableScalar\\)\\s*(\\w+)\\;");
     		return codeRenamePattern( sb, prefix, renames, pattern, line );
     	}
@@ -551,7 +552,17 @@ is
     				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), output.getName()) );"; 
     				sb.append(String.format(code, matcher.group(1), renames.get(matcher.group(2)), renames.get(matcher.group(4))));
     			} else {
-            		System.out.println(matcher.group(3)+","+matcher.group(5) + ": " + line);    				
+            		System.out.println(matcher.group(2)+","+matcher.group(3) + ": " + line);    				
+    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s, %s, output.getName()) );"; 
+    				String a = renames.get(matcher.group(2)) + ".getName()";
+    				if (!matcher.group(3).equals(".matrix")) {
+    					a += matcher.group(3);
+    				}
+    				String b = renames.get(matcher.group(4)) + ".getName()";
+    				if (!matcher.group(5).equals(".matrix")) {
+    					b += matcher.group(5);
+    				}
+    				sb.append(String.format(code, matcher.group(1), a, b));
     			}
     			sb.append("\n");
     			return true;
@@ -568,6 +579,9 @@ is
     		return false;
     	}
     	
+    	final Pattern startsVariableMatrix = Pattern.compile("^(final\\s*)?VariableMatrix\\s+");
+    	final Pattern startsVariableScalar = Pattern.compile("^(final\\s*)?VariableScalar\\s+");
+    	
     	// writes code that will write code
     	public StringBuilder toCode(String prefix) {
     		HashMap<String, String> renames = new HashMap<>();
@@ -575,13 +589,14 @@ is
     		boolean success = true;
     		StringBuilder sb = new StringBuilder();
     		for (String line : body) {
-    			if (line.startsWith("VariableMatrix ")) {
+    			if (startsVariableMatrix.matcher(line).find()) {
+    			//if (line.startsWith("VariableMatrix ")) {
     				success = success && codeVariableMatrix( sb, prefix, renames, line );
     			} else if (line.startsWith("DMatrixRMaj ")) {
     				success = success && codeDMatrixRMaj( sb, prefix, renames, line );
     			} else if (line.startsWith("VariableInteger ")) {
     				success = success && codeVariableInteger( sb, prefix, renames, line );
-    			} else if (line.startsWith("VariableScalar ")) {
+    			} else if (startsVariableScalar.matcher(line).find()) {
     				success = success && codeVariableScalar( sb, prefix, renames, line );
     			} else if (line.startsWith("int ")) {
     				sb.append(prefix);
