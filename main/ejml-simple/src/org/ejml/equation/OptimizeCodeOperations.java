@@ -243,123 +243,126 @@ public class OptimizeCodeOperations {
 		return "";
     }
     
-    protected String mmOp(String op, CodeOperation codeOp) {
-    	String target = codeOp.output.getName();
-    	String lhs = codeOp.input.get(0).getName();
-    	String rhs = codeOp.input.get(1).getName();
-    	switch (op) {
-    	case "add":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "add", lhs, rhs, target);
+    
+    
+//    protected String mmOp(String op, CodeOperation codeOp) {
+//    	String target = codeOp.output.getName();
+//    	String lhs = codeOp.input.get(0).getName();
+//    	String rhs = codeOp.input.get(1).getName();
+//    	switch (op) {
+//    	case "add":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "add", lhs, rhs, target);
+////    	case "copy":
+////    	case "copyR":
+//    	case "dot":
+//        	return String.format("\t\t%s = %s(%s, %s);\n", target, "dot", lhs, rhs );    	
+//    	case "elementDivision":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "elementDiv", lhs, rhs, target);
+//    	case "elementMult":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "elementMult", lhs, rhs, target);
+//    	case "elementPow":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "elementPower", lhs, rhs, target);
+//    	case "kron":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "kron", lhs, rhs, target);
+//    	case "multiply":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "mult", lhs, rhs, target);
+//    	case "solve":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "solve", lhs, rhs, target);    	
+//    	case "subtract":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "subtract", rhs, lhs, target);    	
+//    	}
+//    	return String.format("\t\t%s = %s %s %s; ERROR\n", target, lhs, op, rhs );
+//    }
+//    
+//    protected String msOp(String op, CodeOperation codeOp) {
+//    	String target = codeOp.output.getName();
+//    	String lhs = codeOp.input.get(0).getName();
+//    	VariableScalar rhs = (VariableScalar) codeOp.input.get(1);
+//    	switch (op) {
+//    	case "add":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "add", lhs, rhs.getOperand(), target);    	
+//    	case "multiply":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "scale", rhs.getOperand(), lhs, target);    	
+//    	case "subtract":   	
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "substract", lhs, rhs.getOperand(), target);    	
+//    	case "elementPow":
+//    		return String.format("\t\t%s(%s, %s, %s);\n", "elementPower", lhs, rhs.getOperand(), target);
+//    	}
+//    	return String.format("\t\t%s = %s %s %s;\n", target, lhs, op, rhs );
+//    }
+//    
+//    protected String sOp(String op, CodeOperation codeOp) {
+//    	String target = codeOp.output.getName();
+//    	VariableScalar lhs = (VariableScalar) codeOp.input.get(0);
+//    	return String.format("\t\t%s = Math.%s(%s);\n", target, op, lhs.getOperand() );    	
+//    }
+//    
+//    protected String ssOp(String op, CodeOperation codeOp) {
+//    	String target = codeOp.output.getName();
+//    	VariableScalar lhs = (VariableScalar) codeOp.input.get(0);
+//    	VariableScalar rhs = (VariableScalar) codeOp.input.get(1);
+//    	switch (op) {
+//    	case "add":
+//    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "+", rhs.getOperand() );
+//    	case "divide":
+//    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "/", rhs.getOperand() );
+//    	case "multiply":
+//    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "*", rhs.getOperand() );
+//    	case "subtract":
+//    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "-", rhs.getOperand() );
+//    	case "atan2":
+//        	return String.format("\t\t%s = %s(%s, %s);\n", target, "atan2", lhs.getOperand(), rhs.getOperand() );    	
 //    	case "copy":
-//    	case "copyR":
-    	case "dot":
-        	return String.format("\t\t%s = %s(%s, %s);\n", target, "dot", lhs, rhs );    	
-    	case "elementDivision":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "elementDiv", lhs, rhs, target);
-    	case "elementMult":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "elementMult", lhs, rhs, target);
-    	case "elementPow":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "elementPower", lhs, rhs, target);
-    	case "kron":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "kron", lhs, rhs, target);
-    	case "multiply":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "mult", lhs, rhs, target);
-    	case "solve":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "solve", lhs, rhs, target);    	
-    	case "subtract":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "subtract", rhs, lhs, target);    	
-    	}
-    	return String.format("\t\t%s = %s %s %s; ERROR\n", target, lhs, op, rhs );
-    }
+//        	return String.format("\t\t%s = %s(%s);\n", target, lhs.getOperand() );    	
+//    	case "elementPow":
+//    	case "pow":
+//        	return String.format("\t\t%s = %s(%s);\n", target, "pow", lhs.getOperand(), rhs.getOperand() );    	
+//    	}
+//    	return String.format("\t\t%s = %s %s %s; NIY\n", target, lhs, op, rhs );
+//    }
     
-    protected String msOp(String op, CodeOperation codeOp) {
-    	String target = codeOp.output.getName();
-    	String lhs = codeOp.input.get(0).getName();
-    	VariableScalar rhs = (VariableScalar) codeOp.input.get(1);
-    	switch (op) {
-    	case "add":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "add", lhs, rhs.getOperand(), target);    	
-    	case "multiply":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "scale", rhs.getOperand(), lhs, target);    	
-    	case "subtract":   	
-    		return String.format("\t\t%s(%s, %s, %s);\n", "substract", lhs, rhs.getOperand(), target);    	
-    	case "elementPow":
-    		return String.format("\t\t%s(%s, %s, %s);\n", "elementPower", lhs, rhs.getOperand(), target);
-    	}
-    	return String.format("\t\t%s = %s %s %s;\n", target, lhs, op, rhs );
-    }
-    
-    protected String sOp(String op, CodeOperation codeOp) {
-    	String target = codeOp.output.getName();
-    	VariableScalar lhs = (VariableScalar) codeOp.input.get(0);
-    	return String.format("\t\t%s = Math.%s(%s);\n", target, op, lhs.getOperand() );    	
-    }
-    
-    protected String ssOp(String op, CodeOperation codeOp) {
-    	String target = codeOp.output.getName();
-    	VariableScalar lhs = (VariableScalar) codeOp.input.get(0);
-    	VariableScalar rhs = (VariableScalar) codeOp.input.get(1);
-    	switch (op) {
-    	case "add":
-    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "+", rhs.getOperand() );
-    	case "divide":
-    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "/", rhs.getOperand() );
-    	case "multiply":
-    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "*", rhs.getOperand() );
-    	case "subtract":
-    		return String.format("\t\t%s = %s %s %s;\n", target, lhs.getOperand(), "-", rhs.getOperand() );
-    	case "atan2":
-        	return String.format("\t\t%s = %s(%s, %s);\n", target, "atan2", lhs.getOperand(), rhs.getOperand() );    	
-    	case "copy":
-        	return String.format("\t\t%s = %s(%s);\n", target, lhs.getOperand() );    	
-    	case "elementPow":
-    	case "pow":
-        	return String.format("\t\t%s = %s(%s);\n", target, "pow", lhs.getOperand(), rhs.getOperand() );    	
-    	}
-    	return String.format("\t\t%s = %s %s %s; NIY\n", target, lhs, op, rhs );
-    }
     
 	protected void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {
-		if (! codeOp.dimensions.isEmpty()) {
-			emitResizeTarget( body, codeOp );
-		}
-		String[] fields = codeOp.name().split("-");
-		switch (fields[1]) {
-		case "mm":
-			body.append( mmOp( fields[0], codeOp ) );
-			break;
-		case "ms":
-			body.append( msOp( fields[0], codeOp ) );
-			break;
-		case "ss":
-			body.append( ssOp( fields[0], codeOp ) );
-			break;
-		case "s":
-			switch (fields[0]) {
-			case "det":
-			case "inv":
-			case "normF":
-			case "pinv":
-			case "rref":
-			case "trace":
-				break;
-			default: // java.lang.Math
-				body.append( sOp( fields[0], codeOp) );
-			}
-			break;
-		default:
-			break;
-		}
-		/*
-ii
-ma
-i
-s
-m
-sm
-sm1
-is		 
-		*/
+//		if (! codeOp.dimensions.isEmpty()) {
+//			emitResizeTarget( body, codeOp );
+//		}
+//		String[] fields = codeOp.name().split("-");
+//		switch (fields[1]) {
+//		case "mm":
+//			body.append( mmOp( fields[0], codeOp ) );
+//			break;
+//		case "ms":
+//			body.append( msOp( fields[0], codeOp ) );
+//			break;
+//		case "ss":
+//			body.append( ssOp( fields[0], codeOp ) );
+//			break;
+//		case "s":
+//			switch (fields[0]) {
+//			case "det":
+//			case "inv":
+//			case "normF":
+//			case "pinv":
+//			case "rref":
+//			case "trace":
+//				break;
+//			default: // java.lang.Math
+//				body.append( sOp( fields[0], codeOp) );
+//			}
+//			break;
+//		default:
+//			break;
+//		}
+//		/*
+//ii
+//ma
+//i
+//s
+//m
+//sm
+//sm1
+//is		 
+//		*/
 	}
 
     private void emitResizeTarget(StringBuilder body, CodeOperation codeOp) {
@@ -545,7 +548,7 @@ is
     			 */
     			sb.append(prefix);
     			String code = "sb.append( String.format(formatReshape, output.getName(), %s.getName(), %s.getName()) );"; 
-    			sb.append(String.format(code, renames.get(matcher.group(1)), renames.get(matcher.group(4))));
+    			sb.append(String.format(code, rename(renames, matcher.group(1)), rename(renames, matcher.group(4))));
     			sb.append("\n");
     			return true;
     		}
@@ -559,8 +562,22 @@ is
     		if (matcher.find()) {
     			//groups: 1-variable, 2 - null|.matrix, 3-row expression, 4-col expression
     			sb.append(prefix);
-    			String code = "sb.append( String.format(formatReshape, %s.getName(), %s.getName(), %s.getName()) );"; 
-    			sb.append(String.format(code, renames.get(matcher.group(1)), renames.get(matcher.group(3)), renames.get(matcher.group(4))));
+    			String code = "sb.append( String.format(formatReshape, %s.getName(), %s.getName(), %s.getName()) );";
+    			String a = rename(renames, matcher.group(1));
+        		final Pattern variable = Pattern.compile("\\w+");
+        		final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
+        		if (!variable.matcher(a).matches()) {
+        			return false;
+        		}
+        		String b = rename(renames, matcher.group(3));
+        		if (!variable.matcher(b).matches()) {
+        			return false;
+        		}
+        		String c = rename(renames, matcher.group(4));
+        		if (!variable.matcher(c).matches()) {
+        			return false;
+        		}
+    			sb.append(String.format(code, a, b, c));
     			sb.append("\n");
     			return true;
     		}
@@ -852,9 +869,13 @@ is
     		if (success)
     			return sb;
     		sb.insert(0, prefix + "/*\n");
+    		for (String line : body) {
+    			sb.append(line);
+				sb.append("\n") ;   	
+    		}
     		sb.append(prefix + "*/\n");
     		sb.append(prefix);
-    		sb.append("return MANUAL; //TODO\n");
+    		sb.append("//TODO MANUAL\n");
     		return sb;
     	}
     	
