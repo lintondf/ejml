@@ -62,9 +62,9 @@ public abstract class VariableScalar extends Variable {
 		if (this.getName().endsWith("}")) {
 			int i = this.getName().indexOf('{');
 			int j = this.getName().indexOf('}');
-			return this.getName().substring(i+1, j);
+			return this.getName().substring(i+1, j); // text as specified in equation
 		} else {
-			return this.getName();
+			return this.getName();  // name of scalar variable
 		}
 	}
 }

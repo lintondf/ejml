@@ -253,7 +253,7 @@ public class OptimizeCodeOperations {
 //    	case "copy":
 //    	case "copyR":
     	case "dot":
-        	return String.format("\t\t%s = %s(%s, %s);\n", target, "atan2", lhs, rhs );    	
+        	return String.format("\t\t%s = %s(%s, %s);\n", target, "dot", lhs, rhs );    	
     	case "elementDivision":
     		return String.format("\t\t%s(%s, %s, %s);\n", "elementDiv", lhs, rhs, target);
     	case "elementMult":
@@ -486,9 +486,18 @@ is
     		return codeRenamePattern( sb, prefix, renames, pattern, line );
     	}
     	
+    	protected boolean codeIntVariableInteger( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		final Pattern pattern = Pattern.compile("int\\s*(\\w+)\\s*=\\s*\\(VariableInteger\\)\\s*(\\w+)\\;");
+    		return codeRenamePattern( sb, prefix, renames, pattern, line );
+    	}
+    	
     	protected boolean codeVariableScalar( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		System.out.println(line);
     		final Pattern pattern = Pattern.compile("VariableScalar\\s*(\\w+)\\s*=\\s*\\(VariableScalar\\)\\s*(\\w+)\\;");
+    		return codeRenamePattern( sb, prefix, renames, pattern, line );
+    	}
+    	
+    	protected boolean codeDoubleVariableScalar( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		final Pattern pattern = Pattern.compile("double\\s*(\\w+)\\s*=\\s*\\(\\(VariableScalar\\)\\s*(\\w+)\\)\\.getDouble\\(\\)\\;");
     		return codeRenamePattern( sb, prefix, renames, pattern, line );
     	}
     	
@@ -512,6 +521,12 @@ is
 			code.print("\n");    		
 			code.print(prefix);
 			code.print("final String formatCommonOps3 = \"CommonOps_DDRM.%s( %s, %s, %s );\";");
+			code.print("\n");
+			code.print(prefix);
+			code.print("final String formatCommonOps2 = \"CommonOps_DDRM.%s( %s, %s );\";");
+			code.print("\n");
+			code.print(prefix);
+			code.print("final String formatCommonOps1 = \"CommonOps_DDRM.%s( %s );\";");
 			code.print("\n");
     	}
     	
@@ -554,44 +569,68 @@ is
     	
     	
     	protected boolean codeCommonOps( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		//CommonOps_DDRM\.(\w+)\(\s*(-?\w+)(\.[^,]+)?,\s*(-?\w+)(\.[^,]+)?,\s*(\w+)(\.matrix)?\s*\);
     		final Pattern pattern3Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.[^,]+)?,\\s*(\\w+)(\\.matrix)?\\s*\\);");
-    		final Pattern pattern2Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
-    		final Pattern pattern1Arg  = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.matrix)?\\);");
     		Matcher matcher = pattern3Args.matcher(line);
     		if (matcher.find()) {
+    			sb.append(prefix);
     			sb.append("//" + line + "\n");
     			sb.append(prefix);
     			if (matcher.group(3) == null && matcher.group(5) == null) {
-        			String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), output.getName()) );"; 
-        			sb.append(String.format(code, matcher.group(1), renames.get(matcher.group(2)), renames.get(matcher.group(4))));
+        			String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );"; 
+        			sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)), rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
     			} else if (matcher.group(3).equals(".matrix") && matcher.group(5).equals(".matrix")) {
-    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), output.getName()) );"; 
-    				sb.append(String.format(code, matcher.group(1), renames.get(matcher.group(2)), renames.get(matcher.group(4))));
+    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );"; 
+    				sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)), rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
     			} else {
-            		System.out.println("cCO3: " + matcher.group(3)+","+matcher.group(5) + ": " + line);    				
-            		System.out.println(matcher.group(2)+","+matcher.group(3) + ": " + line);    				
-    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s, %s, output.getName()) );"; 
-    				String a = renames.get(matcher.group(2)) + ".getName()";
+    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s, %s, %s) );"; 
+    				String a = rename(renames, matcher.group(2)) + ".getName()";
     				if (!matcher.group(3).equals(".matrix")) {
     					a += matcher.group(3);
     				}
-    				String b = renames.get(matcher.group(4)) + ".getName()";
+    				String b = rename(renames, matcher.group(4)) + ".getName()";
     				if (!matcher.group(5).equals(".matrix")) {
     					b += matcher.group(5);
     				}
-    				sb.append(String.format(code, matcher.group(1), a, b));
+    				String o = rename(renames, matcher.group(6)) + ".getName()";
+    				sb.append(String.format(code, matcher.group(1), a, b, o));
     			}
     			sb.append("\n");
     			return true;
     		}
+    		final Pattern pattern2Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
     		matcher = pattern2Args.matcher(line);
     		if (matcher.find()) {
-    			System.out.println("cCO2: " + line);
+    			String code = "sb.append( String.format(formatCommonOps2, \"%s\", %s, %s) );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+   				String a = rename(renames, matcher.group(4));
+   				if (matcher.group(5) == null) {
+   				} else if (!matcher.group(5).equals(".matrix")) {
+					a += matcher.group(5);
+				} else {
+   					a += ".getName()";					
+				}
+				String o = rename(renames, matcher.group(2)) + ".getName()";
+    			sb.append(String.format(code, matcher.group(1), o, a));
+    			sb.append("\n");
     			return true;
     		}
+    		final Pattern pattern1Arg  = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.matrix)?\\);");
     		matcher = pattern1Arg.matcher(line);
     		if (matcher.find()) {
-    			System.out.println("cCO1: " + line);
+//    			System.out.println("cCO1: " + line);
+//    			System.out.print("{");
+//    			for (int g = 1; g <= matcher.groupCount(); g++) System.out.print(g+":"+matcher.group(g)+",");
+//    			System.out.println("}");
+    			String code = "sb.append( String.format(formatCommonOps1, \"%s\", %s) );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			String o = rename(renames, matcher.group(2)) + ".getName()";
+    			sb.append(String.format(code, matcher.group(1), o ));
+    			sb.append("\n");
     			return true;
     		}
     		System.out.println("?cCO: "+line);
@@ -599,24 +638,166 @@ is
     	}
     	
     	protected boolean codeOutputValue( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
+    		ArrayList<String> args = new ArrayList<>();
     		//(\w+)\.value
     		final Pattern patternNoCast = Pattern.compile("(\\w+)\\.value");
     		//	\(\((\w+)\)\s*(\w+)\)\.value
-    		final Pattern patternCast = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.value");
+    		final Pattern patternCastValue = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.value");
+    		final Pattern patternCastMatrix = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.matrix");
+    		//(\w+)\.getDouble\(\)
+    		final Pattern patternGetDouble = Pattern.compile("(\\w+)\\.getDouble\\(\\)");
+    		//	\(\((\w+)\)\s*(\w+)\)\.getDouble\(\)
+    		final Pattern patternCastGetDouble = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.getDouble\\(\\)");
+    		
+    		final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
+    		final Pattern patternUnary = Pattern.compile("%s\\s*=\\s*([\\+\\-]*)\\s*%s;");
+
+    		final Pattern pattern1Arg = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^\\)\\s]+)?\\s*\\);");
+    		final Pattern pattern2Args = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
+    		final Pattern pattern1Parameter = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(%s)\\s*\\);");
+
     		boolean success = false;
     		Matcher matcher = patternNoCast.matcher(line);
     		while (matcher.find()) {
-    			line = matcher.replaceFirst(rename(renames, matcher.group(1)));
+    			args.add(rename(renames, matcher.group(1)));
+    			line = matcher.replaceFirst("%s");
     			success = true;
     			matcher = patternNoCast.matcher(line);
     		}
-    		matcher = patternCast.matcher(line);
+    		matcher = patternCastValue.matcher(line);
     		while (matcher.find()) {
-    			line = matcher.replaceFirst(rename(renames, matcher.group(2)));
+    			args.add(rename(renames, matcher.group(2)));
+    			line = matcher.replaceFirst("%s");
     			success = true;
-    			matcher = patternCast.matcher(line);
+    			matcher = patternCastValue.matcher(line);
     		}
-    		System.out.println("-> " + line);
+    		matcher = patternCastMatrix.matcher(line);
+    		while (matcher.find()) {
+    			args.add(rename(renames, matcher.group(2)));
+    			line = matcher.replaceFirst("%s");
+    			success = true;
+    			matcher = patternCastMatrix.matcher(line);
+    		}
+    		matcher = patternGetDouble.matcher(line);
+    		while (matcher.find()) {
+    			args.add(rename(renames, matcher.group(1)));
+    			line = matcher.replaceFirst("%s");
+    			success = true;
+    			matcher = patternGetDouble.matcher(line);
+    		}
+    		matcher = patternCastGetDouble.matcher(line);
+    		while (matcher.find()) {
+    			args.add(rename(renames, matcher.group(2)));
+    			line = matcher.replaceFirst("%s");
+    			success = true;
+    			matcher = patternCastGetDouble.matcher(line);
+    		}
+
+    		matcher = patternBinary.matcher(line);
+    		Matcher unary = patternUnary.matcher(line);
+    		Matcher oneArg = pattern1Arg.matcher(line);
+    		Matcher twoArgs = pattern2Args.matcher(line);
+    		Matcher oneParameter = pattern1Parameter.matcher(line);
+
+    		if (matcher.find()) {
+//    			System.out.printf("   ! \"%%s = %%s %s %%s;\" %% %s\n", matcher.group(1), args.toString() );
+    			String code = "sb.append( String.format(";
+    			String close = ") );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			sb.append(code);
+    			String format = String.format("\"%%s = %%s %s %%s;\"", matcher.group(1));
+    			sb.append(format);
+    			for (String arg : args) {
+    				sb.append(", ");
+    				sb.append(arg);
+    				sb.append(".getName()");
+    			}
+    			sb.append(close);
+    			sb.append("\n");
+    		} else if (unary.find()) {
+//    			System.out.printf("   ! \"%%s = %s%%s;\" %% %s\n", unary.group(1), args.toString() );    			
+    			String code = "sb.append( String.format(";
+    			String close = ") );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			sb.append(code);
+    			String format = String.format("\"%%s = %s%%s;\"", unary.group(1));
+    			sb.append(format);
+    			for (String arg : args) {
+    				sb.append(", ");
+    				sb.append(arg);
+    				sb.append(".getName()");
+    			}
+    			sb.append(close);
+    			sb.append("\n");
+    		} else if (oneArg.find()) {
+//        		System.out.println("1cOV: " + line );
+//    			System.out.print(oneArg.groupCount() + "{");
+//    			for (int g = 1; g <= oneArg.groupCount(); g++) System.out.printf("%d:%s,", g, oneArg.group(g));
+//    			System.out.println("}");
+    			args.add(rename(renames, oneArg.group(3)));
+    			
+    			String code = "sb.append( String.format(";
+    			String close = ") );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			sb.append(code);
+    			String format = String.format("\"%%s = %s.%s(%%s);\"", oneArg.group(1), oneArg.group(2));
+    			sb.append(format);
+    			for (String arg : args) {
+    				sb.append(", ");
+    				sb.append(arg);
+    				sb.append(".getName()");
+    			}
+    			sb.append(close);
+    			sb.append("\n");
+    		} else if (oneParameter.find()) {
+//        		System.out.println("1cOV: " + line );
+//    			System.out.print(oneArg.groupCount() + "{");
+//    			for (int g = 1; g <= oneArg.groupCount(); g++) System.out.printf("%d:%s,", g, oneArg.group(g));
+//    			System.out.println("}");
+    			String code = "sb.append( String.format(";
+    			String close = ") );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			sb.append(code);
+    			String format = String.format("\"%%s = %s.%s(%%s);\"", oneParameter.group(1), oneParameter.group(2));
+    			sb.append(format);
+    			for (String arg : args) {
+    				sb.append(", ");
+    				sb.append(arg);
+    				sb.append(".getName()");
+    			}
+    			sb.append(close);
+    			sb.append("\n");
+    		} else if (twoArgs.find()) {
+    			args.add(rename(renames, twoArgs.group(3)));
+    			args.add(rename(renames, twoArgs.group(5)));
+    			String code = "sb.append( String.format(";
+    			String close = ") );";
+    			sb.append(prefix);
+    			sb.append("//" + line + "\n");
+    			sb.append(prefix);
+    			sb.append(code);
+    			String format = String.format("\"%%s = %s.%s(%%s, %%s);\"", twoArgs.group(1), twoArgs.group(2));
+    			sb.append(format);
+    			for (String arg : args) {
+    				sb.append(", ");
+    				sb.append(arg);
+    				sb.append(".getName()");
+    			}
+    			sb.append(close);
+    			sb.append("\n");
+    		} else {
+        		System.out.println("cOV: " + line );
+    			System.out.println( "  \"" + line + "\" % " + args.toString() + "");
+    			return false;
+    		}
     		return success;
     	}
     	
@@ -633,7 +814,7 @@ is
     	// writes code that will write code
     	public StringBuilder toCode(String prefix) {
     		HashMap<String, String> renames = new HashMap<>();
-    		renames.put("output", "target");
+    		renames.put("target", "output");
     		boolean success = true;
     		StringBuilder sb = new StringBuilder();
     		for (String line : body) {
@@ -647,15 +828,9 @@ is
     			} else if (startsVariableScalar.matcher(line).find()) {
     				success = success && codeVariableScalar( sb, prefix, renames, line );
     			} else if (line.startsWith("int ")) {
-    				sb.append(prefix);
-    				sb.append(line);
-    				sb.append("\n");
-    				//success = false; //TODO
+    				success = success && codeIntVariableInteger( sb, prefix, renames, line );
     			} else if (line.startsWith("double ")) {
-    				sb.append(prefix);
-    				sb.append(line);
-    				sb.append("\n");
-    				//success = false; //TODO
+    				success = success && codeDoubleVariableScalar( sb, prefix, renames, line );
     			} else if (line.startsWith("manager.resize(output")) {
     				success = success && codeManagerResize( sb, prefix, renames, line );
     			} else if (line.startsWith("output.matrix.reshape(")) {
@@ -665,7 +840,6 @@ is
     			} else if (line.startsWith("CommonOps_DDRM.")) {
     				success = success && codeCommonOps( sb, prefix, renames, line );
     			} else if (line.startsWith("output.value = ")) {
-    				System.out.println(line);
     				success = success && codeOutputValue( sb, prefix, renames, line );
     			} else {
     				sb.append("?");
@@ -673,6 +847,7 @@ is
     				sb.append("\n") ;   	
     				success = false;
     			}
+    			//success = true;  // TODO REMOVE THIS
     		}
     		if (success)
     			return sb;
@@ -733,7 +908,10 @@ is
 							continue;
 						}
 						if (line.startsWith("} catch")) {
-							break;
+							while (!line.equals("}")) {
+								line = it.next().trim();
+							}
+							continue;
 						}
 //						System.out.println("    " + line);
 						execution.body.add(line);
@@ -753,16 +931,19 @@ is
 		final String XOP_SWITCH_FORMAT = "\t\tswitch (op) {\n";
 		
 		final String XOP_CASE_FORMAT = "\t\tcase \"%s\": // %s\n" +
-				"%s";
+				"%s" +
+				"\t\t\treturn sb.toString();\n";
 		
 		final String XOP_TRAILER_FORMAT = "\t\t}\n" + 
 				"\t\treturn sb.toString();\n" + 
 				"\t}\n";
 		try {
 			PrintStream code = new PrintStream( new File("code.java") );
+    		Execution.codeFormats( code, "\t" );
+    		code.println();
+    		code.println();
 	    	for (String input : byInputs.keySet()) {
 	    		code.printf( XOP_HEADER_FORMAT, input );
-	    		Execution.codeFormats( code, "\t\t" );
 	    		code.print(XOP_SWITCH_FORMAT);
 	    		Map<String, Execution> byName = byInputs.get(input);
 	    		for (String name : byName.keySet()) {
@@ -770,6 +951,7 @@ is
 	    			code.printf(XOP_CASE_FORMAT, name, execution.method, execution.toCode("\t\t\t").toString());
 	    		}
 	    		code.println(XOP_TRAILER_FORMAT);
+	    		code.println();
 	    	}
 	    	code.close();
 		} catch (Exception x) {
