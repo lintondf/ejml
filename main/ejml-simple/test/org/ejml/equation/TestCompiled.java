@@ -41,25 +41,6 @@ public class TestCompiled {
 
     Random rand = new Random(234);
 
-	// A=B+C*D-B
-	 public DMatrixRMaj test(  DMatrixRMaj B,  DMatrixRMaj C,  DMatrixRMaj D) {
-
-		DMatrixRMaj	A = new DMatrixRMaj(1,1);
-		double    	e = Math.E;
-		double    	pi = Math.PI;
-
-		A.reshape(C.numRows,D.numCols);
-		mult(C, D, A);
-		System.out.println(A);
-		A.reshape(B.numRows,A.numCols);
-		add(B, A, A);
-		A.reshape(B.numRows,B.numCols);
-		subtract(A, B, A);
-		System.out.println(A);
-
-		return A;
-	}
-    
     /**
      * Basic test which checks ability parse basic operators and order of operation
      */
@@ -83,9 +64,9 @@ public class TestCompiled {
         sequence.perform();
         assertTrue(expected.isIdentical(A,1e-15));
         
-        DMatrixRMaj Z = test( B.getDDRM(), C.getDDRM(), D.getDDRM());
-        SimpleMatrix AZ = new SimpleMatrix(Z);
-        assertTrue(expected.isIdentical(AZ,1e-15));
+//        DMatrixRMaj Z = test( B.getDDRM(), C.getDDRM(), D.getDDRM());
+//        SimpleMatrix AZ = new SimpleMatrix(Z);
+//        assertTrue(expected.isIdentical(AZ,1e-15));
     }
 
     /**

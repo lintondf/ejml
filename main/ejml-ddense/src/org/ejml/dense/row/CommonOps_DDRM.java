@@ -1738,6 +1738,27 @@ public class CommonOps_DDRM {
     }
 
     /**
+     * <p>
+     * Element-wise abs operation  <br>
+     * c<sub>ij</sub> = Math.abs(a<sub>ij</sub>)
+     * <p>
+     *
+     * @param A input
+     * @param C output (modified)
+     */
+    public static void elementAbs(DMatrixD1 A , DMatrixD1 C ) {
+
+        if( A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.abs(A.data[i]);
+        }
+    }
+
+    /**
      * Multiplies every element in row i by value[i].
      *
      * @param values array. Not modified.

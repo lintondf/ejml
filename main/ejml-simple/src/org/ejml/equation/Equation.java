@@ -235,6 +235,13 @@ import static org.ejml.equation.TokenList.Type;
 // TODO Recycle temporary variables
 // TODO intelligently handle identity matrices
 public class Equation {
+	
+	String  equationText; // set by compile()
+	
+	public String getText() {
+		return equationText;
+	}
+	
     HashMap<String,Variable> variables = new HashMap<String, Variable>();
     
     public HashMap<String, Variable> getVariables() {
@@ -430,7 +437,8 @@ public class Equation {
      * @return Sequence of operations on the variables
      */
     public Sequence compile( String equation , boolean assignment, boolean debug ) {
-
+    	equationText = equation;
+    	
         managerFunctions.setManagerTemp(managerTemp);
 
         Sequence sequence = new Sequence();
