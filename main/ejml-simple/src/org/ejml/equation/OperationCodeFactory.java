@@ -1187,30 +1187,4 @@ public class OperationCodeFactory implements IOperationFactory {
         return ret;
     }
     
-    public static void main(String[] args ) {
-    	Random rand = new Random(234);
-    	
-    	OperationCodeFactory factory = new OperationCodeFactory();
-    	ManagerFunctions mf = new ManagerFunctions(factory);
-    	
-        Equation eq = new Equation();
-        eq.setManagerFunctions(mf);
-
-        SimpleMatrix A = new SimpleMatrix(5, 6);
-        SimpleMatrix B = SimpleMatrix.random_DDRM(5, 6, -1, 1, rand);
-        SimpleMatrix C = SimpleMatrix.random_DDRM(5, 4, -1, 1, rand);
-        SimpleMatrix D = SimpleMatrix.random_DDRM(4, 6, -1, 1, rand);
-
-        eq.alias(A, "A");
-        eq.alias(B, "B");
-        eq.alias(C, "C");
-        eq.alias(D, "D");
-        
-        String equationText = "A=B+C*D-B";
-        Sequence sequence = eq.compile(equationText);
-    	List<Operation> operations = sequence.getOperations();
-    	OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
-    	optimizer.mapVariableUsage();
-    	optimizer.emitJavaTest(System.out, eq, equationText);
-    }
 }

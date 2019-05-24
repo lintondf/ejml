@@ -80,11 +80,17 @@ public class CodeOperation extends Operation {
     
     public boolean replace(Variable original, Variable replacement) {
     	boolean found = false;
-    	if (input.contains(original)) {
-    		input.remove(original);
-    		input.add(replacement);
-    		found = true;
+    	for (int i = 0; i < input.size(); i++) {
+    		if (input.get(i) == original) {
+    			input.set(i,  replacement);
+    			found = true;
+    		}
     	}
+//    	if (input.contains(original)) {
+//    		input.remove(original);
+//    		input.add(replacement);
+//    		found = true;
+//    	}
     	if (output != null && output.equals(original)) {
     		output = replacement;
     		found = true;

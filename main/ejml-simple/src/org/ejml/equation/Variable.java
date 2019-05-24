@@ -38,6 +38,10 @@ public class Variable {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public String getOperand() {
+		return name;
+	}
 
 	protected Variable(VariableType type, String name) {
         this.type = type;

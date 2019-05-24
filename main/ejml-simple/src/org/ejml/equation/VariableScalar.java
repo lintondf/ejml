@@ -58,7 +58,8 @@ public abstract class VariableScalar extends Variable {
         COMPLEX
     }
 
-	public Object getOperand() {
+    @Override
+	public String getOperand() {
 		if (this.getName().endsWith("}")) {
 			int i = this.getName().indexOf('{');
 			int j = this.getName().indexOf('}');

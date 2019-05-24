@@ -1,8 +1,15 @@
 package org.ejml.equation;
 
+import java.util.List;
+
+import org.ejml.equation.MatrixConstructor.Item;
+
 public class EmitCodeOperation {
 
 	final static String formatReshape = "%s.reshape( %s.numRows, %s.numCols );";
+	final static String formatGeneral3 = "%s.%s( %s, %s, %s );";
+	final static String formatGeneral2 = "%s.%s( %s, %s );";
+	final static String formatGeneral1 = "%s.%s( %s );";
 	final static String formatCommonOps3 = "CommonOps_DDRM.%s( %s, %s, %s );";
 	final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );";
 	final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );";
@@ -30,15 +37,10 @@ public class EmitCodeOperation {
 			sb.append( String.format(formatCommonOps3, "elementMult", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		case "kron": // Info kron( final Variable A , final Variable B, ManagerTempVariables manager)
-			/*
-						//CommonOps_DDRM.kron(mA, mB, output.matrix);
+			String rows = String.format("%s.numRows * %s.numRows", A.getName(), B.getName());
+			String cols = String.format("%s.numCols * %s.numCols", A.getName(), B.getName());
+			sb.append( String.format(formatReshape, output.getName(), rows, cols) );
 			sb.append( String.format(formatCommonOps3, "kron", A.getName(), B.getName(), output.getName()) );
-DMatrixRMaj mA = ((VariableMatrix)A).matrix;
-DMatrixRMaj mB = ((VariableMatrix)B).matrix;
-output.matrix.reshape(mA.numRows * mB.numRows, mA.numCols * mB.numCols);
-CommonOps_DDRM.kron(mA, mB, output.matrix);
-			*/
-			//TODO MANUAL
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), A.getName()) );
@@ -61,16 +63,9 @@ solver.solve(b, output.matrix);
 			//TODO MANUAL
 			return sb.toString();
 		case "dot": // Info dot( final Variable A , final Variable B , ManagerTempVariables manager)
-			/*
-			//%s = VectorVectorMult_DDRM.innerProd(a,b);
-			sb.append( String.format("%s = VectorVectorMult_DDRM.innerProd(%s, %s);", output.getName(), A.getName(), B.getName()) );
-DMatrixRMaj a = ((VariableMatrix)A).matrix;
-DMatrixRMaj b = ((VariableMatrix)B).matrix;
-if( !MatrixFeatures_DDRM.isVector(a) || !MatrixFeatures_DDRM.isVector(b))
-throw new RuntimeException("Both inputs to dot() must be vectors");
-output.value = VectorVectorMult_DDRM.innerProd(a,b);
-			*/
-			//TODO MANUAL
+			sb.append(output.getOperand());
+			sb.append(" = ");
+			sb.append( String.format(formatGeneral2, "VectorVectorMult_DDRM", "innerProd", A.getName(), B.getName()));
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), B.getName()) );
@@ -98,14 +93,11 @@ output.value = VectorVectorMult_DDRM.innerProd(a,b);
 			sb.append( String.format("%s = %s + %s;", output.getName(), A.getName(), B.getName()) );
 			return sb.toString();
 		case "rand": // Info rand( final Variable A , final Variable B , ManagerTempVariables manager)
-			/*
-			sb.append( String.format(formatReshape, output.getName(), A.getName(), B.getName()) );
-int numRows = ((VariableInteger)A).value;
-int numCols = ((VariableInteger)B).value;
-output.matrix.reshape(numRows,numCols);
-RandomMatrices_DDRM.fillUniform(output.matrix, 0,1,manager.getRandom());
-			*/
 			//TODO MANUAL
+			sb.append( String.format(formatGeneral2, output.getName(), "reshape", A.getOperand(), B.getOperand()) );
+			sb.append("Random rand = new Random();");
+			final String fillUniform = "RandomMatrices_DDRM.fillUniform(%s, 0, 1, rand );";
+			sb.append( String.format(fillUniform, output.getName()));
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s - %s;
@@ -120,12 +112,6 @@ RandomMatrices_DDRM.fillUniform(output.matrix, 0,1,manager.getRandom());
 			//%s = %s/%s;
 			sb.append( String.format("%s = %s / %s;", output.getName(), A.getName(), B.getName()) );
 			return sb.toString();
-		case "copy": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
-			/*
-((VariableInteger)dst).value = ((VariableInteger)src).value;
-			*/
-			//TODO MANUAL
-			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s*%s;
 			sb.append( String.format("%s = %s * %s;", output.getName(), A.getName(), B.getName()) );
@@ -136,14 +122,11 @@ RandomMatrices_DDRM.fillUniform(output.matrix, 0,1,manager.getRandom());
 			sb.append( String.format(formatCommonOps2, "fill", output.getName(), 0) );
 			return sb.toString();
 		case "randn": // Info randn( final Variable A , final Variable B , ManagerTempVariables manager)
-			/*
-			sb.append( String.format(formatReshape, output.getName(), A.getName(), B.getName()) );
-int numRows = ((VariableInteger)A).value;
-int numCols = ((VariableInteger)B).value;
-output.matrix.reshape(numRows,numCols);
-RandomMatrices_DDRM.fillGaussian(output.matrix, 0,1,manager.getRandom());
-			*/
 			//TODO MANUAL
+			sb.append( String.format(formatGeneral2, output.getName(), "reshape", A.getOperand(), B.getOperand()) );
+			sb.append("Random rand = new Random();");
+			final String fillGaussian = "RandomMatrices_DDRM.fillGaussian(%s, 0, 1, rand );";
+			sb.append( String.format(fillGaussian, output.getName()));
 			return sb.toString();
 		}
 		return sb.toString();
@@ -172,12 +155,6 @@ RandomMatrices_DDRM.fillGaussian(output.matrix, 0,1,manager.getRandom());
 			//%s = %s/%s;
 			sb.append( String.format("%s = %s / %s;", output.getName(), A.getName(), B.getName()) );
 			return sb.toString();
-		case "copy": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
-			/*
-((VariableDouble)dst).value = ((VariableScalar)src).getDouble();
-			*/
-			//TODO MANUAL
-			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s*%s;
 			sb.append( String.format("%s = %s * %s;", output.getName(), A.getName(), B.getName()) );
@@ -198,7 +175,6 @@ RandomMatrices_DDRM.fillGaussian(output.matrix, 0,1,manager.getRandom());
 	protected static String Op(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		Variable B = codeOp.input.get(1);
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "max_cols": // Info max_two( final Variable A , final Variable P , ManagerTempVariables manager)
@@ -232,11 +208,9 @@ output.value = A.get(row, col);
 			//TODO MANUAL
 			return sb.toString();
 		case "rng": // Info rng( final Variable A , ManagerTempVariables manager)
-			/*
-int seed = ((VariableInteger)A).value;
-manager.getRandom().setSeed(seed);
-			*/
 			//TODO MANUAL
+			sb.append("Random rand = new Random();");
+			sb.append(String.format("rand.setSeed(%s);", A.getOperand()));
 			return sb.toString();
 		case "min_cols": // Info min_two( final Variable A , final Variable P , ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), "1", A.getName()) );
@@ -251,12 +225,6 @@ manager.getRandom().setSeed(seed);
 			sb.append( String.format(formatReshape, output.getName(), "1", A.getName()) );
 			//CommonOps_DDRM.sumCols(varA.matrix, output.matrix);
 			sb.append( String.format(formatCommonOps2, "sumCols", A.getName(), output.getName()) );
-			return sb.toString();
-		case "matrixConstructor": // Info matrixConstructor( final MatrixConstructor m )
-			/*
-m.construct();
-			*/
-			//TODO MANUAL
 			return sb.toString();
 		case "extract": // Info extract( final List<Variable> inputs, ManagerTempVariables manager)
 			/*
@@ -302,12 +270,6 @@ colExtent.array,colExtent.length,output.matrix);
 			//%s = NormOps_DDRM.normP(varA.matrix,valueP);
 			sb.append( String.format("%s = NormOps_DDRM.normP(%s);", output.getName(), A.getName()) );
 			return sb.toString();
-		case "copy": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
-			/*
-((VariableIntegerSequence)dst).sequence = ((VariableIntegerSequence)src).sequence;
-			*/
-			//TODO MANUAL
-			return sb.toString();
 		case "sum_rows": // Info sum_two( final Variable A , final Variable P , ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), "1") );
 			//CommonOps_DDRM.sumRows(varA.matrix, output.matrix);
@@ -321,7 +283,6 @@ colExtent.array,colExtent.length,output.matrix);
 	protected static String sOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		Variable B = codeOp.input.get(1);
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "log": // Info log(final Variable A, ManagerTempVariables manager)
@@ -345,12 +306,8 @@ colExtent.array,colExtent.length,output.matrix);
 			sb.append( String.format("%s = Math.atan(%s);", output.getName(), A.getName()) );
 			return sb.toString();
 		case "inv": // Info inv( final Variable A , ManagerTempVariables manager)
-			/*
-codeOutputValue1: %s = 1.0/%s;
-VariableScalar mA = (VariableScalar)A;
-output.value = 1.0/mA.getDouble();
-			*/
 			//TODO MANUAL
+			sb.append(String.format("%s = 1.0 / %s;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "neg": // Info neg(final Variable A, ManagerTempVariables manager)
 			//%s = -%s;
@@ -373,24 +330,16 @@ output.value = 1.0/mA.getDouble();
 			sb.append( String.format("%s = Math.abs(%s);", output.getName(), A.getName()) );
 			return sb.toString();
 		case "rref": // Info rref( final Variable A , ManagerTempVariables manager)
-			/*
-codeOutputValue1: %s = a == 0 ? 0 : 1;
-double a = ((VariableScalar)A).getDouble();
-output.value = a == 0 ? 0 : 1;
-			*/
 			//TODO MANUAL
+			sb.append(String.format("%s = (%s == 0) ? 0.0 : 1.0;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "sqrt": // Info sqrt(final Variable A, ManagerTempVariables manager)
 			//%s = Math.sqrt(a);
 			sb.append( String.format("%s = Math.sqrt(%s);", output.getName(), A.getName()) );
 			return sb.toString();
 		case "pinv": // Info pinv( final Variable A , ManagerTempVariables manager)
-			/*
-codeOutputValue1: %s = 1.0/%s;
-VariableScalar mA = (VariableScalar)A;
-output.value = 1.0/mA.getDouble();
-			*/
 			//TODO MANUAL
+			sb.append(String.format("%s = 1.0 / %s;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "sin": // Info sin(final Variable A, ManagerTempVariables manager)
 			//%s = Math.sin(%s);
@@ -441,34 +390,13 @@ output.value = 1.0/mA.getDouble();
 	}
 
 
-	protected static String sm1Op(String op, CodeOperation codeOp) {
-		Variable output = codeOp.output;
-		Variable A = codeOp.input.get(0);
-		Variable B = codeOp.input.get(1);
-		StringBuilder sb = new StringBuilder();
-		switch (op) {
-		case "copy": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
-			/*
-DMatrixRMaj s = ((VariableMatrix) src).matrix;
-if( s.numRows != 1 || s.numCols != 1 ) {
-throw new RuntimeException("Attempting to assign a non 1x1 matrix to a double");
-((VariableDouble) dst).value = s.unsafe_get(0,0);
-			*/
-			//TODO MANUAL
-			return sb.toString();
-		}
-		return sb.toString();
-	}
-
-
 	protected static String iOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		Variable B = codeOp.input.get(1);
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "eye": // Info eye( final Variable A , ManagerTempVariables manager)
-			sb.append( String.format(formatReshape, output.getName(), A.getName(), A.getName()) );
+			sb.append( String.format("%s.reshape(%s, %s);", output.getName(), A.getOperand(), A.getOperand()) );
 			//CommonOps_DDRM.setIdentity(output.matrix);
 			sb.append( String.format(formatCommonOps1, "setIdentity", output.getName()) );
 			return sb.toString();
@@ -509,41 +437,6 @@ throw new RuntimeException("Attempting to assign a non 1x1 matrix to a double");
 			//CommonOps_DDRM.subtract(v, m, output.matrix);
 			sb.append( String.format(formatCommonOps3, "subtract", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
-		case "copyR": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
-			/*
-codeIntVariableInteger: int index = i*mdst.numCols + extents.col0;
-OperationExecuteFactory.Extents extents = new OperationExecuteFactory.Extents();
-OperationExecuteFactory.ArrayExtent rowExtent = new OperationExecuteFactory.ArrayExtent();
-OperationExecuteFactory.ArrayExtent colExtent = new OperationExecuteFactory.ArrayExtent();
-double msrc = ((VariableScalar)src).getDouble();
-DMatrixRMaj mdst = ((VariableMatrix)dst).matrix;
-if( range.size() == 1 ) {
-if(extractSimpleExtents(range.get(0),extents,false,mdst.getNumElements())) {
-Arrays.fill(mdst.data,extents.col0,extents.col1+1,msrc);
-} else {
-extractArrayExtent(range.get(0),mdst.getNumElements(),colExtent);
-for (int i = 0; i < colExtent.length; i++) {
-mdst.data[colExtent.array[i]] = msrc;
-} else if( range.size() == 2 ) {
-if(extractSimpleExtents(range.get(0),extents,true,mdst.getNumRows()) &&
-extractSimpleExtents(range.get(1),extents,false,mdst.getNumCols()) ) {
-extents.row1 += 1;
-extents.col1 += 1;
-for (int i = extents.row0; i < extents.row1; i++) {
-int index = i*mdst.numCols + extents.col0;
-for (int j = extents.col0; j < extents.col1; j++) {
-mdst.data[index++] = msrc;
-} else {
-extractArrayExtent(range.get(0),mdst.numRows,rowExtent);
-extractArrayExtent(range.get(1),mdst.numCols,colExtent);
-for (int i = 0; i < rowExtent.length; i++) {
-for (int j = 0; j < colExtent.length; j++) {
-mdst.unsafe_set(rowExtent.array[i],colExtent.array[j],msrc);
-} else {
-throw new RuntimeException("Unexpected number of ranges.  Should have been caught earlier");
-			*/
-			//TODO MANUAL
-			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), B.getName(), B.getName()) );
 			//CommonOps_DDRM.elementPower(a, b, output.matrix);
@@ -557,7 +450,7 @@ throw new RuntimeException("Unexpected number of ranges.  Should have been caugh
 	protected static String mOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		Variable B = codeOp.input.get(1);
+//		Variable B = codeOp.input.get(1);
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "diag": // Info diag( final Variable A , ManagerTempVariables manager)
@@ -653,45 +546,88 @@ throw new RuntimeException("Inverse failed!");
 		}
 		return sb.toString();
 	}
+	
+	private static String construct(CodeOperation codeOp) {
+		StringBuilder sb = new StringBuilder();
+		CodeMatrixConstructor cmc = new CodeMatrixConstructor( codeOp.constructor );
+		cmc.construct(sb);
+		return sb.toString();
+	}
 
+	private static String copyOp(String[] operands, CodeOperation codeOp) {
+		//copy: ii, ss, sm1, none
+		//copyR: sm
+		switch (operands[1]) {
+		case "mm":
+			StringBuilder sb = new StringBuilder();
+//			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
+			sb.append( String.format(formatReshape, codeOp.output.getName(), codeOp.input.get(0).getName(), codeOp.input.get(0).getName()) );
+			sb.append( String.format("%s.set( %s );", codeOp.output.getName(), codeOp.input.get(0).getName() ));
+			return sb.toString();
+		case "ii":
+			if (operands.length > 2)
+				System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString());
+			else
+				return String.format("%s = %s;", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
+		case "ss":
+//			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString());
+			return String.format("%s = %s;", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
+		case "sm1":
+			return String.format("%s =  = %s.unsafe_get(0,0);", codeOp.output.getOperand(), codeOp.input.get(0).getOperand() );
+		case "":
+			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
+			break;
+		case "sm":
+			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
+			break;
+		default:
+			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
+			break;
+		}
+		return "//copyOp: " + codeOp.toString();
+	}
 
+	
 	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {
 		String[] fields = codeOp.name().split("-");
 		String inputs = "";
 		if (fields.length > 1) {
 			inputs = fields[1];
 		}
-		switch (inputs) {
-		case "mm":
-			body.append( mmOp( fields[0], codeOp ) );
-			break;
-		case "ii":
-			body.append( iiOp( fields[0], codeOp ) );
-			break;
-		case "ss":
-			body.append( ssOp( fields[0], codeOp ) );
-			break;
-		case "":
-			body.append( Op( fields[0], codeOp ) );
-			break;
-		case "s":
-			body.append( sOp( fields[0], codeOp ) );
-			break;
-		case "ms":
-			body.append( msOp( fields[0], codeOp ) );
-			break;
-		case "sm1":
-			body.append( sm1Op( fields[0], codeOp ) );
-			break;
-		case "i":
-			body.append( iOp( fields[0], codeOp ) );
-			break;
-		case "sm":
-			body.append( smOp( fields[0], codeOp ) );
-			break;
-		case "m":
-			body.append( mOp( fields[0], codeOp ) );
-			break;
+		if (codeOp.name().equals("matrixConstructor")) {
+			body.append( construct( codeOp ) );
+		} else if (fields[0].startsWith("copy")) {
+			body.append( copyOp( fields, codeOp) );
+		} else {
+			switch (inputs) {
+			case "mm":
+				body.append( mmOp( fields[0], codeOp ) );
+				break;
+			case "ii":
+				body.append( iiOp( fields[0], codeOp ) );
+				break;
+			case "ss":
+				body.append( ssOp( fields[0], codeOp ) );
+				break;
+			case "":
+				body.append( Op( fields[0], codeOp ) );
+				break;
+			case "s":
+				body.append( sOp( fields[0], codeOp ) );
+				break;
+			case "ms":
+				body.append( msOp( fields[0], codeOp ) );
+				break;
+			case "i":
+				body.append( iOp( fields[0], codeOp ) );
+				break;
+			case "sm":
+				body.append( smOp( fields[0], codeOp ) );
+				break;
+			case "m":
+				body.append( mOp( fields[0], codeOp ) );
+				break;
+			}
 		}
 	}
 }

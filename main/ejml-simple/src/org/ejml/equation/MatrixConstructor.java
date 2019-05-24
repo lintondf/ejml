@@ -35,7 +35,7 @@ public class MatrixConstructor {
     List<Item> items = new ArrayList<Item>();
 
 
-    public MatrixConstructor(ManagerTempVariables manager) {
+	public MatrixConstructor(ManagerTempVariables manager) {
         this.output = manager.createMatrix();
     }
 
@@ -108,11 +108,15 @@ public class MatrixConstructor {
 
     }
 
+    public List<Item> getItems() {
+		return items;
+	}
+
     public VariableMatrix getOutput() {
         return output;
     }
 
-    protected void setToRequiredSize( DMatrixRMaj matrix ) {
+    public void setToRequiredSize( DMatrixRMaj matrix ) {
 
 
         int matrixRow = 0;
@@ -128,7 +132,7 @@ public class MatrixConstructor {
                 for (int j = 1; j < row.size(); j++) {
                     v = row.get(j);
                     if( v.getRows() != numRows)
-                        throw new RuntimeException("Row miss-matched. "+numRows+" "+v.getRows());
+                        throw new RuntimeException("Row mis-matched. "+numRows+" "+v.getRows());
                     numCols += v.getColumns();
                 }
                 matrixRow += numRows;
@@ -148,7 +152,7 @@ public class MatrixConstructor {
     }
 
 
-    private static class Item
+    public static class Item
     {
         Variable variable;
         boolean endRow;

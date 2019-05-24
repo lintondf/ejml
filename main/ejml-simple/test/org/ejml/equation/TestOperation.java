@@ -132,7 +132,7 @@ public class TestOperation {
         eq.alias(b, "b");
         eq.alias(x, "x");
 
-        eq.process("x=A\\b");
+        eq.process("x=A\\b");//hello
 
         assertTrue(A.solve(b).isIdentical(x, UtilEjml.TEST_F64));
     }
@@ -1092,7 +1092,8 @@ public class TestOperation {
         SimpleMatrix a = SimpleMatrix.random_DDRM(3,3,-1,1,rand);
         SimpleMatrix c = SimpleMatrix.random_DDRM(3,3,-1,1,rand);
 
-        Equation eq = new Equation(a,"a",c,"c");
+        Equation eq = new Equation();
+        eq.alias(a,"a",c,"c");
         eq.process("z = a' - c");
 
         SimpleMatrix z = eq.lookupSimple("z");
@@ -1384,8 +1385,10 @@ public class TestOperation {
     public void abs_int() {
         Equation eq = new Equation();
 
+        int b = 1;
+        
         eq.alias(-4, "A");
-        eq.alias(1, "B");
+        eq.alias(b, "B");
 
         eq.process("B=abs(A)");
 
@@ -1397,8 +1400,10 @@ public class TestOperation {
     public void abs_scalar() {
         Equation eq = new Equation();
 
+        double b = 1.1;
+        
         eq.alias(-4.6, "A");
-        eq.alias(1.1, "B");
+        eq.alias(b, "B");
 
         eq.process("B=abs(A)");
 
@@ -1411,9 +1416,10 @@ public class TestOperation {
         Equation eq = new Equation();
 
         SimpleMatrix A = SimpleMatrix.random_DDRM(6, 5, -1, 1, rand);
-
+        double b = 1.1;
+        
         eq.alias(A, "A");
-        eq.alias(1.0, "B");
+        eq.alias(b, "B");
 
         eq.process("B=max(A)");
 
@@ -1425,9 +1431,9 @@ public class TestOperation {
     @Test
     public void max_int() {
         Equation eq = new Equation();
-
+        int b = 1;
         eq.alias(4, "A");
-        eq.alias(1, "B");
+        eq.alias(b, "B");
 
         eq.process("B=max(A)");
 

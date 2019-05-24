@@ -3,6 +3,8 @@
  */
 package org.ejml.equation;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -22,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.ejml.equation.Operation.Info;
+import org.ejml.simple.SimpleMatrix;
 
 /**
  * @author NOOK
@@ -215,10 +218,10 @@ public class OptimizeCodeOperations {
 //    	System.out.println("TARGET:");
 //    	printUsage(new Usage(assignmentTarget));
 //    	
-    	for (Operation operation : operations) {
-    		CodeOperation codeOp = (CodeOperation) operation;
-    		System.out.println( codeOp );
-    	}    	
+//    	for (Operation operation : operations) {
+//    		CodeOperation codeOp = (CodeOperation) operation;
+//    		System.out.println( codeOp );
+//    	}    	
     }
     
 
@@ -245,59 +248,121 @@ public class OptimizeCodeOperations {
     
     
 
-	final String declFormatWithValue = "\t\t%-10s\t%s = %s";
-    final String declFormatInitialize = "\t\t%-10s\t%s = new %s(1,1)";
-    final String declFormat = "\t\t%-10s\t%s";
-    final String returnFormat = "\t\treturn %s;\n";
+	final String declFormatWithValue = "%s%s%-10s\t%s = %s";
+    final String declFormatInitialize = "%s%s%-10s\t%s = new %s(1,1)";
+    final String declFormat = "%s%s%-10s\t%s";
+    final String returnFormat = "%s%sreturn %s;\n";
     
-    final Pattern reshapePattern = Pattern.compile("(\\w)+\\.reshape\\(");
+    final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\(\\s*(\\w+)\\.numRows\\,\\s*(\\w+)\\.numCols");
+    
+    public String getAssert( Equation eq ) {
+    	String ret = "";
+    	if (assignmentTarget != null) {
+	    	HashMap<String, Variable> variables = eq.getVariables();
+	    	StringBuilder call = new StringBuilder();
+	    	for (Variable variable : variables.values()) {
+	    		if (variable.getName().equals("e")) {
+	    		} else if (variable.getName().equals("pi")) {
+	    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+	    			//assertTrue(new SimpleMatrix(A_coded).isIdentical(A, 1e-15));
+	    			ret = String.format("assertTrue(new SimpleMatrix(%s_coded).isIdentical(%s.getDDRM(),1e-15));", variable.getName(), variable.getName());
+	    		}
+	    	}
+    	}
+    	return ret;
+    }
     
    
-    public void emitJavaTest( PrintStream out, Equation eq, String equationText ) {
+    public String getCallingSequence( Equation eq) {
+    	HashMap<String, Variable> variables = eq.getVariables();
+    	StringBuilder call = new StringBuilder();
+    	boolean notFirst = false;
+    	for (Variable variable : variables.values()) {
+    		if (variable.getName().equals("e")) {
+    		} else if (variable.getName().equals("pi")) {
+    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+    		} else {
+    			if (notFirst)
+    				call.append(", ");
+    			call.append(variable.getName());
+    			call.append(".getDDRM()");
+    			notFirst = true;
+    		}
+    	}
+    	return call.toString();
+    }
+    
+    public String getReturnVariable( Equation eq ) {
+    	String ret = "";
+    	if (assignmentTarget != null) {
+	    	HashMap<String, Variable> variables = eq.getVariables();
+	    	StringBuilder call = new StringBuilder();
+	    	for (Variable variable : variables.values()) {
+	    		if (variable.getName().equals("e")) {
+	    		} else if (variable.getName().equals("pi")) {
+	    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+	    			ret = String.format("%s %s_coded = ", getJavaType(assignmentTarget), variable.getName());
+	    		}
+	    	}
+    	}
+    	return ret;
+    }
+    
+   
+    public void emitJavaTest( StringBuilder body, String prefix, String name, Equation eq, String equationText ) {
     	HashMap<String, Variable> variables = eq.getVariables();
     	StringBuilder header = new StringBuilder();
     	String returnType = "void";
     	if (assignmentTarget != null) {
     		returnType = getJavaType(assignmentTarget);
     	}
-    	header.append(String.format("\tpublic %s test(", returnType ) );
-    	StringBuilder body = new StringBuilder();
+    	header.append(String.format("%sprotected %s %s(", prefix, returnType, name ) );
     	boolean notFirst = false;
     	for (Variable variable : variables.values()) {
     		if (variable.getName().equals("e")) {
-    			body.append(String.format(declFormatWithValue, "double", "e", "Math.E") );
-    			body.append(";\n");
+//    			body.append(String.format(declFormatWithValue, "double", "e", "Math.E") );
+//    			body.append(";\n");
     		} else if (variable.getName().equals("pi")) {
-    			body.append(String.format(declFormatWithValue, "double", "pi", "Math.PI") );
-    			body.append(";\n");
+//    			body.append(String.format(declFormatWithValue, "double", "pi", "Math.PI") );
+//    			body.append(";\n");
     		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
-    			String type = getJavaType(assignmentTarget);
-    			body.append(String.format(declFormatInitialize, type, variable.getName(), type) );
-    			body.append(";\n");
+//    			String type = getJavaType(assignmentTarget);
+//    			body.append(String.format(declFormatInitialize, type, variable.getName(), type) );
+//    			body.append(";\n");
     		} else {
     			if (notFirst)
-    				header.append(",");
+    				header.append(", ");
     			String type = getJavaType(variable);
-    			header.append(String.format(declFormat, type, variable.getName()) );
+    			header.append(String.format(declFormat, "", "", type, variable.getName()) );
     			notFirst = true;
     		}
     	}
     	
     	header.append(") {\n");
-    	System.out.println("INTEGER TEMPS:");
+    	body.append(header.toString().replaceAll("\t", " "));
+    	body.append(prefix);
+    	body.append(prefix);
+    	body.append("// ");
+    	body.append( equationText);
+    	body.append("\n");
+    	for (Variable variable : variables.values()) {
+			if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+				String type = getJavaType(assignmentTarget);
+				body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type) );
+				body.append(";\n");
+			}
+    	}    	
     	for (Usage usage : integerUsages) {
-    		body.append(String.format(declFormat, getJavaType(usage.variable), usage.variable.getName()) );
+    		body.append(String.format(declFormat, prefix, prefix, getJavaType(usage.variable), usage.variable.getName()) );
 			body.append(";\n");
     	}
-    	System.out.println("DOUBLE TEMPS:");
     	for (Usage usage : doubleUsages) {
-    		body.append(String.format(declFormat, getJavaType(usage.variable), usage.variable.getName()) );
+    		body.append(String.format(declFormat, prefix, prefix, getJavaType(usage.variable), usage.variable.getName()) );
 			body.append(";\n");
     	}
-    	System.out.println("MATRIX TEMPS:");
     	for (Usage usage : matrixUsages) {
 			String type = getJavaType(usage.variable);
-    		body.append(String.format(declFormatInitialize, type, usage.variable.getName(), type) );
+    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type) );
 			body.append(";\n");
     	}
     	body.append("\n");
@@ -315,23 +380,25 @@ public class OptimizeCodeOperations {
     					if (line.equals(reshapes.get(matcher.group(1))))
     						continue;
     				}
+    				if (matcher.group(1).equals(matcher.group(2)) && matcher.group(1).equals(matcher.group(3))) {
+    					continue; // skip self reshapes
+    				}
+    				
+    				//TODO skip reshape if array is an input to the next operation
 					reshapes.put(matcher.group(1), line);
     			}
-    			body.append("\t\t");
+    			body.append(prefix);
+    			body.append(prefix);
     			body.append(line);
     			body.append(";\n");
     		}
     	}    	
-    	out.print("\t// ");
-    	out.println( equationText);
-    	out.print("\t");
-    	out.println(header.toString().replaceAll("\t", " "));
-    	out.print(body);
     	if (assignmentTarget != null) {
-        	out.println();
-    		out.print( String.format(returnFormat, assignmentTarget.getName()) );
+    		body.append("\n");
+    		body.append( String.format(returnFormat, prefix, prefix, assignmentTarget.getName()) );
     	}
-    	out.println("\t}");
+		body.append(prefix);
+    	body.append("}");
     }
     
 }

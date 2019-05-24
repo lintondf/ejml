@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,91 +17,103 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.ejml.simple.SimpleMatrix;
 
 public class GenerateEquationCoders {
-	
-	
-    private static class Execution {
-    	public String method;
-    	public String name;
-    	public String inputs;
-    	public ArrayList<String> body;
-    	
-    	public Execution( String methodDecl, String operationDecl ) {
-    		method = methodDecl.replace("public ", "").replace(" {", "");
-    		int i = operationDecl.indexOf('"');
-    		int j = operationDecl.lastIndexOf('"');
-    		String[] nameParts = operationDecl.substring(i+1, j).split("-");
-    		name = nameParts[0];
-    		if (nameParts.length != 2)
-    			inputs = "";
-    		else
-    			inputs = nameParts[1];
-    		body = new ArrayList<>();
-    	}
-    	
-    	protected boolean codeVariableMatrix( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("VariableMatrix\\s*(\\w+)\\s*=\\s*\\(VariableMatrix\\)\\s*(\\w+)\\;");
-    		return codeRenamePattern( sb, prefix, renames, pattern, line );
-    	}
-    	
-    	protected boolean codeVariableInteger( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("VariableInteger\\s*(\\w+)\\s*=\\s*\\(VariableInteger\\)\\s*(\\w+)\\;");
-    		return codeRenamePattern( sb, prefix, renames, pattern, line );
-    	}
-    	
-    	protected boolean codeIntVariableInteger( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern1 = Pattern.compile("int\\s*(\\w+)\\s*=\\s*\\(VariableInteger\\)\\s*(\\w+)\\;");
-    		final Pattern pattern2 = Pattern.compile("int\\s*(\\w+)\\s*=\\s*\\(\\(VariableInteger\\)\\s*(\\w+)\\)\\.value\\;");
-    		Matcher matcher = pattern1.matcher(line);
-    		if (matcher.find()) {
-    			renames.put( matcher.group(1), matcher.group(2) );
-    			return true;
-    		}
-    		matcher = pattern2.matcher(line);
-    		if (matcher.find()) {
-    			renames.put( matcher.group(1), matcher.group(2) );
-    			return true;
-    		}
-    		sb.append("codeIntVariableInteger: ");
-    		sb.append( line );
-    		sb.append("\n");
-    		return false;
-    	}
-    	
-    	protected boolean codeVariableScalar( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("VariableScalar\\s*(\\w+)\\s*=\\s*\\(VariableScalar\\)\\s*(\\w+)\\;");
-    		return codeRenamePattern( sb, prefix, renames, pattern, line );
-    	}
-    	
-    	protected boolean codeDoubleVariableScalar( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("double\\s*(\\w+)\\s*=\\s*\\(\\(VariableScalar\\)\\s*(\\w+)\\)\\.getDouble\\(\\)\\;");
-    		return codeRenamePattern( sb, prefix, renames, pattern, line );
-    	}
-    	
-    	protected boolean codeDMatrixRMaj( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("DMatrixRMaj\\s*(\\w+)\\s*=\\s*\\(\\(VariableMatrix\\)\\s*(.+)\\).matrix\\;");
-    		return codeRenamePattern( sb, prefix, renames, pattern, line );
-    	}
-    	
-    	protected boolean codeRenamePattern( StringBuilder sb, String prefix, Map<String, String> renames, Pattern pattern, String line ) {
-    		Matcher matcher = pattern.matcher(line);
-    		if (matcher.find()) {
-    			renames.put( matcher.group(1), matcher.group(2) );
-    			return true;
-    		}
-    		sb.append("codeRenamePattern: ");
-    		sb.append( pattern.pattern() ); 
-    		sb.append(" -> ");
-    		sb.append( line );
-    		sb.append("\n");
-    		return false;
-    	}
-    	
-    	protected static void codeFormats( PrintStream code, String prefix ) {
+
+	private static class Execution {
+		public String method;
+		public String name;
+		public String inputs;
+		public ArrayList<String> body;
+
+		public Execution(String methodDecl, String operationDecl) {
+			method = methodDecl.replace("public ", "").replace(" {", "");
+			int i = operationDecl.indexOf('"');
+			int j = operationDecl.lastIndexOf('"');
+			String[] nameParts = operationDecl.substring(i + 1, j).split("-");
+			name = nameParts[0];
+			if (nameParts.length != 2)
+				inputs = "";
+			else
+				inputs = nameParts[1];
+			body = new ArrayList<>();
+		}
+
+		protected boolean codeVariableMatrix(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			final Pattern pattern = Pattern
+					.compile("VariableMatrix\\s*(\\w+)\\s*=\\s*\\(VariableMatrix\\)\\s*(\\w+)\\;");
+			return codeRenamePattern(sb, prefix, renames, pattern, line);
+		}
+
+		protected boolean codeVariableInteger(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			final Pattern pattern = Pattern
+					.compile("VariableInteger\\s*(\\w+)\\s*=\\s*\\(VariableInteger\\)\\s*(\\w+)\\;");
+			return codeRenamePattern(sb, prefix, renames, pattern, line);
+		}
+
+		protected boolean codeIntVariableInteger(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			final Pattern pattern1 = Pattern.compile("int\\s*(\\w+)\\s*=\\s*\\(VariableInteger\\)\\s*(\\w+)\\;");
+			final Pattern pattern2 = Pattern
+					.compile("int\\s*(\\w+)\\s*=\\s*\\(\\(VariableInteger\\)\\s*(\\w+)\\)\\.value\\;");
+			Matcher matcher = pattern1.matcher(line);
+			if (matcher.find()) {
+				renames.put(matcher.group(1), matcher.group(2));
+				return true;
+			}
+			matcher = pattern2.matcher(line);
+			if (matcher.find()) {
+				renames.put(matcher.group(1), matcher.group(2));
+				return true;
+			}
+			sb.append("codeIntVariableInteger: ");
+			sb.append(line);
+			sb.append("\n");
+			return false;
+		}
+
+		protected boolean codeVariableScalar(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			final Pattern pattern = Pattern
+					.compile("VariableScalar\\s*(\\w+)\\s*=\\s*\\(VariableScalar\\)\\s*(\\w+)\\;");
+			return codeRenamePattern(sb, prefix, renames, pattern, line);
+		}
+
+		protected boolean codeDoubleVariableScalar(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			final Pattern pattern = Pattern
+					.compile("double\\s*(\\w+)\\s*=\\s*\\(\\(VariableScalar\\)\\s*(\\w+)\\)\\.getDouble\\(\\)\\;");
+			return codeRenamePattern(sb, prefix, renames, pattern, line);
+		}
+
+		protected boolean codeDMatrixRMaj(StringBuilder sb, String prefix, Map<String, String> renames, String line) {
+			final Pattern pattern = Pattern
+					.compile("DMatrixRMaj\\s*(\\w+)\\s*=\\s*\\(\\(VariableMatrix\\)\\s*(.+)\\).matrix\\;");
+			return codeRenamePattern(sb, prefix, renames, pattern, line);
+		}
+
+		protected boolean codeRenamePattern(StringBuilder sb, String prefix, Map<String, String> renames,
+				Pattern pattern, String line) {
+			Matcher matcher = pattern.matcher(line);
+			if (matcher.find()) {
+				renames.put(matcher.group(1), matcher.group(2));
+				return true;
+			}
+			sb.append("codeRenamePattern: ");
+			sb.append(pattern.pattern());
+			sb.append(" -> ");
+			sb.append(line);
+			sb.append("\n");
+			return false;
+		}
+
+		protected static void codeFormats(PrintStream code, String prefix) {
 			code.print(prefix);
 			code.print("final String formatReshape = \"%s.reshape( %s.numRows, %s.numCols );\";");
-			code.print("\n");    		
+			code.print("\n");
 			code.print(prefix);
 			code.print("final String formatCommonOps3 = \"CommonOps_DDRM.%s( %s, %s, %s );\";");
 			code.print("\n");
@@ -110,394 +123,399 @@ public class GenerateEquationCoders {
 			code.print(prefix);
 			code.print("final String formatCommonOps1 = \"CommonOps_DDRM.%s( %s );\";");
 			code.print("\n");
-    	}
-    	
-    	protected boolean codeManagerResize( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		final Pattern pattern = Pattern.compile("manager\\.resize\\(\\s*output,\\s*(\\w+)(\\.matrix)?\\.(\\w+),\\s*(\\w+)(\\.matrix)?\\.(\\w+)\\)\\;");
-    		Matcher matcher = pattern.matcher(line);
-    		if (matcher.find()) {
-    			// groups: 1 - rows-source, 2 - null|.matrix, 3-numrows, 4-cols-source, 5-null|.matrix, 6-numcols
-    			/* from OperationExecuteFactory:
-    			 	manager.resize(output, mA.matrix.numRows, mA.matrix.numCols);
-    			   becomes in user code:
-					<target>.reshape( <rowSource>.runRows, <colSource>.numCols )
-			manager.resize(output, -> map[output].reshape(
-			mA.matrix -> map[mA]
-			mB.matrix -> map[mB]
-    			 */
-    			sb.append(prefix);
-    			String code = "sb.append( String.format(formatReshape, output.getName(), %s.getName(), %s.getName()) );"; 
-    			sb.append(String.format(code, rename(renames, matcher.group(1)), rename(renames, matcher.group(4))));
-    			sb.append("\n");
-    			return true;
-    		}
-    		sb.append("codeManagerResize: ");
-    		sb.append( pattern.pattern() ); 
-    		sb.append("\n");
-    		return false;    		
-    	}
-    	
-    	protected boolean codeManagerReshape( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		//(\w+)(\.matrix)?\.reshape\(\s*([^,]*),\s*(.*)\);
-    		final Pattern pattern = Pattern.compile("(\\w+)(\\.matrix)?\\.reshape\\(\\s*([^,]*),\\s*(.*)\\);");
-    		Matcher matcher = pattern.matcher(line);
-    		if (matcher.find()) {
-    			//groups: 1-variable, 2 - null|.matrix, 3-row expression, 4-col expression
-    			sb.append(prefix);
-    			String code = "sb.append( String.format(formatReshape, %s.getName(), %s.getName(), %s.getName()) );";
-        		final Pattern variablePattern = Pattern.compile("(\\w+)(\\.matrix)?(\\.numRows)?(\\.numCols)?");
-        		final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
-    			String a = matcher.group(1); 
-    			String b = matcher.group(3); 
-    			String c = matcher.group(4);
-    			matcher = variablePattern.matcher((a));
-        		if (!matcher.matches()) {
-        			return false;
-        		} else {
-        			a = rename(renames, matcher.group(1));
-        		}
-    			matcher = variablePattern.matcher((b));
-        		if (!matcher.matches()) {
-        			return false;
-        		} else {
-        			b = rename(renames, matcher.group(1));
-        		}
-    			matcher = variablePattern.matcher((c));
-        		if (!matcher.matches()) {
-        			return false;
-        		} else {
-        			c = rename(renames, matcher.group(1));
-        		}
-    			sb.append(String.format(code, a, b, c));
-    			sb.append("\n");
-    			return true;
-    		}
-    		sb.append("codeManagerReshape: ");
-    		sb.append( pattern.pattern() ); 
-    		sb.append("\n");
-    		return false;
-    	}
-    	
-    	
-    	protected boolean codeCommonOps( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		//CommonOps_DDRM\.(\w+)\(\s*(-?\w+)(\.[^,]+)?,\s*(-?\w+)(\.[^,]+)?,\s*(\w+)(\.matrix)?\s*\);
-    		final Pattern pattern3Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.[^,]+)?,\\s*(\\w+)(\\.matrix)?\\s*\\);");
-    		Matcher matcher = pattern3Args.matcher(line);
-    		if (matcher.find()) {
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			if (matcher.group(3) == null && matcher.group(5) == null) {
-        			String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );"; 
-        			sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)), rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
-    			} else if (matcher.group(3).equals(".matrix") && matcher.group(5).equals(".matrix")) {
-    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );"; 
-    				sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)), rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
-    			} else {
-    				String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s, %s, %s) );"; 
-    				String a = rename(renames, matcher.group(2)) + ".getName()";
-    				if (!matcher.group(3).equals(".matrix")) {
-    					a += matcher.group(3);
-    				}
-    				String b = rename(renames, matcher.group(4)) + ".getName()";
-    				if (!matcher.group(5).equals(".matrix")) {
-    					b += matcher.group(5);
-    				}
-    				String o = rename(renames, matcher.group(6)) + ".getName()";
-    				sb.append(String.format(code, matcher.group(1), a, b, o));
-    			}
-    			sb.append("\n");
-    			return true;
-    		}
-    		final Pattern pattern2Args = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
-    		matcher = pattern2Args.matcher(line);
-    		if (matcher.find()) {
-    			String code = "sb.append( String.format(formatCommonOps2, \"%s\", %s, %s) );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-   				String a = rename(renames, matcher.group(4));
-   				if (matcher.group(5) == null) {
-   				} else if (!matcher.group(5).equals(".matrix")) {
+		}
+
+		protected boolean codeManagerResize(StringBuilder sb, String prefix, Map<String, String> renames, String line) {
+			final Pattern pattern = Pattern.compile(
+					"manager\\.resize\\(\\s*output,\\s*(\\w+)(\\.matrix)?\\.(\\w+),\\s*(\\w+)(\\.matrix)?\\.(\\w+)\\)\\;");
+			Matcher matcher = pattern.matcher(line);
+			if (matcher.find()) {
+				// groups: 1 - rows-source, 2 - null|.matrix, 3-numrows, 4-cols-source,
+				// 5-null|.matrix, 6-numcols
+				/*
+				 * from OperationExecuteFactory: manager.resize(output, mA.matrix.numRows,
+				 * mA.matrix.numCols); becomes in user code: <target>.reshape(
+				 * <rowSource>.runRows, <colSource>.numCols ) manager.resize(output, ->
+				 * map[output].reshape( mA.matrix -> map[mA] mB.matrix -> map[mB]
+				 */
+				sb.append(prefix);
+				String code = "sb.append( String.format(formatReshape, output.getName(), %s.getName(), %s.getName()) );";
+				sb.append(String.format(code, rename(renames, matcher.group(1)), rename(renames, matcher.group(4))));
+				sb.append("\n");
+				return true;
+			}
+			sb.append("codeManagerResize: ");
+			sb.append(pattern.pattern());
+			sb.append("\n");
+			return false;
+		}
+
+		protected boolean codeManagerReshape(StringBuilder sb, String prefix, Map<String, String> renames,
+				String line) {
+			// (\w+)(\.matrix)?\.reshape\(\s*([^,]*),\s*(.*)\);
+			final Pattern pattern = Pattern.compile("(\\w+)(\\.matrix)?\\.reshape\\(\\s*([^,]*),\\s*(.*)\\);");
+			Matcher matcher = pattern.matcher(line);
+			if (matcher.find()) {
+				// groups: 1-variable, 2 - null|.matrix, 3-row expression, 4-col expression
+				sb.append(prefix);
+				String code = "sb.append( String.format(formatReshape, %s.getName(), %s.getName(), %s.getName()) );";
+				final Pattern variablePattern = Pattern.compile("(\\w+)(\\.matrix)?(\\.numRows)?(\\.numCols)?");
+				final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
+				String a = matcher.group(1);
+				String b = matcher.group(3);
+				String c = matcher.group(4);
+				matcher = variablePattern.matcher((a));
+				if (!matcher.matches()) {
+					return false;
+				} else {
+					a = rename(renames, matcher.group(1));
+				}
+				matcher = variablePattern.matcher((b));
+				if (!matcher.matches()) {
+					return false;
+				} else {
+					b = rename(renames, matcher.group(1));
+				}
+				matcher = variablePattern.matcher((c));
+				if (!matcher.matches()) {
+					return false;
+				} else {
+					c = rename(renames, matcher.group(1));
+				}
+				sb.append(String.format(code, a, b, c));
+				sb.append("\n");
+				return true;
+			}
+			sb.append("codeManagerReshape: ");
+			sb.append(pattern.pattern());
+			sb.append("\n");
+			return false;
+		}
+
+		protected boolean codeCommonOps(StringBuilder sb, String prefix, Map<String, String> renames, String line) {
+			// CommonOps_DDRM\.(\w+)\(\s*(-?\w+)(\.[^,]+)?,\s*(-?\w+)(\.[^,]+)?,\s*(\w+)(\.matrix)?\s*\);
+			final Pattern pattern3Args = Pattern.compile(
+					"CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.[^,]+)?,\\s*(\\w+)(\\.matrix)?\\s*\\);");
+			Matcher matcher = pattern3Args.matcher(line);
+			if (matcher.find()) {
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				if (matcher.group(3) == null && matcher.group(5) == null) {
+					String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );";
+					sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)),
+							rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
+				} else if (matcher.group(3).equals(".matrix") && matcher.group(5).equals(".matrix")) {
+					String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s.getName(), %s.getName(), %s.getName()) );";
+					sb.append(String.format(code, matcher.group(1), rename(renames, matcher.group(2)),
+							rename(renames, matcher.group(4)), rename(renames, matcher.group(6))));
+				} else {
+					String code = "sb.append( String.format(formatCommonOps3, \"%s\", %s, %s, %s) );";
+					String a = rename(renames, matcher.group(2)) + ".getName()";
+					if (!matcher.group(3).equals(".matrix")) {
+						a += matcher.group(3);
+					}
+					String b = rename(renames, matcher.group(4)) + ".getName()";
+					if (!matcher.group(5).equals(".matrix")) {
+						b += matcher.group(5);
+					}
+					String o = rename(renames, matcher.group(6)) + ".getName()";
+					sb.append(String.format(code, matcher.group(1), a, b, o));
+				}
+				sb.append("\n");
+				return true;
+			}
+			final Pattern pattern2Args = Pattern
+					.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
+			matcher = pattern2Args.matcher(line);
+			if (matcher.find()) {
+				String code = "sb.append( String.format(formatCommonOps2, \"%s\", %s, %s) );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				String a = rename(renames, matcher.group(4));
+				if (matcher.group(5) == null) {
+				} else if (!matcher.group(5).equals(".matrix")) {
 					a += matcher.group(5);
 				} else {
-   					a += ".getName()";					
+					a += ".getName()";
 				}
 				String o = rename(renames, matcher.group(2)) + ".getName()";
-    			sb.append(String.format(code, matcher.group(1), o, a));
-    			sb.append("\n");
-    			return true;
-    		}
-    		final Pattern pattern1Arg  = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.matrix)?\\);");
-    		matcher = pattern1Arg.matcher(line);
-    		if (matcher.find()) {
+				sb.append(String.format(code, matcher.group(1), o, a));
+				sb.append("\n");
+				return true;
+			}
+			final Pattern pattern1Arg = Pattern.compile("CommonOps_DDRM\\.(\\w+)\\(\\s*(-?\\w+)(\\.matrix)?\\);");
+			matcher = pattern1Arg.matcher(line);
+			if (matcher.find()) {
 //    			System.out.println("cCO1: " + line);
 //    			System.out.print("{");
 //    			for (int g = 1; g <= matcher.groupCount(); g++) System.out.print(g+":"+matcher.group(g)+",");
 //    			System.out.println("}");
-    			String code = "sb.append( String.format(formatCommonOps1, \"%s\", %s) );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			String o = rename(renames, matcher.group(2)) + ".getName()";
-    			sb.append(String.format(code, matcher.group(1), o ));
-    			sb.append("\n");
-    			return true;
-    		}
-    		sb.append("codeCommonOps: ");
-    		sb.append( line ); 
-    		sb.append("\n");
-    		return false;
-    	}
-    	
-    	protected boolean codeOutputValue( StringBuilder sb, String prefix, Map<String, String> renames, String line ) {
-    		ArrayList<String> args = new ArrayList<>();
-    		//(\w+)\.value
-    		final Pattern patternNoCast = Pattern.compile("(\\w+)\\.value");
-    		//	\(\((\w+)\)\s*(\w+)\)\.value
-    		final Pattern patternCastValue = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.value");
-    		final Pattern patternCastMatrix = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.matrix");
-    		//(\w+)\.getDouble\(\)
-    		final Pattern patternGetDouble = Pattern.compile("(\\w+)\\.getDouble\\(\\)");
-    		//	\(\((\w+)\)\s*(\w+)\)\.getDouble\(\)
-    		final Pattern patternCastGetDouble = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.getDouble\\(\\)");
-    		
-    		final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
-    		final Pattern patternUnary = Pattern.compile("%s\\s*=\\s*([\\+\\-]*)\\s*%s;");
+				String code = "sb.append( String.format(formatCommonOps1, \"%s\", %s) );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				String o = rename(renames, matcher.group(2)) + ".getName()";
+				sb.append(String.format(code, matcher.group(1), o));
+				sb.append("\n");
+				return true;
+			}
+			sb.append("codeCommonOps: ");
+			sb.append(line);
+			sb.append("\n");
+			return false;
+		}
 
-    		final Pattern pattern1Arg = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^\\)\\s]+)?\\s*\\);");
-    		final Pattern pattern2Args = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
-    		final Pattern pattern1Parameter = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(%s)\\s*\\);");
+		protected boolean codeOutputValue(StringBuilder sb, String prefix, Map<String, String> renames, String line) {
+			ArrayList<String> args = new ArrayList<>();
+			// (\w+)\.value
+			final Pattern patternNoCast = Pattern.compile("(\\w+)\\.value");
+			// \(\((\w+)\)\s*(\w+)\)\.value
+			final Pattern patternCastValue = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.value");
+			final Pattern patternCastMatrix = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.matrix");
+			// (\w+)\.getDouble\(\)
+			final Pattern patternGetDouble = Pattern.compile("(\\w+)\\.getDouble\\(\\)");
+			// \(\((\w+)\)\s*(\w+)\)\.getDouble\(\)
+			final Pattern patternCastGetDouble = Pattern.compile("\\(\\((\\w+)\\)\\s*(\\w+)\\)\\.getDouble\\(\\)");
 
-    		boolean success = false;
-    		Matcher matcher = patternNoCast.matcher(line);
-    		while (matcher.find()) {
-    			args.add(rename(renames, matcher.group(1)));
-    			line = matcher.replaceFirst("%s");
-    			success = true;
-    			matcher = patternNoCast.matcher(line);
-    		}
-    		matcher = patternCastValue.matcher(line);
-    		while (matcher.find()) {
-    			args.add(rename(renames, matcher.group(2)));
-    			line = matcher.replaceFirst("%s");
-    			success = true;
-    			matcher = patternCastValue.matcher(line);
-    		}
-    		matcher = patternCastMatrix.matcher(line);
-    		while (matcher.find()) {
-    			args.add(rename(renames, matcher.group(2)));
-    			line = matcher.replaceFirst("%s");
-    			success = true;
-    			matcher = patternCastMatrix.matcher(line);
-    		}
-    		matcher = patternGetDouble.matcher(line);
-    		while (matcher.find()) {
-    			args.add(rename(renames, matcher.group(1)));
-    			line = matcher.replaceFirst("%s");
-    			success = true;
-    			matcher = patternGetDouble.matcher(line);
-    		}
-    		matcher = patternCastGetDouble.matcher(line);
-    		while (matcher.find()) {
-    			args.add(rename(renames, matcher.group(2)));
-    			line = matcher.replaceFirst("%s");
-    			success = true;
-    			matcher = patternCastGetDouble.matcher(line);
-    		}
+			final Pattern patternBinary = Pattern.compile("%s\\s*=\\s*%s\\s*([\\+\\-\\*\\/])\\s*%s;");
+			final Pattern patternUnary = Pattern.compile("%s\\s*=\\s*([\\+\\-]*)\\s*%s;");
 
-    		matcher = patternBinary.matcher(line);
-    		Matcher unary = patternUnary.matcher(line);
-    		Matcher oneArg = pattern1Arg.matcher(line);
-    		Matcher twoArgs = pattern2Args.matcher(line);
-    		Matcher oneParameter = pattern1Parameter.matcher(line);
+			final Pattern pattern1Arg = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^\\)\\s]+)?\\s*\\);");
+			final Pattern pattern2Args = Pattern
+					.compile("(\\w+)\\.(\\w+)\\(\\s*(-?\\w+)(\\.[^,]+)?,\\s*(-?\\w+)(\\.matrix)?\\s*\\);");
+			final Pattern pattern1Parameter = Pattern.compile("(\\w+)\\.(\\w+)\\(\\s*(%s)\\s*\\);");
 
-    		if (matcher.find()) {
+			boolean success = false;
+			Matcher matcher = patternNoCast.matcher(line);
+			while (matcher.find()) {
+				args.add(rename(renames, matcher.group(1)));
+				line = matcher.replaceFirst("%s");
+				success = true;
+				matcher = patternNoCast.matcher(line);
+			}
+			matcher = patternCastValue.matcher(line);
+			while (matcher.find()) {
+				args.add(rename(renames, matcher.group(2)));
+				line = matcher.replaceFirst("%s");
+				success = true;
+				matcher = patternCastValue.matcher(line);
+			}
+			matcher = patternCastMatrix.matcher(line);
+			while (matcher.find()) {
+				args.add(rename(renames, matcher.group(2)));
+				line = matcher.replaceFirst("%s");
+				success = true;
+				matcher = patternCastMatrix.matcher(line);
+			}
+			matcher = patternGetDouble.matcher(line);
+			while (matcher.find()) {
+				args.add(rename(renames, matcher.group(1)));
+				line = matcher.replaceFirst("%s");
+				success = true;
+				matcher = patternGetDouble.matcher(line);
+			}
+			matcher = patternCastGetDouble.matcher(line);
+			while (matcher.find()) {
+				args.add(rename(renames, matcher.group(2)));
+				line = matcher.replaceFirst("%s");
+				success = true;
+				matcher = patternCastGetDouble.matcher(line);
+			}
+
+			matcher = patternBinary.matcher(line);
+			Matcher unary = patternUnary.matcher(line);
+			Matcher oneArg = pattern1Arg.matcher(line);
+			Matcher twoArgs = pattern2Args.matcher(line);
+			Matcher oneParameter = pattern1Parameter.matcher(line);
+
+			if (matcher.find()) {
 //    			System.out.printf("   ! \"%%s = %%s %s %%s;\" %% %s\n", matcher.group(1), args.toString() );
-    			String code = "sb.append( String.format(";
-    			String close = ") );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			sb.append(code);
-    			String format = String.format("\"%%s = %%s %s %%s;\"", matcher.group(1));
-    			sb.append(format);
-    			for (String arg : args) {
-    				sb.append(", ");
-    				sb.append(arg);
-    				sb.append(".getName()");
-    			}
-    			sb.append(close);
-    			sb.append("\n");
-    		} else if (unary.find()) {
+				String code = "sb.append( String.format(";
+				String close = ") );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				sb.append(code);
+				String format = String.format("\"%%s = %%s %s %%s;\"", matcher.group(1));
+				sb.append(format);
+				for (String arg : args) {
+					sb.append(", ");
+					sb.append(arg);
+					sb.append(".getName()");
+				}
+				sb.append(close);
+				sb.append("\n");
+			} else if (unary.find()) {
 //    			System.out.printf("   ! \"%%s = %s%%s;\" %% %s\n", unary.group(1), args.toString() );    			
-    			String code = "sb.append( String.format(";
-    			String close = ") );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			sb.append(code);
-    			String format = String.format("\"%%s = %s%%s;\"", unary.group(1));
-    			sb.append(format);
-    			for (String arg : args) {
-    				sb.append(", ");
-    				sb.append(arg);
-    				sb.append(".getName()");
-    			}
-    			sb.append(close);
-    			sb.append("\n");
-    		} else if (oneArg.find()) {
+				String code = "sb.append( String.format(";
+				String close = ") );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				sb.append(code);
+				String format = String.format("\"%%s = %s%%s;\"", unary.group(1));
+				sb.append(format);
+				for (String arg : args) {
+					sb.append(", ");
+					sb.append(arg);
+					sb.append(".getName()");
+				}
+				sb.append(close);
+				sb.append("\n");
+			} else if (oneArg.find()) {
 //        		System.out.println("1cOV: " + line );
 //    			System.out.print(oneArg.groupCount() + "{");
 //    			for (int g = 1; g <= oneArg.groupCount(); g++) System.out.printf("%d:%s,", g, oneArg.group(g));
 //    			System.out.println("}");
-    			args.add(rename(renames, oneArg.group(3)));
-    			
-    			String code = "sb.append( String.format(";
-    			String close = ") );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			sb.append(code);
-    			String format = String.format("\"%%s = %s.%s(%%s);\"", oneArg.group(1), oneArg.group(2));
-    			sb.append(format);
-    			for (String arg : args) {
-    				sb.append(", ");
-    				sb.append(arg);
-    				sb.append(".getName()");
-    			}
-    			sb.append(close);
-    			sb.append("\n");
-    		} else if (oneParameter.find()) {
+				args.add(rename(renames, oneArg.group(3)));
+
+				String code = "sb.append( String.format(";
+				String close = ") );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				sb.append(code);
+				String format = String.format("\"%%s = %s.%s(%%s);\"", oneArg.group(1), oneArg.group(2));
+				sb.append(format);
+				for (String arg : args) {
+					sb.append(", ");
+					sb.append(arg);
+					sb.append(".getName()");
+				}
+				sb.append(close);
+				sb.append("\n");
+			} else if (oneParameter.find()) {
 //        		System.out.println("1cOV: " + line );
 //    			System.out.print(oneArg.groupCount() + "{");
 //    			for (int g = 1; g <= oneArg.groupCount(); g++) System.out.printf("%d:%s,", g, oneArg.group(g));
 //    			System.out.println("}");
-    			String code = "sb.append( String.format(";
-    			String close = ") );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			sb.append(code);
-    			String format = String.format("\"%%s = %s.%s(%%s);\"", oneParameter.group(1), oneParameter.group(2));
-    			sb.append(format);
-    			for (String arg : args) {
-    				sb.append(", ");
-    				sb.append(arg);
-    				sb.append(".getName()");
-    			}
-    			sb.append(close);
-    			sb.append("\n");
-    		} else if (twoArgs.find()) {
-    			args.add(rename(renames, twoArgs.group(3)));
-    			args.add(rename(renames, twoArgs.group(5)));
-    			String code = "sb.append( String.format(";
-    			String close = ") );";
-    			sb.append(prefix);
-    			sb.append("//" + line + "\n");
-    			sb.append(prefix);
-    			sb.append(code);
-    			String format = String.format("\"%%s = %s.%s(%%s, %%s);\"", twoArgs.group(1), twoArgs.group(2));
-    			sb.append(format);
-    			for (String arg : args) {
-    				sb.append(", ");
-    				sb.append(arg);
-    				sb.append(".getName()");
-    			}
-    			sb.append(close);
-    			sb.append("\n");
-    		} else {
-        		System.out.println("cOV: " + line );
-    			System.out.println( "  \"" + line + "\" % " + args.toString() + "");
-        		sb.append("codeOutputValue1: ");
-        		sb.append( line ); 
-        		sb.append("\n");
-    			return false;
-    		}
-    		if (!success) {
-	    		sb.append("codeOutputValue2: ");
-	    		sb.append( line ); 
-	    		sb.append("\n");
-    		}
-   		return success;
-    	}
-    	
-    	protected String rename(Map<String, String> renames, String name) {
-    		String r = renames.get(name);
-    		if (r != null)
-    			return r;
-    		return name;
-    	}
+				String code = "sb.append( String.format(";
+				String close = ") );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				sb.append(code);
+				String format = String.format("\"%%s = %s.%s(%%s);\"", oneParameter.group(1), oneParameter.group(2));
+				sb.append(format);
+				for (String arg : args) {
+					sb.append(", ");
+					sb.append(arg);
+					sb.append(".getName()");
+				}
+				sb.append(close);
+				sb.append("\n");
+			} else if (twoArgs.find()) {
+				args.add(rename(renames, twoArgs.group(3)));
+				args.add(rename(renames, twoArgs.group(5)));
+				String code = "sb.append( String.format(";
+				String close = ") );";
+				sb.append(prefix);
+				sb.append("//" + line + "\n");
+				sb.append(prefix);
+				sb.append(code);
+				String format = String.format("\"%%s = %s.%s(%%s, %%s);\"", twoArgs.group(1), twoArgs.group(2));
+				sb.append(format);
+				for (String arg : args) {
+					sb.append(", ");
+					sb.append(arg);
+					sb.append(".getName()");
+				}
+				sb.append(close);
+				sb.append("\n");
+			} else {
+				System.out.println("cOV: " + line);
+				System.out.println("  \"" + line + "\" % " + args.toString() + "");
+				sb.append("codeOutputValue1: ");
+				sb.append(line);
+				sb.append("\n");
+				return false;
+			}
+			if (!success) {
+				sb.append("codeOutputValue2: ");
+				sb.append(line);
+				sb.append("\n");
+			}
+			return success;
+		}
 
-    	final Pattern startsVariableMatrix = Pattern.compile("^(final\\s*)?VariableMatrix\\s+");
-    	final Pattern startsVariableScalar = Pattern.compile("^(final\\s*)?VariableScalar\\s+");
-    	
-    	// writes code that will write code
-    	public StringBuilder toCode(String prefix) {
-    		HashMap<String, String> renames = new HashMap<>();
-    		renames.put("target", "output");
-    		boolean success = true;
-    		StringBuilder sb = new StringBuilder();
-    		for (String line : body) {
-    			if (line.startsWith("//"))
-    				continue;
-    			if (startsVariableMatrix.matcher(line).find()) {
-    				success = codeVariableMatrix( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("DMatrixRMaj ")) {
-    				success = codeDMatrixRMaj( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("VariableInteger ")) {
-    				success = codeVariableInteger( sb, prefix, renames, line ) && success;
-    			} else if (startsVariableScalar.matcher(line).find()) {
-    				success = codeVariableScalar( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("int ")) {
-    				success = codeIntVariableInteger( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("double ")) {
-    				success = codeDoubleVariableScalar( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("manager.resize(output")) {
-    				success = codeManagerResize( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("output.matrix.reshape(")) {
-    				success = codeManagerReshape( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("out.reshape(")) {
-    				success = codeManagerReshape( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("CommonOps_DDRM.")) {
-    				success = codeCommonOps( sb, prefix, renames, line ) && success;
-    			} else if (line.startsWith("output.value = ")) {
-    				success = codeOutputValue( sb, prefix, renames, line ) && success;
-    			} else {
-    				success = false;
-    				System.out.printf("? %s\n", line);
-    			}
-    			//success = true;  // TODO REMOVE THIS
-    		}
-    		if (success)
-    			return sb;
-    		sb.insert(0, prefix + "/*\n");
-    		for (String line : body) {
-    			sb.append(line);
-				sb.append("\n") ;   	
-    		}
-    		sb.append(prefix + "*/\n");
-    		sb.append(prefix);
-    		sb.append("//TODO MANUAL\n");
-    		return sb;
-    	}
-    	
-    	public String toString() {
-    		return String.format("%s-%s: %s", name, inputs, body.toString() );
-    	}
-    }
-    
-    private static HashMap<String, HashMap<String, Execution>> byInputs = new HashMap<>();
-    
-    private static void addExecution( Execution execution ) {
-    	if (! byInputs.containsKey(execution.inputs)) {
-    		byInputs.put( execution.inputs, new HashMap<String, Execution>() );
-    	}
-    	HashMap<String, Execution> byName = byInputs.get(execution.inputs);
-    	byName.put( execution.name, execution);
-    }
+		protected String rename(Map<String, String> renames, String name) {
+			String r = renames.get(name);
+			if (r != null)
+				return r;
+			return name;
+		}
 
-    public static void mainGenerateEmitCodeOperation(String[] args) {
+		final Pattern startsVariableMatrix = Pattern.compile("^(final\\s*)?VariableMatrix\\s+");
+		final Pattern startsVariableScalar = Pattern.compile("^(final\\s*)?VariableScalar\\s+");
+
+		// writes code that will write code
+		public StringBuilder toCode(String prefix) {
+			HashMap<String, String> renames = new HashMap<>();
+			renames.put("target", "output");
+			boolean success = true;
+			StringBuilder sb = new StringBuilder();
+			for (String line : body) {
+				if (line.startsWith("//"))
+					continue;
+				if (startsVariableMatrix.matcher(line).find()) {
+					success = codeVariableMatrix(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("DMatrixRMaj ")) {
+					success = codeDMatrixRMaj(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("VariableInteger ")) {
+					success = codeVariableInteger(sb, prefix, renames, line) && success;
+				} else if (startsVariableScalar.matcher(line).find()) {
+					success = codeVariableScalar(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("int ")) {
+					success = codeIntVariableInteger(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("double ")) {
+					success = codeDoubleVariableScalar(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("manager.resize(output")) {
+					success = codeManagerResize(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("output.matrix.reshape(")) {
+					success = codeManagerReshape(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("out.reshape(")) {
+					success = codeManagerReshape(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("CommonOps_DDRM.")) {
+					success = codeCommonOps(sb, prefix, renames, line) && success;
+				} else if (line.startsWith("output.value = ")) {
+					success = codeOutputValue(sb, prefix, renames, line) && success;
+				} else {
+					success = false;
+					System.out.printf("? %s\n", line);
+				}
+				// success = true; // TODO REMOVE THIS
+			}
+			if (success)
+				return sb;
+			sb.insert(0, prefix + "/*\n");
+			for (String line : body) {
+				sb.append(line);
+				sb.append("\n");
+			}
+			sb.append(prefix + "*/\n");
+			sb.append(prefix);
+			sb.append("//TODO MANUAL\n");
+			return sb;
+		}
+
+		public String toString() {
+			return String.format("%s-%s: %s", name, inputs, body.toString());
+		}
+	}
+
+	private static HashMap<String, HashMap<String, Execution>> byInputs = new HashMap<>();
+
+	private static void addExecution(Execution execution) {
+		if (!byInputs.containsKey(execution.inputs)) {
+			byInputs.put(execution.inputs, new HashMap<String, Execution>());
+		}
+		HashMap<String, Execution> byName = byInputs.get(execution.inputs);
+		byName.put(execution.name, execution);
+	}
+
+	public static void mainGenerateEmitCodeOperation(String[] args) {
 		Path path = Paths.get("src/org/ejml/equation/OperationExecuteFactory.java");
 		Path outPath = Paths.get("src/org/ejml/equation/EmitCodeOperation.java");
 		String methodDecl = null;
@@ -505,12 +523,12 @@ public class GenerateEquationCoders {
 			List<String> lines = Files.readAllLines(path);
 //			System.out.println(lines.size());
 			Iterator<String> it = lines.iterator();
-			while (it.hasNext()) { 
+			while (it.hasNext()) {
 				String line = it.next().trim();
 				if (line.startsWith("public Operation")) {
 					line = it.next().trim();
 					while (!line.startsWith("@Override")) {
-						line = it.next().trim();						
+						line = it.next().trim();
 					}
 					continue;
 				}
@@ -520,14 +538,11 @@ public class GenerateEquationCoders {
 				}
 				if (line.contains("new Operation")) {
 //					System.out.println("  " + line);
-					Execution execution = new Execution( methodDecl, line );
+					Execution execution = new Execution(methodDecl, line);
 					line = it.next().trim();
-					while (! line.startsWith("};")) {
-						if (line.isEmpty() ||
-							line.startsWith("@Override") ||
-							line.startsWith("public void") ||
-							line.startsWith("try") ||
-							line.equals("}") ) {
+					while (!line.startsWith("};")) {
+						if (line.isEmpty() || line.startsWith("@Override") || line.startsWith("public void")
+								|| line.startsWith("try") || line.equals("}")) {
 							line = it.next().trim();
 							continue;
 						}
@@ -547,28 +562,18 @@ public class GenerateEquationCoders {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		final String PACKAGE_HEADER = "package org.ejml.equation;\n" + 
-				"\n" + 
-				"public class EmitCodeOperation {\n" + 
-				"\n";
-		final String PACKAGE_TRAILER_FORMAT = "	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {\n" +
-				"%s" +
-				"	}\n" + 
-				"}";
-		final String XOP_HEADER_FORMAT = "\tprotected String %sOp(String op, CodeOperation codeOp) {\n" + 
-				"\t\tVariable output = codeOp.output;\n" + 
-				"\t\tVariable A = codeOp.input.get(0);\n" + 
-				"\t\tVariable B = codeOp.input.get(1);\n" + 
-				"\t\tStringBuilder sb = new StringBuilder();\n";
+		final String PACKAGE_HEADER = "package org.ejml.equation;\n" + "\n" + "public class EmitCodeOperation {\n"
+				+ "\n";
+		final String PACKAGE_TRAILER_FORMAT = "	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {\n"
+				+ "%s" + "	}\n" + "}";
+		final String XOP_HEADER_FORMAT = "\tprotected String %sOp(String op, CodeOperation codeOp) {\n"
+				+ "\t\tVariable output = codeOp.output;\n" + "\t\tVariable A = codeOp.input.get(0);\n"
+				+ "\t\tVariable B = codeOp.input.get(1);\n" + "\t\tStringBuilder sb = new StringBuilder();\n";
 		final String XOP_SWITCH_FORMAT = "\t\tswitch (op) {\n";
-		
-		final String XOP_CASE_FORMAT = "\t\tcase \"%s\": // %s\n" +
-				"%s" +
-				"\t\t\treturn sb.toString();\n";
-		
-		final String XOP_TRAILER_FORMAT = "\t\t}\n" + 
-				"\t\treturn sb.toString();\n" + 
-				"\t}\n";
+
+		final String XOP_CASE_FORMAT = "\t\tcase \"%s\": // %s\n" + "%s" + "\t\t\treturn sb.toString();\n";
+
+		final String XOP_TRAILER_FORMAT = "\t\t}\n" + "\t\treturn sb.toString();\n" + "\t}\n";
 		for (String input : byInputs.keySet()) {
 			System.out.println(input);
 		}
@@ -595,13 +600,44 @@ public class GenerateEquationCoders {
 //		} catch (Exception x) {
 //			x.printStackTrace();
 //		}
-    }
+	}
+
+	private static String unquote(String f) {
+		f = f.trim();
+		if (f.charAt(0) == '\"') {
+			f = f.substring(1, f.length() - 1);
+		}
+		return f.trim();
+	}
+
+	private static void writeCodedEquationMethod(ArrayList<String> body, String testName,
+			OptimizeCodeOperations optimizer, Equation eq, Sequence sequence, String equationText) {
+		String prefix = "    ";
+		body.add("");
+		String name = String.format("%s_Coded", testName);
+		StringBuilder sb = new StringBuilder();
+		optimizer.emitJavaTest(sb, prefix, name, eq, equationText);
+		body.addAll(Arrays.asList(sb.toString().split("\n")));
+		body.add("}");
+	}
 
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
 		ArrayList<String> body = new ArrayList<>();
 		final Pattern compilePattern = Pattern.compile("(\\w+)\\.compile\\((\\\"[^\\\"]*\\\")");
 		final Pattern processPattern = Pattern.compile("(\\w+)\\.process\\((\\\"[^\\\"]*\\\")");
-		final Pattern equationPattern = Pattern.compile("(\\w+)\\s*=");
+		final Pattern assignmentPattern = Pattern.compile("(\\w+)\\s*=");
+
+		final Pattern declInt = Pattern.compile("int\\s+(\\w+)");
+		final Pattern declDouble = Pattern.compile("double\\s+(\\w+)");
+		final Pattern declMatrix = Pattern.compile("SimpleMatrix\\s+(\\w+)");
+
+		final Pattern aliasPattern = Pattern.compile("\\.alias\\(([^}]*)\\)");
+
+		ArrayList<String> integers = new ArrayList<>();
+		ArrayList<String> doubles = new ArrayList<>();
+		ArrayList<String> matrices = new ArrayList<>();
+		ArrayList<String> aliases = new ArrayList<>();
+
 		body.add(line);
 		int nCompile = 0;
 		int nProcess = 0;
@@ -620,81 +656,139 @@ public class GenerateEquationCoders {
 //				System.out.println(line);
 				nCompile++;
 				equationVariable = matcher.group(1);
-				equationText = matcher.group(2);
+				equationText = unquote(matcher.group(2));
 			}
 			matcher = processPattern.matcher(line);
 			if (matcher.find()) {
 //				System.out.println(line);
 				nProcess++;
 				equationVariable = matcher.group(1);
-				equationText = matcher.group(2);
+				equationText = unquote(matcher.group(2));
 			}
 			if (line.startsWith("        assert")) {
 //				System.out.println(line);
 				nAssert++;
 			}
-		}
-		if ( (nCompile == 1 || nProcess == 1) && nAssert > 0) {
-			Matcher matcher = equationPattern.matcher(equationText);
+			matcher = declInt.matcher(line);
 			if (matcher.find()) {
-				String target = matcher.group(1);
-				body.add(String.format("\t// %s: %s -> %s", equationVariable, equationText, target));
-				String callCompiled = String.format("\t%sCoded(%s);", testName, equationVariable);
-				body.add(callCompiled);
-				body.add(endParen);
-				
-				writeCodedEquationMethod( body, testName, equationText );
-				body.forEach(code::println);
-				return true;
+				integers.add(matcher.group(1));
+			}
+			matcher = declDouble.matcher(line);
+			if (matcher.find()) {
+				doubles.add(matcher.group(1));
+			}
+			matcher = declMatrix.matcher(line);
+			if (matcher.find()) {
+				matrices.add(matcher.group(1));
+			}
+
+			matcher = aliasPattern.matcher(line);
+			if (matcher.find()) {
+				aliases.add(matcher.group(1));
 			}
 		}
+		if ((nCompile == 1 || nProcess == 1) && nAssert > 0) {
+			equationText = equationText.replace("\\\\", "\\"); // for reasons unknown backslashes are double escaped here
+			Matcher matcher = assignmentPattern.matcher(equationText);
+			if (matcher.find()) {
+				Equation eq = new Equation();
+				OperationCodeFactory factory = new OperationCodeFactory();
+				ManagerFunctions mf = new ManagerFunctions(factory);
+				eq.setManagerFunctions(mf);
+
+				HashMap<String, String> names = new HashMap<>();
+				for (String a : aliases) {
+					String[] f = a.trim().split(",");
+					for (int i = 0; i < f.length; i += 2) {
+						String var = f[i].trim();
+						String name = unquote(f[i + 1]);
+						char c = var.charAt(0);
+						if (c == '-' || c == '+' || Character.isDigit(c)) {
+							if (var.contains(".")) {
+								doubles.add(name);
+							} else {
+								integers.add(name);
+							}
+							names.put(name, name);
+						} else {
+							names.put(var, name);
+						}
+					}
+				}
+//				System.out.println(names);
+
+				for (String n : integers) {
+					if (names.containsKey(n)) {
+						Integer x = new Integer(0);
+						eq.alias(x, names.get(n));
+					}
+				}
+				for (String n : doubles) {
+					if (names.containsKey(n)) {
+						Double x = new Double(0.0);
+						eq.alias(x, names.get(n));
+					}
+				}
+				for (String n : matrices) {
+					if (names.containsKey(n)) {
+						SimpleMatrix x = new SimpleMatrix(1, 1);
+//						System.out.println(x + "->" + names.get(n));
+						eq.alias(x, names.get(n));
+					}
+				}
+				try {
+					Sequence sequence = eq.compile(equationText);
+					List<Operation> operations = sequence.getOperations();
+					OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
+					optimizer.mapVariableUsage();
+					String target = matcher.group(1);
+					body.add(String.format("\t// %s: %s -> %s", equationVariable, equationText, target));
+					String ret = optimizer.getReturnVariable(eq);
+					String callCompiled = String.format("\t%s%s_Coded(%s);", ret, testName,
+							optimizer.getCallingSequence(eq));
+					body.add(callCompiled);
+					body.add("\t" + optimizer.getAssert(eq));
+					body.add(endParen);
+					writeCodedEquationMethod(body, testName, optimizer, eq, sequence, equationText);
+					body.forEach(code::println);
+					return true;
+				} catch (Exception x) {
+					System.err.printf("In %s: %s\n", testName, x.getMessage() );
+					return false;
+				}
+			}
+		}
+		System.err.printf("In %s: %d, %d, %d\n", testName, nCompile, nProcess, nAssert );
 		return false;
 	}
 
-	private static void writeCodedEquationMethod(ArrayList<String> body, String testName, String equationText) {
-		String prefix = "    ";
-		body.add("");
-		body.add( String.format("%sprotected void %sCoded( Equation eq) {", prefix, testName) );
-		OperationCodeFactory factory = new OperationCodeFactory();
-		ManagerFunctions mf = new ManagerFunctions(factory);
-		eq.setManagerFunctions(mf);
-        Sequence sequence = eq.compile(equationText);
-    	List<Operation> operations = sequence.getOperations();
-    	OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
-    	optimizer.mapVariableUsage();
-    	optimizer.emitJavaTest(System.out, eq, equationText);
-		
-		body.add( prefix + "}");
-	}
-
 	public static void main(String[] args) {
-    	final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
-    	Path path = Paths.get("test/org/ejml/equation");
-    	String[] tests = {"TestEquation.java", "TestCompiled.java", "TestOperation.java"};
-    	PrintStream code = System.out;
-    	try {
-    		for (String test : tests ) {
-    			List<String> lines = Files.readAllLines(path.resolve(test));
-    			System.out.println(test + " " + lines.size() );
-    			Iterator<String> it = lines.iterator();
-    			int nTests = 0;
-    			int nCoded = 0;
-    			while (it.hasNext()) {
-    				String line = it.next();
-    				Matcher matcher = method.matcher(line);
-    				if (matcher.find()) {
-    					nTests++;
-    					if (copyTest( code, it, matcher.group(1), line )) {
-    						nCoded++;
-    					}
-    				}
-    			}
-    			System.out.printf("%d tests; %d coded\n", nTests, nCoded);
-    			break;
-    		}
-    	} catch (Exception x) {
-    		x.printStackTrace();
-    	}
-    }
+		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
+		Path path = Paths.get("test/org/ejml/equation");
+		String[] tests = { "TestEquation.java", "TestOperation.java" };
+		try {
+			PrintStream code = new PrintStream("code.java"); // System.out;
+			for (String test : tests) {
+				List<String> lines = Files.readAllLines(path.resolve(test));
+				System.out.println(test + " " + lines.size());
+				Iterator<String> it = lines.iterator();
+				int nTests = 0;
+				int nCoded = 0;
+				while (it.hasNext()) {
+					String line = it.next();
+					Matcher matcher = method.matcher(line);
+					if (matcher.find()) {
+						nTests++;
+						if (copyTest(code, it, matcher.group(1), line)) {
+							nCoded++;
+						}
+					}
+				}
+				System.out.printf("%d tests; %d coded\n", nTests, nCoded);
+			}
+		} catch (Exception x) {
+			x.printStackTrace();
+		}
+	}
 
 }
