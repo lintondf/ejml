@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -610,15 +611,15 @@ public class GenerateEquationCoders {
 		return f.trim();
 	}
 
-	private static void writeCodedEquationMethod(ArrayList<String> body, String testName,
+	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
 			OptimizeCodeOperations optimizer, Equation eq, Sequence sequence, String equationText) {
-		String prefix = "    ";
+		
 		body.add("");
 		String name = String.format("%s_Coded", testName);
 		StringBuilder sb = new StringBuilder();
 		optimizer.emitJavaTest(sb, prefix, name, eq, equationText);
 		body.addAll(Arrays.asList(sb.toString().split("\n")));
-		body.add("}");
+		//body.add("}");
 	}
 
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
@@ -641,7 +642,7 @@ public class GenerateEquationCoders {
 		body.add(line);
 		int nCompile = 0;
 		int nProcess = 0;
-		int nAssert = 0;
+		int nAssign = 0;
 		final String endParen = "    }";
 		String equationVariable = null;
 		String equationText = null;
@@ -665,10 +666,6 @@ public class GenerateEquationCoders {
 				equationVariable = matcher.group(1);
 				equationText = unquote(matcher.group(2));
 			}
-			if (line.startsWith("        assert")) {
-//				System.out.println(line);
-				nAssert++;
-			}
 			matcher = declInt.matcher(line);
 			if (matcher.find()) {
 				integers.add(matcher.group(1));
@@ -687,14 +684,16 @@ public class GenerateEquationCoders {
 				aliases.add(matcher.group(1));
 			}
 		}
-		if ((nCompile == 1 || nProcess == 1) && nAssert > 0) {
+		Equation eq = new Equation();
+		OperationCodeFactory factory = new OperationCodeFactory();
+		ManagerFunctions mf = new ManagerFunctions(factory);
+		eq.setManagerFunctions(mf);
+
+		if (nCompile == 1 || nProcess == 1) {
 			equationText = equationText.replace("\\\\", "\\"); // for reasons unknown backslashes are double escaped here
 			Matcher matcher = assignmentPattern.matcher(equationText);
 			if (matcher.find()) {
-				Equation eq = new Equation();
-				OperationCodeFactory factory = new OperationCodeFactory();
-				ManagerFunctions mf = new ManagerFunctions(factory);
-				eq.setManagerFunctions(mf);
+				nAssign++;
 
 				HashMap<String, String> names = new HashMap<>();
 				for (String a : aliases) {
@@ -737,20 +736,23 @@ public class GenerateEquationCoders {
 					}
 				}
 				try {
+					String prefix = "    ";
 					Sequence sequence = eq.compile(equationText);
 					List<Operation> operations = sequence.getOperations();
 					OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
 					optimizer.mapVariableUsage();
 					String target = matcher.group(1);
-					body.add(String.format("\t// %s: %s -> %s", equationVariable, equationText, target));
+					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
 					String ret = optimizer.getReturnVariable(eq);
-					String callCompiled = String.format("\t%s%s_Coded(%s);", ret, testName,
+					String callCompiled = String.format("%s%s%s%s_Coded(%s);", prefix, prefix, ret, testName,
 							optimizer.getCallingSequence(eq));
 					body.add(callCompiled);
-					body.add("\t" + optimizer.getAssert(eq));
+					body.add(prefix+prefix + optimizer.getAssert(eq));
 					body.add(endParen);
-					writeCodedEquationMethod(body, testName, optimizer, eq, sequence, equationText);
+					writeCodedEquationMethod(body, prefix, testName, optimizer, eq, sequence, equationText);
 					body.forEach(code::println);
+					code.println();
+					code.println();
 					return true;
 				} catch (Exception x) {
 					System.err.printf("In %s: %s\n", testName, x.getMessage() );
@@ -758,7 +760,21 @@ public class GenerateEquationCoders {
 				}
 			}
 		}
-		System.err.printf("In %s: %d, %d, %d\n", testName, nCompile, nProcess, nAssert );
+		System.err.printf("In %s: %d, %d, %d\n", testName, nCompile, nProcess, nAssign );
+//		if (testName.equals("compile_assign_submatrix")) {
+//			Random rand = new Random();
+//	        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+//	        SimpleMatrix B = SimpleMatrix.random_DDRM(2, 5, -1, 1, rand);
+//
+//	        SimpleMatrix A_orig = A.copy();
+//
+//	        eq.alias(A, "A");
+//	        eq.alias(B, "B");
+//
+//	        Sequence sequence = eq.compile("A(2:3,0:4)=B", true, true);
+//	        List<Operation> operations = sequence.getOperations();
+//	        operations.forEach(System.out::println);
+//		}
 		return false;
 	}
 
@@ -779,6 +795,8 @@ public class GenerateEquationCoders {
 					Matcher matcher = method.matcher(line);
 					if (matcher.find()) {
 						nTests++;
+//						if (! matcher.group(1).equals("compile_assign_submatrix"))
+//							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
 						}

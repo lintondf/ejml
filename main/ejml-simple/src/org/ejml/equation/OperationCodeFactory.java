@@ -561,6 +561,7 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Operation copy( final Variable src , final Variable dst , final List<Variable> range ) {
     	CodeInfo ret = new CodeInfo(src);
+    	ret.range = range;
     	ret.output = dst;
 
     	if( src instanceof VariableMatrix && dst instanceof VariableMatrix ) {

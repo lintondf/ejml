@@ -19,10 +19,12 @@ public class CodeOperation extends Operation {
 	    public List<Variable> input;
 	    public MatrixConstructor constructor;
 	    public List<DimensionSources> dimensions;
+		public List<Variable> range;
 	    
 	    public CodeInfo() {
 	    	input = new ArrayList<Variable>();
 	    	dimensions = new ArrayList<DimensionSources>();
+	    	range = null;
 	    }
 	    
 	    public CodeInfo( final Variable A) {
@@ -59,6 +61,7 @@ public class CodeOperation extends Operation {
     public Variable       output;
     public MatrixConstructor constructor;
     public List<DimensionSources> dimensions;
+    public List<Variable> range;
 
     protected CodeOperation(String name, CodeInfo info) {
         super(name);
@@ -66,6 +69,7 @@ public class CodeOperation extends Operation {
         output = info.output;
         constructor = info.constructor;
         dimensions = info.dimensions;
+        range = info.range;
     }
 
     public void process() {}

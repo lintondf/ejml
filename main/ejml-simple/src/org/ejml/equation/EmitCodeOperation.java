@@ -587,6 +587,9 @@ throw new RuntimeException("Inverse failed!");
 		return "//copyOp: " + codeOp.toString();
 	}
 
+	private static String copyROp(String[] operands, CodeOperation codeOp) {
+		return "//copyOp: " + codeOp.toString();
+	}
 	
 	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {
 		String[] fields = codeOp.name().split("-");
@@ -596,8 +599,10 @@ throw new RuntimeException("Inverse failed!");
 		}
 		if (codeOp.name().equals("matrixConstructor")) {
 			body.append( construct( codeOp ) );
-		} else if (fields[0].startsWith("copy")) {
+		} else if (fields[0].equals("copy")) {
 			body.append( copyOp( fields, codeOp) );
+		} else if (fields[0].equals("copyR")) {
+			body.append( copyROp( fields, codeOp) );
 		} else {
 			switch (inputs) {
 			case "mm":

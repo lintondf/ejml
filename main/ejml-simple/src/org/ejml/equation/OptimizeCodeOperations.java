@@ -348,7 +348,11 @@ public class OptimizeCodeOperations {
     	for (Variable variable : variables.values()) {
 			if (assignmentTarget != null && variable.equals(assignmentTarget)) {
 				String type = getJavaType(assignmentTarget);
-				body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type) );
+				if (type.equals("int") || type.equals("double")) {
+					body.append(String.format(declFormatWithValue, prefix, prefix, type, variable.getName(), "0") );					
+				} else {
+					body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type) );
+				}
 				body.append(";\n");
 			}
     	}    	
