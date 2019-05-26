@@ -130,7 +130,7 @@ public class OperationCodeFactory implements IOperationFactory {
             final Variable m = (Variable)A;
             final VariableScalar s = (VariableScalar)B;
             ret.output = output;
-            ret.op = new CodeOperation("divide-ma", ret);
+            ret.op = new CodeOperation("divide-ms", ret);
         } else if( A instanceof VariableScalar && B instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
             final Variable m = (Variable)B;
@@ -139,7 +139,7 @@ public class OperationCodeFactory implements IOperationFactory {
             ret.input.clear();
             ret.input.add(m);
             ret.input.add(s);
-            ret.op = new CodeOperation("divide-ma", ret);
+            ret.op = new CodeOperation("divide-ms", ret);
         } else if( A instanceof VariableInteger && B instanceof VariableInteger ) {
             final VariableInteger output = manager.createInteger();
             ret.output = output;

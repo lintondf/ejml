@@ -2,6 +2,8 @@ package org.ejml.equation;
 
 import java.util.List;
 
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.equation.MatrixConstructor.Item;
 
 public class EmitCodeOperation {
@@ -13,6 +15,21 @@ public class EmitCodeOperation {
 	final static String formatCommonOps3 = "CommonOps_DDRM.%s( %s, %s, %s );";
 	final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );";
 	final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );";
+	
+	protected static boolean isNumeric(String str) {
+	    return str.matches("[+-]?\\d*(\\.\\d+)?");
+	}
+	
+	protected static void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
+		String o = output.getOperand();
+		String a = A.getOperand();
+		String b = B.getOperand();
+		if (!isNumeric(a))
+			a += ".numRows";
+		if (!isNumeric(b))
+			b += ".numCols";
+		sb.append( String.format(formatGeneral2, o, "reshape", a, b) );
+	}
 
 
 	protected static String mmOp(String op, CodeOperation codeOp) {
@@ -39,7 +56,7 @@ public class EmitCodeOperation {
 		case "kron": // Info kron( final Variable A , final Variable B, ManagerTempVariables manager)
 			String rows = String.format("%s.numRows * %s.numRows", A.getName(), B.getName());
 			String cols = String.format("%s.numCols * %s.numCols", A.getName(), B.getName());
-			sb.append( String.format(formatReshape, output.getName(), rows, cols) );
+			sb.append( String.format(formatGeneral2, output.getName(), "reshape", rows, cols) );
 			sb.append( String.format(formatCommonOps3, "kron", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
@@ -60,7 +77,7 @@ throw new RuntimeException("Solver failed!");
 output.matrix.reshape(a.numCols,b.numCols);
 solver.solve(b, output.matrix);
 			*/
-			//TODO MANUAL
+			sb.append("//TODO: " + op);//TODO MANUAL
 			return sb.toString();
 		case "dot": // Info dot( final Variable A , final Variable B , ManagerTempVariables manager)
 			sb.append(output.getOperand());
@@ -90,43 +107,41 @@ solver.solve(b, output.matrix);
 		switch (op) {
 		case "add": // Info add(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s + %s;
-			sb.append( String.format("%s = %s + %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s + %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "rand": // Info rand( final Variable A , final Variable B , ManagerTempVariables manager)
-			//TODO MANUAL
-			sb.append( String.format(formatGeneral2, output.getName(), "reshape", A.getOperand(), B.getOperand()) );
+			sb.append( String.format(formatGeneral2, output.getOperand(), "reshape", A.getOperand(), B.getOperand()) );
 			sb.append("Random rand = new Random();");
 			final String fillUniform = "RandomMatrices_DDRM.fillUniform(%s, 0, 1, rand );";
-			sb.append( String.format(fillUniform, output.getName()));
+			sb.append( String.format(fillUniform, output.getOperand()));
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s - %s;
-			sb.append( String.format("%s = %s - %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s - %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "ones": // Info ones( final Variable A , final Variable B , ManagerTempVariables manager)
-			sb.append( String.format(formatReshape, output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format(formatReshape, output.getOperand(), A.getOperand(), B.getOperand()) );
 			//CommonOps_DDRM.fill(output.matrix, 1);
-			sb.append( String.format(formatCommonOps2, "fill", output.getName(), 1) );
+			sb.append( String.format(formatCommonOps2, "fill", output.getOperand(), 1) );
 			return sb.toString();
 		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s/%s;
-			sb.append( String.format("%s = %s / %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s / %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s*%s;
-			sb.append( String.format("%s = %s * %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s * %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "zeros": // Info zeros( final Variable A , final Variable B , ManagerTempVariables manager)
-			sb.append( String.format(formatReshape, output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format(formatReshape, output.getOperand(), A.getOperand(), B.getOperand()) );
 			//CommonOps_DDRM.fill(output.matrix, 0);
-			sb.append( String.format(formatCommonOps2, "fill", output.getName(), 0) );
+			sb.append( String.format(formatCommonOps2, "fill", output.getOperand(), 0) );
 			return sb.toString();
 		case "randn": // Info randn( final Variable A , final Variable B , ManagerTempVariables manager)
-			//TODO MANUAL
-			sb.append( String.format(formatGeneral2, output.getName(), "reshape", A.getOperand(), B.getOperand()) );
+			sb.append( String.format(formatGeneral2, output.getOperand(), "reshape", A.getOperand(), B.getOperand()) );
 			sb.append("Random rand = new Random();");
 			final String fillGaussian = "RandomMatrices_DDRM.fillGaussian(%s, 0, 1, rand );";
-			sb.append( String.format(fillGaussian, output.getName()));
+			sb.append( String.format(fillGaussian, output.getOperand()));
 			return sb.toString();
 		}
 		return sb.toString();
@@ -141,31 +156,31 @@ solver.solve(b, output.matrix);
 		switch (op) {
 		case "add": // Info add(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s + %s;
-			sb.append( String.format("%s = %s + %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s + %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s - %s;
-			sb.append( String.format("%s = %s - %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s - %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "pow": // Info pow(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = Math.pow(a, b);
-			sb.append( String.format("%s = Math.pow(%s, %s);", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = Math.pow(%s, %s);", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s/%s;
-			sb.append( String.format("%s = %s / %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s / %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = %s*%s;
-			sb.append( String.format("%s = %s * %s;", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = %s * %s;", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "atan2": // Info atan2(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = Math.atan2(a, b);
-			sb.append( String.format("%s = Math.atan2(%s, %s);", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = Math.atan2(%s, %s);", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			//%s = Math.pow(a, b);
-			sb.append( String.format("%s = Math.pow(%s, %s);", output.getName(), A.getName(), B.getName()) );
+			sb.append( String.format("%s = Math.pow(%s, %s);", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		}
 		return sb.toString();
@@ -205,10 +220,9 @@ int row = ((VariableInteger) inputs.get(1)).value;
 int col = ((VariableInteger) inputs.get(2)).value;
 output.value = A.get(row, col);
 			*/
-			//TODO MANUAL
+			sb.append("//TODO: " + op);//TODO MANUAL
 			return sb.toString();
 		case "rng": // Info rng( final Variable A , ManagerTempVariables manager)
-			//TODO MANUAL
 			sb.append("Random rand = new Random();");
 			sb.append(String.format("rand.setSeed(%s);", A.getOperand()));
 			return sb.toString();
@@ -259,7 +273,7 @@ CommonOps_DDRM.extract(A,
 rowExtent.array,rowExtent.length,
 colExtent.array,colExtent.length,output.matrix);
 			*/
-			//TODO MANUAL
+			sb.append("//TODO: " + op);//TODO MANUAL
 			return sb.toString();
 		case "min_rows": // Info min_two( final Variable A , final Variable P , ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), "1") );
@@ -287,67 +301,64 @@ colExtent.array,colExtent.length,output.matrix);
 		switch (op) {
 		case "log": // Info log(final Variable A, ManagerTempVariables manager)
 			//%s = Math.log(%s);
-			sb.append( String.format("%s = Math.log(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.log(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "max": // Info max( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "cos": // Info cos(final Variable A, ManagerTempVariables manager)
 			//%s = Math.cos(%s);
-			sb.append( String.format("%s = Math.cos(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.cos(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "normF": // Info normF( final Variable A , ManagerTempVariables manager)
 			//%s = Math.abs(%s);
-			sb.append( String.format("%s = Math.abs(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.abs(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "atan": // Info atan(final Variable A, ManagerTempVariables manager)
 			//%s = Math.atan(%s);
-			sb.append( String.format("%s = Math.atan(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.atan(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "inv": // Info inv( final Variable A , ManagerTempVariables manager)
-			//TODO MANUAL
 			sb.append(String.format("%s = 1.0 / %s;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "neg": // Info neg(final Variable A, ManagerTempVariables manager)
 			//%s = -%s;
-			sb.append( String.format("%s = -%s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = -%s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "det": // Info det( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "trace": // Info trace( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "min": // Info min( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "abs": // Info abs( final Variable A , ManagerTempVariables manager)
 			//%s = Math.abs(%s);
-			sb.append( String.format("%s = Math.abs(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.abs(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "rref": // Info rref( final Variable A , ManagerTempVariables manager)
-			//TODO MANUAL
 			sb.append(String.format("%s = (%s == 0) ? 0.0 : 1.0;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "sqrt": // Info sqrt(final Variable A, ManagerTempVariables manager)
 			//%s = Math.sqrt(a);
-			sb.append( String.format("%s = Math.sqrt(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.sqrt(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "pinv": // Info pinv( final Variable A , ManagerTempVariables manager)
-			//TODO MANUAL
 			sb.append(String.format("%s = 1.0 / %s;", output.getOperand(), A.getOperand()));
 			return sb.toString();
 		case "sin": // Info sin(final Variable A, ManagerTempVariables manager)
 			//%s = Math.sin(%s);
-			sb.append( String.format("%s = Math.sin(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.sin(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "exp": // Info exp(final Variable A, ManagerTempVariables manager)
 			//%s = Math.exp(%s);
-			sb.append( String.format("%s = Math.exp(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.exp(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
 		return sb.toString();
@@ -396,25 +407,25 @@ colExtent.array,colExtent.length,output.matrix);
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "eye": // Info eye( final Variable A , ManagerTempVariables manager)
-			sb.append( String.format("%s.reshape(%s, %s);", output.getName(), A.getOperand(), A.getOperand()) );
+			sb.append( String.format("%s.reshape(%s, %s);", output.getOperand(), A.getOperand(), A.getOperand()) );
 			//CommonOps_DDRM.setIdentity(output.matrix);
-			sb.append( String.format(formatCommonOps1, "setIdentity", output.getName()) );
+			sb.append( String.format(formatCommonOps1, "setIdentity", output.getOperand()) );
 			return sb.toString();
 		case "neg": // Info neg(final Variable A, ManagerTempVariables manager)
 			//%s = -%s;
-			sb.append( String.format("%s = -%s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = -%s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "min": // Info min( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "abs": // Info abs( final Variable A , ManagerTempVariables manager)
 			//%s = Math.abs(%s);
-			sb.append( String.format("%s = Math.abs(%s);", output.getName(), A.getName()) );
+			sb.append( String.format("%s = Math.abs(%s);", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		case "max": // Info max( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
-			sb.append( String.format("%s = %s;", output.getName(), A.getName()) );
+			sb.append( String.format("%s = %s;", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
 		return sb.toString();
@@ -471,12 +482,12 @@ output.matrix.reshape(N,1);
 for (int i = 0; i < N; i++) {
 output.matrix.data[i] = mA.unsafe_get(i,i);
 			*/
-			//TODO MANUAL
+			sb.append("//TODO: " + op);//TODO MANUAL
 			return sb.toString();
 		case "log": // Info log(final Variable A, ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), A.getName()) );
 			//CommonOps_DDRM.elementLog(a, out);
-			sb.append( String.format(formatCommonOps2, "elementLog", A.getName(), output) );
+			sb.append( String.format(formatCommonOps2, "elementLog", A.getName(), output.getName()) );
 			return sb.toString();
 		case "max": // Info max( final Variable A , ManagerTempVariables manager)
 			//%s = CommonOps_DDRM.elementMax(%s);
@@ -494,7 +505,7 @@ output.matrix.reshape(mA.matrix.numRows, mA.matrix.numCols);
 if( !CommonOps_DDRM.invert(mA.matrix,output.matrix) )
 throw new RuntimeException("Inverse failed!");
 			*/
-			//TODO MANUAL
+			sb.append("//TODO: " + op);//TODO MANUAL
 			return sb.toString();
 		case "eye": // Info eye( final Variable A , ManagerTempVariables manager)
 			sb.append( String.format(formatReshape, output.getName(), A.getName(), A.getName()) );
@@ -588,7 +599,54 @@ throw new RuntimeException("Inverse failed!");
 	}
 
 	private static String copyROp(String[] operands, CodeOperation codeOp) {
-		return "//copyOp: " + codeOp.toString();
+    	Extents extents = new Extents();
+
+    	ArrayExtent rowExtent = new ArrayExtent();
+    	ArrayExtent colExtent = new ArrayExtent();
+    	
+    	StringBuilder sb = new StringBuilder();
+    	
+        if( codeOp.range.size() == 1 ) {
+        	sb.append( String.format("//if( !MatrixFeatures_DDRM.isVector(%s))", codeOp.input.get(0).getOperand() ) );
+        	sb.append( "\tthrow new Exception(\"Source must be a vector for copy into elements\");" );
+            if( extents.extractSimpleExtents(codeOp.range.get(0),false,-1)) {
+                int length = extents.col1-extents.col0+1;
+//                if( msrc.getNumElements() != length )
+//                    throw new IllegalArgumentException("Source vector not the right length.");
+//                if( extents.col1+1 > mdst.getNumElements() )
+//                    throw new IllegalArgumentException("Requested range is outside of dst length");
+                sb.append( String.format("System.arraycopy(%s.data,0,%s.data,%d,%d);", codeOp.input.get(0).getOperand(), codeOp.output.getOperand(), extents.col0, length ));
+            } else {
+            	throw new IllegalArgumentException("Complex target ranges can not be compiled.");
+//            	colExtent.extractArrayExtent(codeOp.range.get(0),-1);
+////                if( colExtent.length > msrc.getNumElements() )
+////                    throw new IllegalArgumentException("src doesn't have enough elements");
+//                for (int i = 0; i < colExtent.length; i++) {
+//                    mdst.data[colExtent.array[i]] = msrc.data[i];
+//                }
+            }
+        } else if( codeOp.range.size() == 2 ) {
+            if(extents.extractSimpleExtents(codeOp.range.get(0),true,-1) &&
+            		extents.extractSimpleExtents(codeOp.range.get(1),false,-1) ) {
+
+                int numRows = extents.row1 - extents.row0 + 1;
+                int numCols = extents.col1 - extents.col0 + 1;
+
+                sb.append( String.format("CommonOps_DDRM.extract(%s, 0, %d, 0, %d, %s, %d, %d);", 
+                		codeOp.input.get(0).getOperand(), numRows, numCols, codeOp.output.getOperand(), extents.row0, extents.col0 ) );
+            } else {
+            	throw new IllegalArgumentException("Complex target ranges can not be compiled.");
+//            	rowExtent.extractArrayExtent(codeOp.range.get(0),mdst.numRows);
+//            	colExtent.extractArrayExtent(codeOp.range.get(1),mdst.numCols);
+//
+//                CommonOps_DDRM.insert(msrc, mdst, rowExtent.array, rowExtent.length,
+//                        colExtent.array, colExtent.length);
+            }
+        } else {
+            throw new RuntimeException("Unexpected number of ranges.  Should have been caught earlier");
+        }
+		//TODO CommonOps_DDRM.extract(src, 0, src.numRows, 0, src.numCols, dst, range[0].start, range[1].start);
+		return sb.toString();
 	}
 	
 	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {

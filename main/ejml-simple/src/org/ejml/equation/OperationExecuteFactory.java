@@ -42,28 +42,28 @@ public class OperationExecuteFactory implements IOperationFactory {
 	public OperationExecuteFactory() {
 	}
 
-    public static class Extents
-    {
-        int row0,row1;
-        int col0,col1;
-    }
-
-    public static class ArrayExtent
-    {
-        int array[];
-        int length;
-
-        public ArrayExtent() {
-            array = new int[1];
-        }
-
-        public void setLength( int length ) {
-            if( length > array.length ) {
-                array = new int[ length ];
-            }
-            this.length = length;
-        }
-    }
+//    public static class Extents
+//    {
+//        int row0,row1;
+//        int col0,col1;
+//    }
+//
+//    public static class ArrayExtent
+//    {
+//        int array[];
+//        int length;
+//
+//        public ArrayExtent() {
+//            array = new int[1];
+//        }
+//
+//        public void setLength( int length ) {
+//            if( length > array.length ) {
+//                array = new int[ length ];
+//            }
+//            this.length = length;
+//        }
+//    }
 
     /* (non-Javadoc)
 	 * @see org.ejml.equation.IOperationFactory#multiply(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
@@ -840,9 +840,9 @@ public class OperationExecuteFactory implements IOperationFactory {
 	public Operation copy( final Variable src , final Variable dst , final List<Variable> range ) {
         if( src instanceof VariableMatrix && dst instanceof VariableMatrix ) {
             return new Operation("copyR-mm") {
-            	OperationExecuteFactory.Extents extents = new OperationExecuteFactory.Extents();
-                OperationExecuteFactory.ArrayExtent rowExtent = new OperationExecuteFactory.ArrayExtent();
-                OperationExecuteFactory.ArrayExtent colExtent = new OperationExecuteFactory.ArrayExtent();
+            	Extents extents = new Extents();
+                ArrayExtent rowExtent = new ArrayExtent();
+                ArrayExtent colExtent = new ArrayExtent();
 
                 @Override
                 public void process() {
@@ -854,7 +854,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                         if( !MatrixFeatures_DDRM.isVector(msrc) ) {
                             throw new ParseError("Source must be a vector for copy into elements");
                         }
-                        if(extractSimpleExtents(range.get(0),extents,false,mdst.getNumElements())) {
+                        if( extents.extractSimpleExtents(range.get(0),false,mdst.getNumElements())) {
                             int length = extents.col1-extents.col0+1;
                             if( msrc.getNumElements() != length )
                                 throw new IllegalArgumentException("Source vector not the right length.");
@@ -862,7 +862,7 @@ public class OperationExecuteFactory implements IOperationFactory {
                                 throw new IllegalArgumentException("Requested range is outside of dst length");
                             System.arraycopy(msrc.data,0,mdst.data,extents.col0,length);
                         } else {
-                            extractArrayExtent(range.get(0),mdst.getNumElements(),colExtent);
+                        	colExtent.extractArrayExtent(range.get(0),mdst.getNumElements());
                             if( colExtent.length > msrc.getNumElements() )
                                 throw new IllegalArgumentException("src doesn't have enough elements");
                             for (int i = 0; i < colExtent.length; i++) {
@@ -870,16 +870,16 @@ public class OperationExecuteFactory implements IOperationFactory {
                             }
                         }
                     } else if( range.size() == 2 ) {
-                        if(extractSimpleExtents(range.get(0),extents,true,mdst.getNumRows()) &&
-                                extractSimpleExtents(range.get(1),extents,false,mdst.getNumCols()) ) {
+                        if(extents.extractSimpleExtents(range.get(0),true,mdst.getNumRows()) &&
+                        		extents.extractSimpleExtents(range.get(1),false,mdst.getNumCols()) ) {
 
                             int numRows = extents.row1 - extents.row0 + 1;
                             int numCols = extents.col1 - extents.col0 + 1;
 
                             CommonOps_DDRM.extract(msrc, 0, numRows, 0, numCols, mdst, extents.row0, extents.col0);
                         } else {
-                            extractArrayExtent(range.get(0),mdst.numRows,rowExtent);
-                            extractArrayExtent(range.get(1),mdst.numCols,colExtent);
+                        	rowExtent.extractArrayExtent(range.get(0),mdst.numRows);
+                        	colExtent.extractArrayExtent(range.get(1),mdst.numCols);
 
                             CommonOps_DDRM.insert(msrc, mdst, rowExtent.array, rowExtent.length,
                                     colExtent.array, colExtent.length);
@@ -891,9 +891,9 @@ public class OperationExecuteFactory implements IOperationFactory {
             };
         } else if( src instanceof VariableScalar && dst instanceof VariableMatrix ) {
             return new Operation("copyR-sm") {
-            	OperationExecuteFactory.Extents extents = new OperationExecuteFactory.Extents();
-            	OperationExecuteFactory.ArrayExtent rowExtent = new OperationExecuteFactory.ArrayExtent();
-            	OperationExecuteFactory.ArrayExtent colExtent = new OperationExecuteFactory.ArrayExtent();
+            	Extents extents = new Extents();
+            	ArrayExtent rowExtent = new ArrayExtent();
+            	ArrayExtent colExtent = new ArrayExtent();
 
                 @Override
                 public void process() {
@@ -902,17 +902,17 @@ public class OperationExecuteFactory implements IOperationFactory {
                     DMatrixRMaj mdst = ((VariableMatrix)dst).matrix;
 
                     if( range.size() == 1 ) {
-                        if(extractSimpleExtents(range.get(0),extents,false,mdst.getNumElements())) {
+                        if(extents.extractSimpleExtents(range.get(0),false,mdst.getNumElements())) {
                             Arrays.fill(mdst.data,extents.col0,extents.col1+1,msrc);
                         } else {
-                            extractArrayExtent(range.get(0),mdst.getNumElements(),colExtent);
+                        	colExtent.extractArrayExtent(range.get(0),mdst.getNumElements());
                             for (int i = 0; i < colExtent.length; i++) {
                                 mdst.data[colExtent.array[i]] = msrc;
                             }
                         }
                     } else if( range.size() == 2 ) {
-                        if(extractSimpleExtents(range.get(0),extents,true,mdst.getNumRows()) &&
-                                extractSimpleExtents(range.get(1),extents,false,mdst.getNumCols()) ) {
+                        if(extents.extractSimpleExtents(range.get(0),true,mdst.getNumRows()) &&
+                        		extents.extractSimpleExtents(range.get(1),false,mdst.getNumCols()) ) {
 
                             extents.row1 += 1;
                             extents.col1 += 1;
@@ -924,8 +924,8 @@ public class OperationExecuteFactory implements IOperationFactory {
                                 }
                             }
                         } else {
-                            extractArrayExtent(range.get(0),mdst.numRows,rowExtent);
-                            extractArrayExtent(range.get(1),mdst.numCols,colExtent);
+                        	rowExtent.extractArrayExtent(range.get(0),mdst.numRows);
+                        	colExtent.extractArrayExtent(range.get(1),mdst.numCols);
 
                             for (int i = 0; i < rowExtent.length; i++) {
                                 for (int j = 0; j < colExtent.length; j++) {
@@ -1688,10 +1688,10 @@ public class OperationExecuteFactory implements IOperationFactory {
 
         ret.op = new Operation("extract") {
 
-        	OperationExecuteFactory.Extents extents = new OperationExecuteFactory.Extents();
+        	Extents extents = new Extents();
 
-        	OperationExecuteFactory.ArrayExtent rowExtent = new OperationExecuteFactory.ArrayExtent();
-        	OperationExecuteFactory.ArrayExtent colExtent = new OperationExecuteFactory.ArrayExtent();
+        	ArrayExtent rowExtent = new ArrayExtent();
+        	ArrayExtent colExtent = new ArrayExtent();
 
             @Override
             public void process() {
@@ -1699,25 +1699,25 @@ public class OperationExecuteFactory implements IOperationFactory {
                 DMatrixRMaj A = ((VariableMatrix)inputs.get(0)).matrix;
 
                 if( inputs.size() == 2  ) {
-                    if( extractSimpleExtents(inputs.get(1), extents, false, A.getNumElements()) ) {
+                    if( extents.extractSimpleExtents(inputs.get(1), false, A.getNumElements()) ) {
                         extents.col1 += 1;
                         output.matrix.reshape(1,extents.col1-extents.col0);
                         System.arraycopy(A.data,extents.col0,output.matrix.data,0,extents.col1-extents.col0);
                     } else {
-                        extractArrayExtent(inputs.get(1),A.getNumElements(),colExtent);
+                    	colExtent.extractArrayExtent(inputs.get(1),A.getNumElements());
                         output.matrix.reshape(1, colExtent.length);
                         CommonOps_DDRM.extract(A,
                                 colExtent.array, colExtent.length, output.matrix);
                     }
-                } else if( extractSimpleExtents(inputs.get(1), extents, true, A.numRows) &&
-                        extractSimpleExtents(inputs.get(2), extents, false, A.numCols)) {
+                } else if( extents.extractSimpleExtents(inputs.get(1), true, A.numRows) &&
+                		extents.extractSimpleExtents(inputs.get(2), false, A.numCols)) {
                     extents.row1 += 1;
                     extents.col1 += 1;
                     output.matrix.reshape(extents.row1-extents.row0,extents.col1-extents.col0);
                     CommonOps_DDRM.extract(A,extents.row0,extents.row1,extents.col0,extents.col1,output.matrix,0,0);
                 } else {
-                    extractArrayExtent(inputs.get(1),A.numRows,rowExtent);
-                    extractArrayExtent(inputs.get(2),A.numCols,colExtent);
+                	rowExtent.extractArrayExtent(inputs.get(1),A.numRows);
+                	colExtent.extractArrayExtent(inputs.get(2),A.numCols);
 
                     output.matrix.reshape(rowExtent.length, colExtent.length);
                     CommonOps_DDRM.extract(A,
@@ -1832,60 +1832,60 @@ public class OperationExecuteFactory implements IOperationFactory {
         return ret;
     }
 
-    /**
-     * See if a simple sequence can be used to extract the array.  A simple extent is a continuous block from
-     * a min to max index
-     *
-     * @return true if it is a simple range or false if not
-     */
-    private boolean extractSimpleExtents(Variable var, Extents extents, boolean row, int length) {
-        int lower;
-        int upper;
-        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
-            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-            if( sequence.getType() == IntegerSequence.Type.FOR ) {
-                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-                seqFor.initialize(length);
-                if( seqFor.getStep() == 1 ) {
-                    lower = seqFor.getStart();
-                    upper = seqFor.getEnd();
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } else if( var.getType() == VariableType.SCALAR ) {
-            lower = upper = ((VariableInteger)var).value;
-        } else {
-            throw new RuntimeException("How did a bad variable get put here?!?!");
-        }
-        if( row ) {
-            extents.row0 = lower;
-            extents.row1 = upper;
-        } else {
-            extents.col0 = lower;
-            extents.col1 = upper;
-        }
-        return true;
-    }
-
-    private void extractArrayExtent( Variable var , int length , ArrayExtent extent ) {
-        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
-            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-            sequence.initialize(length-1);
-            extent.setLength(sequence.length());
-            int index = 0;
-            while( sequence.hasNext() ) {
-                extent.array[index++] = sequence.next();
-            }
-        } else if( var.getType() == VariableType.SCALAR ) {
-            extent.setLength(1);
-            extent.array[0] = ((VariableInteger)var).value;
-        } else {
-            throw new RuntimeException("How did a bad variable get put here?!?!");
-        }
-    }
+//    /**
+//     * See if a simple sequence can be used to extract the array.  A simple extent is a continuous block from
+//     * a min to max index
+//     *
+//     * @return true if it is a simple range or false if not
+//     */
+//    private boolean extractSimpleExtents(Variable var, Extents extents, boolean row, int length) {
+//        int lower;
+//        int upper;
+//        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
+//            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
+//            if( sequence.getType() == IntegerSequence.Type.FOR ) {
+//                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+//                seqFor.initialize(length);
+//                if( seqFor.getStep() == 1 ) {
+//                    lower = seqFor.getStart();
+//                    upper = seqFor.getEnd();
+//                } else {
+//                    return false;
+//                }
+//            } else {
+//                return false;
+//            }
+//        } else if( var.getType() == VariableType.SCALAR ) {
+//            lower = upper = ((VariableInteger)var).value;
+//        } else {
+//            throw new RuntimeException("How did a bad variable get put here?!?!");
+//        }
+//        if( row ) {
+//            extents.row0 = lower;
+//            extents.row1 = upper;
+//        } else {
+//            extents.col0 = lower;
+//            extents.col1 = upper;
+//        }
+//        return true;
+//    }
+//
+//    private void extractArrayExtent( Variable var , int length , ArrayExtent extent ) {
+//        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
+//            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
+//            sequence.initialize(length-1);
+//            extent.setLength(sequence.length());
+//            int index = 0;
+//            while( sequence.hasNext() ) {
+//                extent.array[index++] = sequence.next();
+//            }
+//        } else if( var.getType() == VariableType.SCALAR ) {
+//            extent.setLength(1);
+//            extent.array[0] = ((VariableInteger)var).value;
+//        } else {
+//            throw new RuntimeException("How did a bad variable get put here?!?!");
+//        }
+//    }
 
     /* (non-Javadoc)
 	 * @see org.ejml.equation.IOperationFactory#matrixConstructor(org.ejml.equation.MatrixConstructor)

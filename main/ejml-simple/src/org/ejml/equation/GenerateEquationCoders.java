@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -612,7 +613,8 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			OptimizeCodeOperations optimizer, Equation eq, Sequence sequence, String equationText) {
+			HashMap<String, String> lookups, OptimizeCodeOperations optimizer, 
+			Equation eq, Sequence sequence, String equationText) {
 		
 		body.add("");
 		String name = String.format("%s_Coded", testName);
@@ -621,24 +623,32 @@ public class GenerateEquationCoders {
 		body.addAll(Arrays.asList(sb.toString().split("\n")));
 		//body.add("}");
 	}
+	
 
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
 		ArrayList<String> body = new ArrayList<>();
 		final Pattern compilePattern = Pattern.compile("(\\w+)\\.compile\\((\\\"[^\\\"]*\\\")");
 		final Pattern processPattern = Pattern.compile("(\\w+)\\.process\\((\\\"[^\\\"]*\\\")");
-		final Pattern assignmentPattern = Pattern.compile("(\\w+)\\s*=");
+		final Pattern assignmentPattern = Pattern.compile("(\\w+).*=");
 
 		final Pattern declInt = Pattern.compile("int\\s+(\\w+)");
 		final Pattern declDouble = Pattern.compile("double\\s+(\\w+)");
-		final Pattern declMatrix = Pattern.compile("SimpleMatrix\\s+(\\w+)");
-
+		final Pattern declSimpleMatrix = Pattern.compile("SimpleMatrix\\s+(\\w+)");
+		final Pattern declDMatrixRMaj = Pattern.compile("DMatrixRMaj\\s+(\\w+)");
 		final Pattern aliasPattern = Pattern.compile("\\.alias\\(([^}]*)\\)");
+		final Pattern lookupPattern = Pattern.compile("eq\\.lookup(\\w+)\\(([^\\)]*)\\)");
+		final Pattern lookupAssignPattern = Pattern.compile("(\\w+)\\s+(\\w+)\\s*=\\s*eq\\.lookup(\\w+)\\(([^\\)]*)\\)");
+		
+		final String prefix = "    ";
 
 		ArrayList<String> integers = new ArrayList<>();
 		ArrayList<String> doubles = new ArrayList<>();
 		ArrayList<String> matrices = new ArrayList<>();
 		ArrayList<String> aliases = new ArrayList<>();
+		
+		HashMap<String, String> lookups = new HashMap<>();
 
+		body.add(prefix+"@Test");
 		body.add(line);
 		int nCompile = 0;
 		int nProcess = 0;
@@ -674,14 +684,28 @@ public class GenerateEquationCoders {
 			if (matcher.find()) {
 				doubles.add(matcher.group(1));
 			}
-			matcher = declMatrix.matcher(line);
+			matcher = declSimpleMatrix.matcher(line);
 			if (matcher.find()) {
 				matrices.add(matcher.group(1));
 			}
-
+			matcher = declDMatrixRMaj.matcher(line);
+			if (matcher.find()) {
+				matrices.add(matcher.group(1));
+			}
 			matcher = aliasPattern.matcher(line);
 			if (matcher.find()) {
 				aliases.add(matcher.group(1));
+			}
+			
+			matcher = lookupPattern.matcher(line);
+			if (matcher.find()) {
+				System.out.println(line);
+				matcher = lookupAssignPattern.matcher(line);
+				if (matcher.find()) {
+//					for (int g = 1; g <= matcher.groupCount(); g++) System.out.printf("[%s]", matcher.group(g));
+//					System.out.println();
+					lookups.put(unquote(matcher.group(4)), matcher.group(2));
+				}
 			}
 		}
 		Equation eq = new Equation();
@@ -696,6 +720,7 @@ public class GenerateEquationCoders {
 				nAssign++;
 
 				HashMap<String, String> names = new HashMap<>();
+				HashMap<String, String> constants = new HashMap<>();
 				for (String a : aliases) {
 					String[] f = a.trim().split(",");
 					for (int i = 0; i < f.length; i += 2) {
@@ -709,6 +734,7 @@ public class GenerateEquationCoders {
 								integers.add(name);
 							}
 							names.put(name, name);
+							constants.put(name, var);
 						} else {
 							names.put(var, name);
 						}
@@ -736,7 +762,6 @@ public class GenerateEquationCoders {
 					}
 				}
 				try {
-					String prefix = "    ";
 					Sequence sequence = eq.compile(equationText);
 					List<Operation> operations = sequence.getOperations();
 					OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
@@ -745,11 +770,11 @@ public class GenerateEquationCoders {
 					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
 					String ret = optimizer.getReturnVariable(eq);
 					String callCompiled = String.format("%s%s%s%s_Coded(%s);", prefix, prefix, ret, testName,
-							optimizer.getCallingSequence(eq));
+							optimizer.getCallingSequence(constants, eq));
 					body.add(callCompiled);
-					body.add(prefix+prefix + optimizer.getAssert(eq));
+					body.add(prefix+prefix + optimizer.getAssert(constants, lookups, eq));
 					body.add(endParen);
-					writeCodedEquationMethod(body, prefix, testName, optimizer, eq, sequence, equationText);
+					writeCodedEquationMethod(body, prefix, testName, lookups, optimizer, eq, sequence, equationText);
 					body.forEach(code::println);
 					code.println();
 					code.println();
@@ -779,6 +804,21 @@ public class GenerateEquationCoders {
 	}
 
 	public static void main(String[] args) {
+		HashSet<String> skips = new HashSet<>();
+		skips.add("compile_parentheses_extract_IndexMath");
+		skips.add("compile_constructMatrix_commas");
+		skips.add("print");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		skips.add("");
+		
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
 		String[] tests = { "TestEquation.java", "TestOperation.java" };
@@ -795,7 +835,9 @@ public class GenerateEquationCoders {
 					Matcher matcher = method.matcher(line);
 					if (matcher.find()) {
 						nTests++;
-//						if (! matcher.group(1).equals("compile_assign_submatrix"))
+						if (skips.contains(matcher.group(1)))
+							continue;
+//						if (! matcher.group(1).equals("divide_matrix_scalar"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;

@@ -250,12 +250,13 @@ public class OptimizeCodeOperations {
 
 	final String declFormatWithValue = "%s%s%-10s\t%s = %s";
     final String declFormatInitialize = "%s%s%-10s\t%s = new %s(1,1)";
+    final String declFormatScalar = "%s%s%-10s %s = 0";
     final String declFormat = "%s%s%-10s\t%s";
     final String returnFormat = "%s%sreturn %s;\n";
     
     final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\(\\s*(\\w+)\\.numRows\\,\\s*(\\w+)\\.numCols");
     
-    public String getAssert( Equation eq ) {
+    public String getAssert( HashMap<String, String> constants, HashMap<String, String> lookups, Equation eq ) {
     	String ret = "";
     	if (assignmentTarget != null) {
 	    	HashMap<String, Variable> variables = eq.getVariables();
@@ -265,7 +266,19 @@ public class OptimizeCodeOperations {
 	    		} else if (variable.getName().equals("pi")) {
 	    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
 	    			//assertTrue(new SimpleMatrix(A_coded).isIdentical(A, 1e-15));
-	    			ret = String.format("assertTrue(new SimpleMatrix(%s_coded).isIdentical(%s.getDDRM(),1e-15));", variable.getName(), variable.getName());
+	    			String var = variable.getName();
+	    			String l = lookups.get(var);
+	    			if (l != null)
+	    				var = l;
+	    			if (constants.containsKey(variable.getName())) {
+	    				var = constants.get(variable.getName());
+	    			}
+	    			
+	    			ret = String.format("assertTrue(isIdentical(%s_coded, %s));", variable.getName(), var);
+//	    			if (assignmentTarget.getType() != VariableType.MATRIX) {
+//	    				System.out.println( assignmentTarget.type.toString() + " " + ret);
+//	    				ret += " // " + assignmentTarget.getClass()
+//	    			}
 	    		}
 	    	}
     	}
@@ -273,7 +286,7 @@ public class OptimizeCodeOperations {
     }
     
    
-    public String getCallingSequence( Equation eq) {
+    public String getCallingSequence( HashMap<String, String> constants, Equation eq) {
     	HashMap<String, Variable> variables = eq.getVariables();
     	StringBuilder call = new StringBuilder();
     	boolean notFirst = false;
@@ -284,8 +297,13 @@ public class OptimizeCodeOperations {
     		} else {
     			if (notFirst)
     				call.append(", ");
-    			call.append(variable.getName());
-    			call.append(".getDDRM()");
+    			if (constants.containsKey(variable.getName())) {
+    				call.append( constants.get(variable.getName()) );
+    			} else {
+	    			call.append(variable.getName());
+	    			if (variable.getType() == VariableType.MATRIX)
+	    				call.append(".getDDRM()");
+    			}
     			notFirst = true;
     		}
     	}
@@ -333,7 +351,7 @@ public class OptimizeCodeOperations {
     			if (notFirst)
     				header.append(", ");
     			String type = getJavaType(variable);
-    			header.append(String.format(declFormat, "", "", type, variable.getName()) );
+   				header.append(String.format(declFormat, "", "", type, variable.getName()) );
     			notFirst = true;
     		}
     	}
@@ -357,11 +375,11 @@ public class OptimizeCodeOperations {
 			}
     	}    	
     	for (Usage usage : integerUsages) {
-    		body.append(String.format(declFormat, prefix, prefix, getJavaType(usage.variable), usage.variable.getName()) );
+    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
 			body.append(";\n");
     	}
     	for (Usage usage : doubleUsages) {
-    		body.append(String.format(declFormat, prefix, prefix, getJavaType(usage.variable), usage.variable.getName()) );
+    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
 			body.append(";\n");
     	}
     	for (Usage usage : matrixUsages) {
