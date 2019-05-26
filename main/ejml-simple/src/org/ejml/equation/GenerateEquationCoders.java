@@ -699,12 +699,16 @@ public class GenerateEquationCoders {
 			
 			matcher = lookupPattern.matcher(line);
 			if (matcher.find()) {
+				String alias = matcher.group(2);
+				String type = matcher.group(1);
 				System.out.println(line);
 				matcher = lookupAssignPattern.matcher(line);
 				if (matcher.find()) {
 //					for (int g = 1; g <= matcher.groupCount(); g++) System.out.printf("[%s]", matcher.group(g));
 //					System.out.println();
 					lookups.put(unquote(matcher.group(4)), matcher.group(2));
+				} else {
+					lookups.put(unquote(alias), String.format("eq.lookup%s(%s)", type, alias) );
 				}
 			}
 		}
@@ -823,11 +827,20 @@ public class GenerateEquationCoders {
 		Path path = Paths.get("test/org/ejml/equation");
 		String[] tests = { "TestEquation.java", "TestOperation.java" };
 		try {
-			PrintStream code = new PrintStream("code.java"); // System.out;
+			Path in = path.resolve("TestCoded.java");
+			List<String> template = Files.readAllLines(path.resolve(path));
+			PrintStream code = new PrintStream(path.toFile()); // System.out;
+			Iterator<String> it = template.iterator();
+			while (it.hasNext()) {
+				String line = it.next();
+				if (line.trim().equals("@Test"))
+					break;
+				code.println(line);
+			}
 			for (String test : tests) {
 				List<String> lines = Files.readAllLines(path.resolve(test));
 				System.out.println(test + " " + lines.size());
-				Iterator<String> it = lines.iterator();
+				it = lines.iterator();
 				int nTests = 0;
 				int nCoded = 0;
 				while (it.hasNext()) {
@@ -837,7 +850,7 @@ public class GenerateEquationCoders {
 						nTests++;
 						if (skips.contains(matcher.group(1)))
 							continue;
-//						if (! matcher.group(1).equals("divide_matrix_scalar"))
+//						if (! matcher.group(1).equals("copy_submatrix_scalar_case1"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
@@ -846,6 +859,7 @@ public class GenerateEquationCoders {
 				}
 				System.out.printf("%d tests; %d coded\n", nTests, nCoded);
 			}
+			code.println("}");
 		} catch (Exception x) {
 			x.printStackTrace();
 		}
