@@ -57,6 +57,11 @@ public abstract class VariableScalar extends Variable {
         DOUBLE,
         COMPLEX
     }
+    
+    @Override
+    public boolean isConstant() {
+    	return this.getName().endsWith("}");
+    }
 
     @Override
 	public String getOperand() {

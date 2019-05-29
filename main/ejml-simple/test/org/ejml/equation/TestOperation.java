@@ -1045,6 +1045,22 @@ public class TestOperation {
     }
 
     @Test
+    public void extract_two_case4() {
+        Equation eq = new Equation();
+
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3, 4, -1, 1, rand);
+
+        eq.alias(b, "b");
+        int i1 = 4; 
+        int i2 = 5;
+        int j1 = 1;
+        int j2 = 3;
+        eq.alias(i1, "i1", i2, "i2", j1, "j1", j2, "j2");
+        eq.process("c=b(i1:i2,j1:j2)");
+        DMatrixRMaj found = eq.lookupDDRM("c");
+    }
+    
+    @Test
     public void extractScalar_one() {
         Equation eq = new Equation();
 

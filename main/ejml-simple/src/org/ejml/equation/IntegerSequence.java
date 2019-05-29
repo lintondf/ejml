@@ -78,6 +78,17 @@ public interface IntegerSequence {
         public Explicit(TokenList.Token single ) {
             sequence.add( (VariableInteger)single.getVariable() );
         }
+        
+        @Override
+        public String toString() {
+        	StringBuilder sb = new StringBuilder();
+        	sb.append("Explicit: ");
+        	for (VariableInteger v : sequence) {
+        		sb.append( v.getOperand() );
+        		sb.append(",");
+        	}
+        	return sb.toString();
+        }
 
         @Override
         public int length() {
@@ -135,6 +146,19 @@ public interface IntegerSequence {
             this.start = (VariableInteger)start.getVariable();
             this.step = step == null ? null : (VariableInteger)step.getVariable();
             this.end = (VariableInteger)end.getVariable();
+        }
+
+        @Override
+        public String toString() {
+        	StringBuilder sb = new StringBuilder();
+        	sb.append("For: ");
+        	sb.append( start.getOperand() );
+        	sb.append(",");
+        	if (step != null) sb.append( step.getOperand() );
+        	sb.append(",");
+        	sb.append( end.getOperand() );
+        	sb.append(",");
+        	return sb.toString();
         }
 
         @Override
@@ -221,6 +245,19 @@ public interface IntegerSequence {
             } while( t != null && t.previous != end);
         }
 
+        @Override 
+        public String toString() {
+        	StringBuilder sb = new StringBuilder();
+        	sb.append("Combined[");
+        	for (IntegerSequence v : sequences) {
+        		sb.append( v.toString() );
+        		sb.append(";");
+        	}
+        	sb.append("]");
+        	return sb.toString();
+        }
+        
+        
         @Override
         public int length() {
             int total = 0;
@@ -292,6 +329,17 @@ public interface IntegerSequence {
         public Range(TokenList.Token start, TokenList.Token step ) {
             this.start = start == null ? null : (VariableInteger)start.getVariable();
             this.step = step == null ? null : (VariableInteger)step.getVariable();
+        }
+
+        @Override
+        public String toString() {
+        	StringBuilder sb = new StringBuilder();
+        	sb.append("Range: ");
+        	if (start != null) sb.append( start.getOperand() );
+        	sb.append(",");
+        	if (step != null) sb.append( step.getOperand() );
+        	sb.append(",");
+        	return sb.toString();
         }
 
         @Override

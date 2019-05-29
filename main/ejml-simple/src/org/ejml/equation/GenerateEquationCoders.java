@@ -701,7 +701,7 @@ public class GenerateEquationCoders {
 			if (matcher.find()) {
 				String alias = matcher.group(2);
 				String type = matcher.group(1);
-				System.out.println(line);
+//				System.out.println(line);
 				matcher = lookupAssignPattern.matcher(line);
 				if (matcher.find()) {
 //					for (int g = 1; g <= matcher.groupCount(); g++) System.out.printf("[%s]", matcher.group(g));
@@ -785,11 +785,12 @@ public class GenerateEquationCoders {
 					return true;
 				} catch (Exception x) {
 					System.err.printf("In %s: %s\n", testName, x.getMessage() );
+//					throw x;
 					return false;
 				}
 			}
 		}
-		System.err.printf("In %s: %d, %d, %d\n", testName, nCompile, nProcess, nAssign );
+		System.err.printf("In %s: %d, %d, %d; not exactly one compile() or process()\n", testName, nCompile, nProcess, nAssign );
 //		if (testName.equals("compile_assign_submatrix")) {
 //			Random rand = new Random();
 //	        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
@@ -813,23 +814,14 @@ public class GenerateEquationCoders {
 		skips.add("compile_constructMatrix_commas");
 		skips.add("print");
 		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
-		skips.add("");
 		
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
 		String[] tests = { "TestEquation.java", "TestOperation.java" };
 		try {
 			Path in = path.resolve("TestCoded.java");
-			List<String> template = Files.readAllLines(path.resolve(path));
-			PrintStream code = new PrintStream(path.toFile()); // System.out;
+			List<String> template = Files.readAllLines(in);
+			PrintStream code = new PrintStream(in.toFile()); // System.out;
 			Iterator<String> it = template.iterator();
 			while (it.hasNext()) {
 				String line = it.next();
@@ -850,7 +842,7 @@ public class GenerateEquationCoders {
 						nTests++;
 						if (skips.contains(matcher.group(1)))
 							continue;
-//						if (! matcher.group(1).equals("copy_submatrix_scalar_case1"))
+//						if (! matcher.group(1).equals("compile_parentheses_extractScalar"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;

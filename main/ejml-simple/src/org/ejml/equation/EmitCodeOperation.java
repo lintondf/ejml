@@ -1,10 +1,17 @@
 package org.ejml.equation;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.MatrixFeatures_DDRM;
+import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.equation.MatrixConstructor.Item;
+import org.ejml.interfaces.linsol.LinearSolverDense;
 
 public class EmitCodeOperation {
 
@@ -12,6 +19,9 @@ public class EmitCodeOperation {
 	final static String formatGeneral3 = "%s.%s( %s, %s, %s );";
 	final static String formatGeneral2 = "%s.%s( %s, %s );";
 	final static String formatGeneral1 = "%s.%s( %s );";
+	final static String formatCommonOps6 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s, %s );";
+	final static String formatCommonOps5 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s );";
+	final static String formatCommonOps4 = "CommonOps_DDRM.%s( %s, %s, %s, %s );";
 	final static String formatCommonOps3 = "CommonOps_DDRM.%s( %s, %s, %s );";
 	final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );";
 	final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );";
@@ -65,19 +75,11 @@ public class EmitCodeOperation {
 			sb.append( String.format(formatCommonOps3, "subtract", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		case "solve": // Info solve( final Variable A , final Variable B , ManagerTempVariables manager)
-			/*
 			emitReshape(sb, output, A, B);
-LinearSolverDense<DMatrixRMaj> solver;
-DMatrixRMaj a = ((VariableMatrix)A).matrix;
-DMatrixRMaj b = ((VariableMatrix)B).matrix;
-if( solver == null ) {
-solver = LinearSolverFactory_DDRM.leastSquares(a.numRows,a.numCols);
-if( !solver.setA(a))
-throw new RuntimeException("Solver failed!");
-output.matrix.reshape(a.numCols,b.numCols);
-solver.solve(b, output.matrix);
-			*/
-			sb.append("//TODO: " + op);//TODO MANUAL
+			sb.append(String.format("LinearSolverDense<DMatrixRMaj> solver = LinearSolverFactory_DDRM.leastSquares(%s.numRows, %s.numCols);",
+					A.getOperand(), A.getOperand() ) );
+			sb.append(String.format("boolean ok = solver.setA(%s);", A.getOperand()));
+			sb.append(String.format("solver.solve(%s, %s);", B.getOperand(), output.getOperand()) );
 			return sb.toString();
 		case "dot": // Info dot( final Variable A , final Variable B , ManagerTempVariables manager)
 			sb.append(output.getOperand());
@@ -204,24 +206,13 @@ solver.solve(b, output.matrix);
 			sb.append( String.format(formatCommonOps2, "maxRows", A.getName(), output.getName()) );
 			return sb.toString();
 		case "extractScalar": // Info extractScalar( final List<Variable> inputs, ManagerTempVariables manager)
-			/*
-codeIntVariableInteger: int index = ((VariableInteger)inputs.get(1)).value;
-			//%s = A.get(index);
-			sb.append( String.format("%s = A.get(%s);", output.getName(), index.getName()) );
-codeIntVariableInteger: int row = ((VariableInteger) inputs.get(1)).value;
-codeIntVariableInteger: int col = ((VariableInteger) inputs.get(2)).value;
-			//%s = A.get(row, col);
-			sb.append( String.format("%s = A.get(%s, %s);", output.getName(), row.getName(), col.getName()) );
-DMatrixRMaj A = ((VariableMatrix)inputs.get(0)).matrix;
-if( inputs.size() == 2 ) {
-int index = ((VariableInteger)inputs.get(1)).value;
-output.value = A.get(index);
-} else {
-int row = ((VariableInteger) inputs.get(1)).value;
-int col = ((VariableInteger) inputs.get(2)).value;
-output.value = A.get(row, col);
-			*/
-			sb.append("//TODO: " + op);//TODO MANUAL
+            if( codeOp.input.size() == 2 ) {
+                sb.append(String.format("%s = %s.get(%s);", output.getOperand(), A.getOperand(), codeOp.input.get(1).getOperand() ));
+            } else {
+                sb.append(String.format("%s = %s.get(%s, %s);", output.getOperand(), A.getOperand(), 
+                		codeOp.input.get(1).getOperand(), codeOp.input.get(2).getOperand() ));
+            }
+			
 			return sb.toString();
 		case "rng": // Info rng( final Variable A , ManagerTempVariables manager)
 			sb.append("Random rand = new Random();");
@@ -242,39 +233,31 @@ output.value = A.get(row, col);
 			sb.append( String.format(formatCommonOps2, "sumCols", A.getName(), output.getName()) );
 			return sb.toString();
 		case "extract": // Info extract( final List<Variable> inputs, ManagerTempVariables manager)
-			/*
-						codeCommonOps: CommonOps_DDRM.extract(A,
-			codeCommonOps: CommonOps_DDRM.extract(A,extents.row0,extents.row1,extents.col0,extents.col1,output.matrix,0,0);
-			codeCommonOps: CommonOps_DDRM.extract(A,
-OperationExecuteFactory.Extents extents = new OperationExecuteFactory.Extents();
-OperationExecuteFactory.ArrayExtent rowExtent = new OperationExecuteFactory.ArrayExtent();
-OperationExecuteFactory.ArrayExtent colExtent = new OperationExecuteFactory.ArrayExtent();
-DMatrixRMaj A = ((VariableMatrix)inputs.get(0)).matrix;
-if( inputs.size() == 2  ) {
-if( extractSimpleExtents(inputs.get(1), extents, false, A.getNumElements()) ) {
-extents.col1 += 1;
-output.matrix.reshape(1,extents.col1-extents.col0);
-System.arraycopy(A.data,extents.col0,output.matrix.data,0,extents.col1-extents.col0);
-} else {
-extractArrayExtent(inputs.get(1),A.getNumElements(),colExtent);
-output.matrix.reshape(1, colExtent.length);
-CommonOps_DDRM.extract(A,
-colExtent.array, colExtent.length, output.matrix);
-} else if( extractSimpleExtents(inputs.get(1), extents, true, A.numRows) &&
-extractSimpleExtents(inputs.get(2), extents, false, A.numCols)) {
-extents.row1 += 1;
-extents.col1 += 1;
-output.matrix.reshape(extents.row1-extents.row0,extents.col1-extents.col0);
-CommonOps_DDRM.extract(A,extents.row0,extents.row1,extents.col0,extents.col1,output.matrix,0,0);
-} else {
-extractArrayExtent(inputs.get(1),A.numRows,rowExtent);
-extractArrayExtent(inputs.get(2),A.numCols,colExtent);
-output.matrix.reshape(rowExtent.length, colExtent.length);
-CommonOps_DDRM.extract(A,
-rowExtent.array,rowExtent.length,
-colExtent.array,colExtent.length,output.matrix);
-			*/
-			sb.append("//TODO: " + op);//TODO MANUAL
+//			System.out.print("Extract/output: ");
+//			System.out.println(codeOp.output);
+//			for (Variable i : codeOp.input) {
+//				System.out.print("Extract/input: ");
+//				System.out.println(i);
+//			}
+	    	CodeExtents codeExtents = new CodeExtents( codeOp.input, 1 );
+//	    	System.out.println( codeExtents.toString()); 
+	    	
+	    	String target = codeOp.output.getName();
+	    	String source = codeOp.input.get(0).getName();
+	    	String[] lastRowsCols = { source+".numRows-1", source+".numCols-1"};
+	    	
+	    	if (codeExtents.isBlock) {
+	    		sb.append(String.format(formatCommonOps6, "extract", source, 
+	    				codeExtents.codeSimpleStartRow(), codeExtents.codeSimpleStartCol(),
+	    				codeExtents.codeSimpleEndRow(lastRowsCols), codeExtents.codeSimpleEndCol(lastRowsCols),
+	    				target) );
+	    	} else {
+	    		sb.append(String.format(formatCommonOps6, "extract", source, 
+	    				codeExtents.codeComplexRowIndices(lastRowsCols), codeExtents.codeNumRows(lastRowsCols), 
+	    				codeExtents.codeComplexColIndices(lastRowsCols), codeExtents.codeNumCols(lastRowsCols),
+	    				target) );
+	    	}
+	    	
 			return sb.toString();
 		case "min_rows": // Info min_two( final Variable A , final Variable P , ManagerTempVariables manager)
 			emitReshape( sb, output, A, one );
@@ -463,28 +446,22 @@ colExtent.array,colExtent.length,output.matrix);
 	protected static String mOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-//		Variable B = codeOp.input.get(1);
+		VariableInteger one = new VariableInteger(1, "Integer{1}");
+
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "diag": // Info diag( final Variable A , ManagerTempVariables manager)
-			/*
-codeIntVariableInteger: int N = mA.getNumElements();
-			sb.append( String.format(formatReshape, output.getName(), N.getName(), N.getName()) );
-codeCommonOps: CommonOps_DDRM.diag(output.matrix,N,mA.data);
-codeIntVariableInteger: int N = Math.min(mA.numCols,mA.numRows);
-			sb.append( String.format(formatReshape, output.getName(), N.getName(), 1.getName()) );
-DMatrixRMaj mA = ((VariableMatrix)A).matrix;
-if(MatrixFeatures_DDRM.isVector(mA)) {
-int N = mA.getNumElements();
-output.matrix.reshape(N,N);
-CommonOps_DDRM.diag(output.matrix,N,mA.data);
-} else {
-int N = Math.min(mA.numCols,mA.numRows);
-output.matrix.reshape(N,1);
-for (int i = 0; i < N; i++) {
-output.matrix.data[i] = mA.unsafe_get(i,i);
-			*/
-			sb.append("//TODO: " + op);//TODO MANUAL
+			sb.append(String.format("if (MatrixFeatures_DDRM.isVector(%s)) { //;", A.getOperand() ));
+			sb.append("\t");
+			emitReshape(sb, output, A, A);
+			sb.append("\t");
+			sb.append(String.format("CommonOps_DDRM.diag(%s, %s.numRows, %s.data);", output.getOperand(), A.getOperand(), A.getOperand()) );
+			sb.append("} else { //;");
+			sb.append("\t");
+			emitReshape(sb, output, A, one);
+			sb.append("\t");
+			sb.append(String.format("CommonOps_DDRM.extractDiag(%s, %s);", A.getOperand(), output.getOperand()) );
+			sb.append("}//;");
 			return sb.toString();
 		case "log": // Info log(final Variable A, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
@@ -500,14 +477,8 @@ output.matrix.data[i] = mA.unsafe_get(i,i);
 			sb.append( String.format("%s = NormOps_DDRM.normF(%s);", output.getName(), A.getName()) );
 			return sb.toString();
 		case "inv": // Info inv( final Variable A , ManagerTempVariables manager)
-			/*
 			emitReshape(sb, output, A, A);
-VariableMatrix mA = (VariableMatrix)A;
-output.matrix.reshape(mA.matrix.numRows, mA.matrix.numCols);
-if( !CommonOps_DDRM.invert(mA.matrix,output.matrix) )
-throw new RuntimeException("Inverse failed!");
-			*/
-			sb.append("//TODO: " + op);//TODO MANUAL
+			sb.append(String.format("boolean ok = CommonOps_DDRM.invert(%s, %s);", A.getName(), output.getName()));
 			return sb.toString();
 		case "eye": // Info eye( final Variable A , ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
@@ -599,82 +570,357 @@ throw new RuntimeException("Inverse failed!");
 		}
 		return "//copyOp: " + codeOp.toString();
 	}
+	
+	private static class CodeExtents {
+		
+		protected Variable startRow;
+		protected Variable stepRow;
+		protected Variable endRow;
+		protected Variable startCol;
+		protected Variable stepCol;
+		protected Variable endCol;
+		
+		protected IntegerSequence rowSequence;
+		protected IntegerSequence colSequence;
+		
+		
+		protected boolean  isBlock;
+		
+		public boolean isBlock() {
+			return isBlock;
+		}
+		
+		protected List<Variable> range;
+		
+		private boolean isSimpleStep( Variable step ) {
+            if (step == null) {
+            	return true;
+            } else if (step.getType() == VariableType.SCALAR) {
+            	VariableScalar scalar = (VariableScalar) step;
+            	if (scalar.getScalarType() == VariableScalar.Type.INTEGER && step.isConstant()) {
+            		return step.getOperand().equals("1");
+            	}
+            } 
+            return false;
+		}
+		
+		public CodeExtents( List<Variable> range, int iFirst ) {
+			this.range = range;
+			isBlock = false;
+			if (range.size() == 1+iFirst) {
+				startCol = null;
+				endCol = null;
+				colSequence = null;
+				Variable var = range.get(iFirst+0);
+		        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
+		            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
+		            rowSequence = sequence;
+		            switch( sequence.getType() ) {
+		            case FOR:
+		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+		                isBlock = isSimpleStep(seqFor.step);
+		                startRow = seqFor.start;
+		                endRow = seqFor.end;
+		                break;
+		            case RANGE:
+		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
+		                isBlock = isSimpleStep(seqRange.step);
+		                startRow = seqRange.start;
+		                endRow = null;
+		            	break;
+		            default:
+		            	isBlock = false;
+		            	break;
+		            }
+		        } else if( var.getType() == VariableType.SCALAR ) {
+		            isBlock = true;
+	                startRow = var;
+	                endRow = var;
+		        }
+			} else {
+				Variable rowVar = range.get(iFirst+0);
+		        if( rowVar.getType() == VariableType.INTEGER_SEQUENCE ) {
+		            IntegerSequence sequence = ((VariableIntegerSequence)rowVar).sequence;
+		            rowSequence = sequence;
+		            switch( sequence.getType() ) {
+		            case FOR:
+		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+		                isBlock = isSimpleStep(seqFor.step);
+		                startRow = seqFor.start;
+		                endRow = seqFor.end;
+		                break;
+		            case RANGE:
+		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
+		                isBlock = isSimpleStep(seqRange.step);
+		                startRow = seqRange.start;
+		                endRow = null;
+		            	break;
+		            default:
+		            	isBlock = false;
+		            	break;
+		            }
+		        } else if( rowVar.getType() == VariableType.SCALAR ) {
+		            isBlock = true;
+	                startRow = rowVar;
+	                endRow = rowVar;
+		        }
+				Variable colVar = range.get(iFirst+1);
+		        if( colVar.getType() == VariableType.INTEGER_SEQUENCE ) {
+		            IntegerSequence sequence = ((VariableIntegerSequence)colVar).sequence;
+		            colSequence = sequence;
+		            switch( sequence.getType() ) {
+		            case FOR:
+		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+		                isBlock = isSimpleStep(seqFor.step);
+		                startCol = seqFor.start;
+		                endCol = seqFor.end;
+		                break;
+		            case RANGE:
+		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
+		                isBlock = isSimpleStep(seqRange.step);
+		                startCol = seqRange.start;
+		                endCol = null;
+		            	break;
+		            default:
+		            	isBlock = false;
+		            	break;
+		            }
+		        } else if( colVar.getType() == VariableType.SCALAR ) {
+		            isBlock = true;
+	                startCol = colVar;
+	                endCol = colVar;
+		        }
+			}
+		}
+		
+		public String codeSimpleStartRow() {
+			if (startRow == null) {
+				return "0";
+			} else {
+				return startRow.getOperand();
+			}
+		}
+		
+		public String codeSimpleEndRow(String[] lastRowsCols) {
+			if (endRow == null) {
+				return String.format("%s", lastRowsCols[0] );
+			} else {
+				return endRow.getOperand();
+			}
+		}
+
+		public String codeSimpleStartCol() {
+			if (startCol == null) {
+				return "0";
+			} else {
+				return startCol.getOperand();
+			}
+		}
+		
+		public String codeSimpleEndCol(String[] lastRowsCols) {
+			if (endCol == null) {
+				return String.format("%s", lastRowsCols[1] );
+			} else {
+				return endCol.getOperand();
+			}
+		}
+		
+		public String codeSimpleRows(String[] lastRowsCols) {
+			return String.format("1+(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow() );
+		}
+		
+		public String codeSimpleCols(String[] lastRowsCols) {
+			return String.format("1+(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol() );
+		}
+		
+		public String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
+			StringBuilder sb = new StringBuilder();
+			if (sequence == null) {
+				sb.append("new int[] {0}");
+			} else {
+				String step = null;
+	            switch( sequence.getType() ) {
+	            case FOR:
+	                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+	                if (seqFor.step == null) {
+	                	step = "1";
+	                } else {
+	                	step = seqFor.step.getOperand();
+	                }
+	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
+	                		seqFor.start.getOperand(), step, seqFor.end.getOperand() ) );
+	                break;
+	            case RANGE:
+	                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
+	                if (seqRange.step == null) {
+	                	step = "1";
+	                } else {
+	                	step = seqRange.step.getOperand();
+	                }
+	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
+	                		seqRange.start.getOperand(), step, lastRowsCols ) );
+	            	break;
+	            case EXPLICIT:
+	            	IntegerSequence.Explicit seqExplicit = (IntegerSequence.Explicit)sequence;
+	            	sb.append("new int[] {");
+	            	for (VariableInteger var : seqExplicit.getSequence()) {
+	            		sb.append(var.getOperand());
+	            		sb.append(",");
+	            	}
+	            	sb.deleteCharAt(sb.length()-1);
+	            	sb.append("}");
+	            	break;
+	            case COMBINED:
+	            	//		int[] W = Stream.of(indiciesArray(0, 2, 5), indiciesArray(5, 3, 15), new int[] {21, 25, 29}).flatMapToInt(IntStream::of).toArray();
+                    sb.append("Stream.of(");
+                    IntegerSequence.Combined seqCombined = (IntegerSequence.Combined) sequence;
+                    for (IntegerSequence s : seqCombined.sequences) {
+                    	sb.append(codeComplexExtent(s, lastRowsCols));
+	            		sb.append(",");
+                    }
+	            	sb.deleteCharAt(sb.length()-1);
+	            	sb.append(").flatMapToInt(IntStream::of).toArray()");
+	            	break;
+	            }
+			}
+			return sb.toString();
+		}
+		
+		public String codeComplexLength(IntegerSequence sequence, String lastRowsCols) {
+			StringBuilder sb = new StringBuilder();
+			if (sequence == null) {
+				sb.append("1");
+			} else {
+	            switch( sequence.getType() ) {
+	            case FOR:
+	                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
+	                if (seqFor.step == null) {
+	                	sb.append(String.format("1+(%s-%s)", 
+		                		seqFor.end.getOperand(), seqFor.start.getOperand() ) );
+	                } else {
+	                	sb.append(String.format("1+(%s-%s)/%s", 
+	                		seqFor.end.getOperand(), seqFor.start.getOperand(), seqFor.step.getOperand() ) );
+	                }
+	                break;
+	            case RANGE:
+	                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
+	                if (seqRange.step == null) {
+	                	sb.append(String.format("1+(%s-%s)", 
+	                			lastRowsCols, seqRange.start.getOperand() ) );
+	                } else {
+	                	sb.append(String.format("1+(%s-%s)/%s", 
+	                			lastRowsCols, seqRange.start.getOperand(), seqRange.step.getOperand() ) );
+	                }
+	            	break;
+	            case EXPLICIT:
+	            	IntegerSequence.Explicit seqExplicit = (IntegerSequence.Explicit)sequence;
+	            	sb.append( Integer.toString( seqExplicit.getSequence().size()) );
+	            	break;
+	            case COMBINED:
+                    sb.append("(");
+                    IntegerSequence.Combined seqCombined = (IntegerSequence.Combined) sequence;
+                    for (IntegerSequence s : seqCombined.sequences) {
+                    	sb.append(codeComplexLength(s, lastRowsCols));
+	            		sb.append("+");
+                    }
+	            	sb.deleteCharAt(sb.length()-1);
+	            	sb.append(")");
+	            	break;
+	            }
+			}
+			return sb.toString();
+		}
+		
+		public String codeComplexRowIndices(String[] lastRowsCols) {
+			return codeComplexExtent(rowSequence, lastRowsCols[0]);
+		}
+
+		public String codeComplexColIndices(String[] lastRowsCols) {
+			return codeComplexExtent(colSequence, lastRowsCols[1]);
+		}
+		
+		private String codeComplexRows( String[] lastRowsCols ) {
+			return codeComplexLength(rowSequence, lastRowsCols[0]);
+		}
+		
+		private String codeComplexCols( String[] lastRowsCols ) {
+			return codeComplexLength(colSequence, lastRowsCols[1]);
+		}
+		
+		public String codeNumRows( String[] lastRowsCols ) {
+			if (isBlock()) {
+				return codeSimpleRows(lastRowsCols);
+			} else {
+				return codeComplexRows(lastRowsCols);
+			}
+		}
+		
+		public String codeNumCols( String[] lastRowsCols ) {
+			if (isBlock()) {
+				return codeSimpleCols(lastRowsCols);
+			} else {
+				return codeComplexCols(lastRowsCols);
+			}
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			String[] M = {"M.numRows-1", "M.numCols-1"};
+			if (isBlock) {
+				sb.append("BLOCK{");
+				sb.append(codeSimpleStartRow());
+				sb.append(",");
+				sb.append(codeSimpleEndRow(M));
+				sb.append(",");
+				sb.append(codeSimpleStartCol());
+				sb.append(",");
+				sb.append(codeSimpleEndCol(M));
+				sb.append("} [");
+				sb.append(codeSimpleRows(M));
+				sb.append(",");
+				sb.append(codeSimpleCols(M));
+				sb.append("]");
+			} else {
+				sb.append("ELEMENTS{");
+				sb.append(codeComplexRowIndices(M));
+				sb.append(",");
+				sb.append(codeComplexColIndices(M));
+				sb.append("} [");
+				sb.append(codeComplexRows(M));
+				sb.append(",");
+				sb.append(codeComplexCols(M));
+				sb.append("]");
+			}
+			return sb.toString();
+		}
+		
+	}
 
 	private static String copyROp(String[] operands, CodeOperation codeOp) {
-    	Extents extents = new Extents();
-
-    	ArrayExtent rowExtent = new ArrayExtent();
-    	ArrayExtent colExtent = new ArrayExtent();
-    	
     	StringBuilder sb = new StringBuilder();
     	
-        if( codeOp.range.size() == 1 ) {
-        	sb.append( String.format("//if( !MatrixFeatures_DDRM.isVector(%s))", codeOp.input.get(0).getOperand() ) );
-        	sb.append( "\tthrow new Exception(\"Source must be a vector for copy into elements\");" );
-            if( extents.extractSimpleExtents(codeOp.range.get(0),false,-1)) {
-                int length = extents.col1-extents.col0+1;
-//                if( msrc.getNumElements() != length )
-//                    throw new IllegalArgumentException("Source vector not the right length.");
-//                if( extents.col1+1 > mdst.getNumElements() )
-//                    throw new IllegalArgumentException("Requested range is outside of dst length");
-                String source = codeOp.input.get(0).getOperand();
-                if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
-                	StringBuffer s = new StringBuffer();
-                	s.append("new DMatrixRMaj(new double[] {");
-                	for (int i = 0; i < length; i++) {
-            			if (i != 0) s.append(",");
-            			s.append(source);
-                	}
-                	s.append("})");
-                	source = s.toString();
-                }
-                sb.append( String.format("System.arraycopy(%s.data,0,%s.data,%d,%d);", source, codeOp.output.getOperand(), extents.col0, length ));
-            } else {
-            	throw new IllegalArgumentException("Complex target ranges can not be compiled.");
-//            	colExtent.extractArrayExtent(codeOp.range.get(0),-1);
-////                if( colExtent.length > msrc.getNumElements() )
-////                    throw new IllegalArgumentException("src doesn't have enough elements");
-//                for (int i = 0; i < colExtent.length; i++) {
-//                    mdst.data[colExtent.array[i]] = msrc.data[i];
-//                }
-            }
-        } else if( codeOp.range.size() == 2 ) {
-            if(extents.extractSimpleExtents(codeOp.range.get(0),true,-1) &&
-            		extents.extractSimpleExtents(codeOp.range.get(1),false,-1) ) {
-
-                int numRows = extents.row1 - extents.row0 + 1;
-                int numCols = extents.col1 - extents.col0 + 1;
-
-                String source = codeOp.input.get(0).getOperand();
-                if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
-                	StringBuffer s = new StringBuffer();
-                	s.append("new DMatrixRMaj(new double[][] {");
-                	for (int iRow = 0; iRow < numRows; iRow++) {
-                		if (iRow != 0) s.append(",");
-                		s.append("{");
-                		for (int jCol = 0; jCol < numCols; jCol++) {
-                			if (jCol != 0) s.append(",");
-                			s.append(source);
-                		}
-                		s.append("}");
-                	}
-                	s.append("})");
-                	source = s.toString();
-                }
-                sb.append( String.format("CommonOps_DDRM.extract(%s, 0, %d, 0, %d, %s, %d, %d);", 
-                		source, numRows, numCols, codeOp.output.getOperand(), extents.row0, extents.col0 ) );
-            } else {
-            	throw new IllegalArgumentException("Complex target ranges can not be compiled.");
-//            	rowExtent.extractArrayExtent(codeOp.range.get(0),mdst.numRows);
-//            	colExtent.extractArrayExtent(codeOp.range.get(1),mdst.numCols);
-//
-//                CommonOps_DDRM.insert(msrc, mdst, rowExtent.array, rowExtent.length,
-//                        colExtent.array, colExtent.length);
-            }
-        } else {
-            throw new RuntimeException("Unexpected number of ranges.  Should have been caught earlier");
+    	CodeExtents codeExtents = new CodeExtents( codeOp.range, 0 );
+    	//System.out.println( codeExtents.toString());
+    	
+    	String target = codeOp.output.getName();
+        String source = codeOp.input.get(0).getName();
+        String[] lastRowsCols = { target+".numRows-1", target+".numCols-1"};
+        if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
+        	source = String.format("new DMatrixRMaj(%s, %s, %s)", 
+        			codeExtents.codeNumRows(lastRowsCols), 
+        			codeExtents.codeNumCols(lastRowsCols), 
+        			codeOp.input.get(0).getOperand());
         }
-		//TODO CommonOps_DDRM.extract(src, 0, src.numRows, 0, src.numCols, dst, range[0].start, range[1].start);
+    	
+    	if (codeExtents.isBlock) {
+    		sb.append(String.format(formatCommonOps4, "insert", source, codeOp.output.getName(), 
+    				codeExtents.codeSimpleStartRow(), codeExtents.codeSimpleStartCol()) );
+    	} else {
+    		sb.append(String.format(formatCommonOps6, "insert", source, codeOp.output.getName(), 
+    				codeExtents.codeComplexRowIndices(lastRowsCols), codeExtents.codeNumRows(lastRowsCols), 
+    				codeExtents.codeComplexColIndices(lastRowsCols), codeExtents.codeNumCols(lastRowsCols)) );
+    	}
 		return sb.toString();
 	}
 	
@@ -721,5 +967,31 @@ throw new RuntimeException("Inverse failed!");
 				break;
 			}
 		}
+	}
+	
+	public static int[] indiciesArray( int start, int step, int end ) {
+		int n = (end - start) / step;
+		int[] a = new int[n+1];
+		for (int i = 0; i < a.length; i++) {
+			a[i] = start;
+			start += step;
+		}
+		return a;
+	}
+	
+	public static void main(String[] args) {
+		int[] a = indiciesArray(0, 2, 5);
+		System.out.println( Arrays.toString( a ) );
+		int[] b = indiciesArray(5, 3, 15);
+		System.out.println( Arrays.toString( b ) );
+		int[] c = new int[] {21, 25, 29};
+		System.out.println( Arrays.toString( c ) );
+		int[] Z = Stream.of(a, b, c).flatMapToInt(IntStream::of).toArray();
+		System.out.println( Arrays.toString( Z ) );
+		int[] W = Stream.of(indiciesArray(0, 2, 5), indiciesArray(5, 3, 15), new int[] {21, 25, 29}).flatMapToInt(IntStream::of).toArray();
+		System.out.println( Arrays.toString( W ) );
+		
+		DMatrixRMaj M = new DMatrixRMaj(5, 7, 3.14);
+		System.out.println(M);
 	}
 }

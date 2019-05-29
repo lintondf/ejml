@@ -121,6 +121,14 @@ public class DMatrixRMaj extends DMatrix1Row {
         this.numCols = numCols;
     }
 
+    public DMatrixRMaj(int numRows  , int numCols, double v ) {
+        data = new double[ numRows * numCols ];
+
+        this.numRows = numRows;
+        this.numCols = numCols;
+        this.fill(v);
+    }
+
     /**
      * Creates a new matrix which is equivalent to the provided matrix.  Note that
      * the length of the data will be determined by the shape of the matrix.
@@ -318,6 +326,13 @@ public class DMatrixRMaj extends DMatrix1Row {
                 }
             }
         }
+    }
+
+    /**
+     * Sets all elements equal to specified value.
+     */
+    public void fill(double v) {
+        Arrays.fill(data, 0, getNumElements(), v);
     }
 
     /**

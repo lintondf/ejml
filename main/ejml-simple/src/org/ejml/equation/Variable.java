@@ -63,4 +63,8 @@ public class Variable {
 	public void setTemp(boolean temp) {
 	    this.temp = temp;
 	}
+
+	public boolean isConstant() {
+		return false;
+	}
 }

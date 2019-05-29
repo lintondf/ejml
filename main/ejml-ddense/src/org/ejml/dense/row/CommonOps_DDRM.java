@@ -1065,7 +1065,7 @@ public class CommonOps_DDRM {
 
         return ret;
     }
-
+    
     /**
      * <p>
      * The Kronecker product of two matrices is defined as:<br>

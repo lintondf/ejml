@@ -6,12 +6,15 @@ import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.NormOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
+import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.dense.row.mult.VectorVectorMult_DDRM;
+import org.ejml.interfaces.linsol.LinearSolverDense;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
 
 import java.util.Random;
-
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.ejml.equation.TokenList.Type;
 import static java.lang.Math.exp;
@@ -22,6 +25,17 @@ import static org.ejml.dense.row.CommonOps_DDRM.*;
 import static org.junit.Assert.*;
 
 public class TestCoded {
+	
+	public static int[] indiciesArray( int start, int step, int end ) {
+		int n = (end - start) / step;
+		int[] a = new int[n+1];
+		for (int i = 0; i < a.length; i++) {
+			a[i] = start;
+			start += step;
+		}
+		return a;
+	}
+	
 
 	Random rand = new Random(234);
 	
@@ -173,15 +187,53 @@ public class TestCoded {
             }
         }
         // eq: A(2:3,0:4)=B -> A
-        DMatrixRMaj A_coded = compile_assign_submatrix_Coded(B.getDDRM());
+        DMatrixRMaj A_coded = compile_assign_submatrix_Coded(A.getDDRM(), B.getDDRM());
         assertTrue(isIdentical(A_coded, A));
     }
 
-    protected DMatrixRMaj compile_assign_submatrix_Coded(DMatrixRMaj B) {
+    protected DMatrixRMaj compile_assign_submatrix_Coded(final DMatrixRMaj A_in, DMatrixRMaj B) {
         // A(2:3,0:4)=B
-        DMatrixRMaj	A = new DMatrixRMaj(1,1);
+        DMatrixRMaj	A = new DMatrixRMaj(A_in);
 
-        CommonOps_DDRM.extract(B, 0, 2, 0, 5, A, 2, 0);
+        CommonOps_DDRM.insert( B, A, 2, 0 );
+
+        return A;
+    }
+
+
+    @Test
+    public void compile_assign_submatrix_special() {
+        Equation eq = new Equation();
+
+        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 5, -1, 1, rand);
+        SimpleMatrix B = SimpleMatrix.random_DDRM(4, 5, -1, 1, rand);
+
+        SimpleMatrix A_orig = A.copy();
+
+        eq.alias(A, "A");
+        eq.alias(B, "B");
+
+        eq.process("A(2:,:)=B");
+
+        for (int y = 0; y < 6; y++) {
+            for (int x = 0; x < 5; x++) {
+                if( y >= 2 ) {
+                    assertTrue(A.get(y,x) == B.get(y-2,x));
+                } else {
+                    assertTrue(x+" "+y,A.get(y,x) == A_orig.get(y,x));
+                }
+            }
+        }
+        // eq: A(2:,:)=B -> A
+        DMatrixRMaj A_coded = compile_assign_submatrix_special_Coded(A.getDDRM(), B.getDDRM());
+        assertTrue(isIdentical(A_coded, A));
+    }
+
+    protected DMatrixRMaj compile_assign_submatrix_special_Coded(final DMatrixRMaj A_in, DMatrixRMaj B) {
+        // A(2:,:)=B
+        DMatrixRMaj	A = new DMatrixRMaj(A_in);
+
+        CommonOps_DDRM.insert( B, A, 2, 0 );
 
         return A;
     }
@@ -261,10 +313,8 @@ public class TestCoded {
     protected double compile_parentheses_extractScalar_Coded(DMatrixRMaj B) {
         // A=B(1,2)
         double    	A = 0;
-        double     td1 = 0;
 
-        //TODO: extractScalar;
-        A = td1;
+        A = B.get(1, 2);
 
         return A;
     }
@@ -443,7 +493,8 @@ public class TestCoded {
         R.reshape( B.numRows, B.numCols );
         CommonOps_DDRM.transpose( B, R );
         CommonOps_DDRM.add( R, C, R );
-        //TODO: inv;
+        tm3.reshape( B.numRows, B.numCols );
+        boolean ok = CommonOps_DDRM.invert(B, tm3);
         tm4.reshape( A.numRows, A.numCols );
         CommonOps_DDRM.transpose( A, tm4 );
         CommonOps_DDRM.transpose( R, R );
@@ -577,10 +628,8 @@ public class TestCoded {
     protected int divide_int_int_Coded(int        A, int        b) {
         // x=b/A
         int       	x = 0;
-        int        ti1 = 0;
 
-        ti1 = b / A;
-        x = ti1;
+        x = b / A;
 
         return x;
     }
@@ -607,10 +656,8 @@ public class TestCoded {
     protected double divide_scalar_scalar_Coded(int        A, double     b) {
         // x=b/A
         double    	x = 0;
-        double     td1 = 0;
 
-        td1 = b / A;
-        x = td1;
+        x = b / A;
 
         return x;
     }
@@ -640,7 +687,10 @@ public class TestCoded {
         // x=b/A
         DMatrixRMaj	x = new DMatrixRMaj(1,1);
 
-        //TODO: solve;
+        x.reshape( A.numRows, b.numCols );
+        LinearSolverDense<DMatrixRMaj> solver = LinearSolverFactory_DDRM.leastSquares(A.numRows, A.numCols);
+        boolean ok = solver.setA(A);
+        solver.solve(b, x);
 
         return x;
     }
@@ -670,7 +720,10 @@ public class TestCoded {
         // x=A\b
         DMatrixRMaj	x = new DMatrixRMaj(1,1);
 
-        //TODO: solve;
+        x.reshape( A.numRows, b.numCols );
+        LinearSolverDense<DMatrixRMaj> solver = LinearSolverFactory_DDRM.leastSquares(A.numRows, A.numCols);
+        boolean ok = solver.setA(A);
+        solver.solve(b, x);
 
         return x;
     }
@@ -697,10 +750,8 @@ public class TestCoded {
     protected int multiply_int_int_Coded(int        A, int        b) {
         // x=b*A
         int       	x = 0;
-        int        ti1 = 0;
 
-        ti1 = b * A;
-        x = ti1;
+        x = b * A;
 
         return x;
     }
@@ -727,10 +778,8 @@ public class TestCoded {
     protected double multiply_scalar_scalar_Coded(int        A, double     b) {
         // x=b*A
         double    	x = 0;
-        double     td1 = 0;
 
-        td1 = b * A;
-        x = td1;
+        x = b * A;
 
         return x;
     }
@@ -936,10 +985,8 @@ public class TestCoded {
     protected double elementPower_ss_Coded(double     a, double     b) {
         // c=a.^b
         double    	c = 0;
-        double     td1 = 0;
 
-        td1 = Math.pow(a, b);
-        c = td1;
+        c = Math.pow(a, b);
 
         return c;
     }
@@ -990,10 +1037,8 @@ public class TestCoded {
     protected double power_double_double_Coded() {
         // a=2.3^4.2
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.pow(2.3, 4.2);
-        a = td1;
+        a = Math.pow(2.3, 4.2);
 
         return a;
     }
@@ -1015,10 +1060,8 @@ public class TestCoded {
     protected double power_int_int_Coded() {
         // a=2^4
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.pow(2, 4);
-        a = td1;
+        a = Math.pow(2, 4);
 
         return a;
     }
@@ -1039,10 +1082,8 @@ public class TestCoded {
     protected double sqrt_int_Coded() {
         // a=sqrt(5)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.sqrt(5);
-        a = td1;
+        a = Math.sqrt(5);
 
         return a;
     }
@@ -1063,10 +1104,8 @@ public class TestCoded {
     protected double sqrt_double_Coded() {
         // a=sqrt(5.7)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.sqrt(5.7);
-        a = td1;
+        a = Math.sqrt(5.7);
 
         return a;
     }
@@ -1088,10 +1127,8 @@ public class TestCoded {
     protected double atan2_scalar_Coded() {
         // a=atan2(1.1,0.5)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.atan2(1.1, 0.5);
-        a = td1;
+        a = Math.atan2(1.1, 0.5);
 
         return a;
     }
@@ -1114,10 +1151,8 @@ public class TestCoded {
     protected int neg_int_Coded(int        b) {
         // a=-b
         int       	a = 0;
-        int        ti1 = 0;
 
-        ti1 = -b;
-        a = ti1;
+        a = -b;
 
         return a;
     }
@@ -1140,10 +1175,8 @@ public class TestCoded {
     protected double neg_scalar_Coded(double     b) {
         // a=-b
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = -b;
-        a = td1;
+        a = -b;
 
         return a;
     }
@@ -1196,10 +1229,8 @@ public class TestCoded {
     protected double sin_Coded() {
         // a=sin(2.1)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.sin(2.1);
-        a = td1;
+        a = Math.sin(2.1);
 
         return a;
     }
@@ -1221,10 +1252,8 @@ public class TestCoded {
     protected double cos_Coded() {
         // a=cos(2.1)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.cos(2.1);
-        a = td1;
+        a = Math.cos(2.1);
 
         return a;
     }
@@ -1246,10 +1275,8 @@ public class TestCoded {
     protected double atan_Coded() {
         // a=atan(2.1)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.atan(2.1);
-        a = td1;
+        a = Math.atan(2.1);
 
         return a;
     }
@@ -1271,10 +1298,8 @@ public class TestCoded {
     protected double exp_s_Coded() {
         // a=exp(2.1)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.exp(2.1);
-        a = td1;
+        a = Math.exp(2.1);
 
         return a;
     }
@@ -1325,10 +1350,8 @@ public class TestCoded {
     protected double log_s_Coded() {
         // a=log(2.1)
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = Math.log(2.1);
-        a = td1;
+        a = Math.log(2.1);
 
         return a;
     }
@@ -1379,10 +1402,8 @@ public class TestCoded {
     protected int add_int_int_Coded() {
         // a=2 + 3
         int       	a = 0;
-        int        ti1 = 0;
 
-        ti1 = 2 + 3;
-        a = ti1;
+        a = 2 + 3;
 
         return a;
     }
@@ -1404,10 +1425,8 @@ public class TestCoded {
     protected double add_scalar_scalar_Coded() {
         // a= 2.3 + 3
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = 2.3 + 3;
-        a = td1;
+        a = 2.3 + 3;
 
         return a;
     }
@@ -1457,10 +1476,8 @@ public class TestCoded {
     protected int subtract_int_int_Coded() {
         // a=2 - 3
         int       	a = 0;
-        int        ti1 = 0;
 
-        ti1 = 2 - 3;
-        a = ti1;
+        a = 2 - 3;
 
         return a;
     }
@@ -1482,10 +1499,8 @@ public class TestCoded {
     protected double subtract_scalar_scalar_Coded() {
         // a= 2.3 - 3
         double    	a = 0;
-        double     td1 = 0;
 
-        td1 = 2.3 - 3;
-        a = td1;
+        a = 2.3 - 3;
 
         return a;
     }
@@ -1583,15 +1598,101 @@ public class TestCoded {
 
         assertTrue(a.isIdentical(b.extractMatrix(1, 3, 1, 4), UtilEjml.TEST_F64));
         // eq: b(1:2,1:3)=a -> b
-        DMatrixRMaj b_coded = copy_submatrix_matrix_case0_Coded(a.getDDRM());
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case0_Coded(a.getDDRM(), b.getDDRM());
         assertTrue(isIdentical(b_coded, b));
     }
 
-    protected DMatrixRMaj copy_submatrix_matrix_case0_Coded(DMatrixRMaj a) {
+    protected DMatrixRMaj copy_submatrix_matrix_case0_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
         // b(1:2,1:3)=a
-        DMatrixRMaj	b = new DMatrixRMaj(1,1);
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.extract(a, 0, 2, 0, 3, b, 1, 1);
+        CommonOps_DDRM.insert( a, b, 1, 1 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_matrix_case1() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(2,3,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a, "a", b, "b");
+        eq.process("b(0 1,3 2 0)=a");
+
+        int rows[] = new int[]{0,1};
+        int cols[] = new int[]{3,2,0};
+
+        checkSubMatrixArraysInsert(a, b, rows, cols);
+        // eq: b(0 1,3 2 0)=a -> b
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case1_Coded(a.getDDRM(), b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_matrix_case1_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
+        // b(0 1,3 2 0)=a
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( a, b, new int[] {0,1}, 2, new int[] {3,2,0}, 3 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_matrix_case2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3,2,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a, "a", b, "b");
+        eq.process("b(:,2:)=a");
+
+        int rows[] = new int[]{0,1,2};
+        int cols[] = new int[]{2,3};
+
+        checkSubMatrixArraysInsert(a, b, rows, cols);
+        // eq: b(:,2:)=a -> b
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case2_Coded(a.getDDRM(), b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_matrix_case2_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
+        // b(:,2:)=a
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( a, b, 0, 2 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_matrix_case3() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(6,1,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a, "a", b, "b");
+        eq.process("b(2 3 4 5 6 7)=a");
+
+        for (int i = 0; i < 6; i++) {
+            assertEquals(b.get(i+2),a.get(i),UtilEjml.TEST_F64);
+        }
+        // eq: b(2 3 4 5 6 7)=a -> b
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case3_Coded(a.getDDRM(), b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_matrix_case3_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
+        // b(2 3 4 5 6 7)=a
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( a, b, new int[] {2,3,4,5,6,7}, 6, new int[] {0}, 1 );
 
         return b;
     }
@@ -1611,16 +1712,71 @@ public class TestCoded {
             assertEquals(b.get(i+2),a.get(i),UtilEjml.TEST_F64);
         }
         // eq: b(2:8)=a -> b
-        DMatrixRMaj b_coded = copy_submatrix_matrix_case4_Coded(a.getDDRM());
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case4_Coded(a.getDDRM(), b.getDDRM());
         assertTrue(isIdentical(b_coded, b));
     }
 
-    protected DMatrixRMaj copy_submatrix_matrix_case4_Coded(DMatrixRMaj a) {
+    protected DMatrixRMaj copy_submatrix_matrix_case4_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
         // b(2:8)=a
-        DMatrixRMaj	b = new DMatrixRMaj(1,1);
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        //if( !MatrixFeatures_DDRM.isVector(a))	throw new Exception("Source must be a vector for copy into elements");
-        System.arraycopy(a.data,0,b.data,2,7);
+        CommonOps_DDRM.insert( a, b, 2, 0 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_matrix_case5() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3*4-2,1,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a, "a", b, "b");
+        eq.process("b(2:)=a");
+
+        for (int i = 0; i < a.getNumElements(); i++) {
+            assertEquals(b.get(i+2),a.get(i),UtilEjml.TEST_F64);
+        }
+        // eq: b(2:)=a -> b
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case5_Coded(a.getDDRM(), b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_matrix_case5_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
+        // b(2:)=a
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( a, b, 2, 0 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_matrix_case6() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3*4-2,1,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a, "a", b, "b");
+        eq.process("b(2 3:)=a");
+
+        for (int i = 0; i < a.getNumElements(); i++) {
+            assertEquals(b.get(i+2),a.get(i),UtilEjml.TEST_F64);
+        }
+        // eq: b(2 3:)=a -> b
+        DMatrixRMaj b_coded = copy_submatrix_matrix_case6_Coded(a.getDDRM(), b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_matrix_case6_Coded(DMatrixRMaj a, final DMatrixRMaj b_in) {
+        // b(2 3:)=a
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( a, b, Stream.of(new int[] {2},indiciesArray(3, 1, b.numRows-1)).flatMapToInt(IntStream::of).toArray(), (1+1+(b.numRows-1-3)), new int[] {0}, 1 );
 
         return b;
     }
@@ -1640,15 +1796,71 @@ public class TestCoded {
 
         checkSubMatrixArraysInsert(4.5, b, rows, cols);
         // eq: b(0:1,1:3)=4.5 -> b
-        DMatrixRMaj b_coded = copy_submatrix_scalar_case1_Coded();
+        DMatrixRMaj b_coded = copy_submatrix_scalar_case1_Coded(b.getDDRM());
         assertTrue(isIdentical(b_coded, b));
     }
 
-    protected DMatrixRMaj copy_submatrix_scalar_case1_Coded() {
+    protected DMatrixRMaj copy_submatrix_scalar_case1_Coded(final DMatrixRMaj b_in) {
         // b(0:1,1:3)=4.5
-        DMatrixRMaj	b = new DMatrixRMaj(1,1);
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.extract(new DMatrixRMaj(new double[][] {{4.5,4.5,4.5},{4.5,4.5,4.5}}), 0, 2, 0, 3, b, 0, 1);
+        CommonOps_DDRM.insert( new DMatrixRMaj(1+(1 - 0), 1+(3 - 1), 4.5), b, 0, 1 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_scalar_case2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(b, "b");
+        eq.process("b(:,2:)=4.5");
+
+        int rows[] = new int[]{0, 1, 2};
+        int cols[] = new int[]{2,3};
+
+        checkSubMatrixArraysInsert(4.5,b,rows,cols);
+        // eq: b(:,2:)=4.5 -> b
+        DMatrixRMaj b_coded = copy_submatrix_scalar_case2_Coded(b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_scalar_case2_Coded(final DMatrixRMaj b_in) {
+        // b(:,2:)=4.5
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( new DMatrixRMaj(1+(b.numRows-1 - 0), 1+(b.numCols-1 - 2), 4.5), b, 0, 2 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_scalar_case3() {
+        Equation eq = new Equation();
+
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(b, "b");
+        eq.process("b(1 0 3)=4.5");
+
+        int indexes[] = new int[]{1,0,3};
+        for (int i = 0; i < indexes.length; i++) {
+            assertEquals(b.get(indexes[i]),4.5,UtilEjml.TEST_F64);
+        }
+        // eq: b(1 0 3)=4.5 -> b
+        DMatrixRMaj b_coded = copy_submatrix_scalar_case3_Coded(b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_scalar_case3_Coded(final DMatrixRMaj b_in) {
+        // b(1 0 3)=4.5
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( new DMatrixRMaj(3, 1, 4.5), b, new int[] {1,0,3}, 3, new int[] {0}, 1 );
 
         return b;
     }
@@ -1668,16 +1880,43 @@ public class TestCoded {
             assertEquals(b.get(indexes[i]),4.5,UtilEjml.TEST_F64);
         }
         // eq: b(1:3)=4.5 -> b
-        DMatrixRMaj b_coded = copy_submatrix_scalar_case4_Coded();
+        DMatrixRMaj b_coded = copy_submatrix_scalar_case4_Coded(b.getDDRM());
         assertTrue(isIdentical(b_coded, b));
     }
 
-    protected DMatrixRMaj copy_submatrix_scalar_case4_Coded() {
+    protected DMatrixRMaj copy_submatrix_scalar_case4_Coded(final DMatrixRMaj b_in) {
         // b(1:3)=4.5
-        DMatrixRMaj	b = new DMatrixRMaj(1,1);
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        //if( !MatrixFeatures_DDRM.isVector(4.5))	throw new Exception("Source must be a vector for copy into elements");
-        System.arraycopy(new DMatrixRMaj(new double[] {4.5,4.5,4.5}).data,0,b.data,1,3);
+        CommonOps_DDRM.insert( new DMatrixRMaj(1+(3 - 1), 1+(b.numCols-1 - 0), 4.5), b, 1, 0 );
+
+        return b;
+    }
+
+
+    @Test
+    public void copy_submatrix_scalar_case5() {
+        Equation eq = new Equation();
+
+        SimpleMatrix b = SimpleMatrix.random_DDRM(2,3,-1,1,rand);
+
+        eq.alias(b, "b");
+        eq.process("b(2 3:)=4.5");
+
+        int indexes[] = new int[]{2,3,4,5};
+        for (int i = 0; i < indexes.length; i++) {
+            assertEquals(b.get(indexes[i]),4.5,UtilEjml.TEST_F64);
+        }
+        // eq: b(2 3:)=4.5 -> b
+        DMatrixRMaj b_coded = copy_submatrix_scalar_case5_Coded(b.getDDRM());
+        assertTrue(isIdentical(b_coded, b));
+    }
+
+    protected DMatrixRMaj copy_submatrix_scalar_case5_Coded(final DMatrixRMaj b_in) {
+        // b(2 3:)=4.5
+        DMatrixRMaj	b = new DMatrixRMaj(b_in);
+
+        CommonOps_DDRM.insert( new DMatrixRMaj((1+1+(b.numRows-1-3)), 1, 4.5), b, Stream.of(new int[] {2},indiciesArray(3, 1, b.numRows-1)).flatMapToInt(IntStream::of).toArray(), (1+1+(b.numRows-1-3)), new int[] {0}, 1 );
 
         return b;
     }
@@ -1705,7 +1944,7 @@ public class TestCoded {
         // c=b(1 2)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, new int[] {1,2}, 2, new int[] {0}, 1, c );
 
         return c;
     }
@@ -1734,7 +1973,7 @@ public class TestCoded {
         // c=b(1:3)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 1, 0, 3, b.numCols-1, c );
 
         return c;
     }
@@ -1763,7 +2002,7 @@ public class TestCoded {
         // c=b(4:)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 4, 0, b.numRows-1, b.numCols-1, c );
 
         return c;
     }
@@ -1792,7 +2031,7 @@ public class TestCoded {
         // c=b(:)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 0, 0, b.numRows-1, b.numCols-1, c );
 
         return c;
     }
@@ -1821,7 +2060,7 @@ public class TestCoded {
         // c=b(1 2,1 0 2)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, new int[] {1,2}, 2, new int[] {1,0,2}, 3, c );
 
         return c;
     }
@@ -1850,7 +2089,7 @@ public class TestCoded {
         // c=b(1:2,2:3)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 1, 2, 2, 3, c );
 
         return c;
     }
@@ -1879,7 +2118,7 @@ public class TestCoded {
         // c=b(2:,1:)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 2, 1, b.numRows-1, b.numCols-1, c );
 
         return c;
     }
@@ -1908,7 +2147,36 @@ public class TestCoded {
         // c=b(:,:)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        //TODO: extract;
+        CommonOps_DDRM.extract( b, 0, 0, b.numRows-1, b.numCols-1, c );
+
+        return c;
+    }
+
+
+    @Test
+    public void extract_two_case4() {
+        Equation eq = new Equation();
+
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3, 4, -1, 1, rand);
+
+        eq.alias(b, "b");
+        int i1 = 4; 
+        int i2 = 5;
+        int j1 = 1;
+        int j2 = 3;
+        eq.alias(i1, "i1", i2, "i2", j1, "j1", j2, "j2");
+        eq.process("c=b(i1:i2,j1:j2)");
+        DMatrixRMaj found = eq.lookupDDRM("c");
+        // eq: c=b(i1:i2,j1:j2) -> c
+        DMatrixRMaj c_coded = extract_two_case4_Coded(b.getDDRM(), j1, i1, j2, i2);
+        assertTrue(isIdentical(c_coded, found));
+    }
+
+    protected DMatrixRMaj extract_two_case4_Coded(DMatrixRMaj b, int        j1, int        i1, int        j2, int        i2) {
+        // c=b(i1:i2,j1:j2)
+        DMatrixRMaj	c = new DMatrixRMaj(1,1);
+
+        CommonOps_DDRM.extract( b, i1, j1, i2, j2, c );
 
         return c;
     }
@@ -1933,10 +2201,8 @@ public class TestCoded {
     protected double extractScalar_one_Coded(DMatrixRMaj b) {
         // c=b(3)
         double    	c = 0;
-        double     td1 = 0;
 
-        //TODO: extractScalar;
-        c = td1;
+        c = b.get(3);
 
         return c;
     }
@@ -1961,10 +2227,8 @@ public class TestCoded {
     protected double extractScalar_two_Coded(DMatrixRMaj b) {
         // c=b(2,3)
         double    	c = 0;
-        double     td1 = 0;
 
-        //TODO: extractScalar;
-        c = td1;
+        c = b.get(2, 3);
 
         return c;
     }
@@ -2047,7 +2311,8 @@ public class TestCoded {
         // b=inv(a)
         DMatrixRMaj	b = new DMatrixRMaj(1,1);
 
-        //TODO: inv;
+        b.reshape( a.numRows, a.numCols );
+        boolean ok = CommonOps_DDRM.invert(a, b);
 
         return b;
     }
@@ -2069,10 +2334,8 @@ public class TestCoded {
     protected double inv_scalar_Coded(double     a) {
         // b=inv(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = 1.0 / a;
-        b = td1;
+        b = 1.0 / a;
 
         return b;
     }
@@ -2121,10 +2384,8 @@ public class TestCoded {
     protected double pinv_scalar_Coded(double     a) {
         // b=pinv(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = 1.0 / a;
-        b = td1;
+        b = 1.0 / a;
 
         return b;
     }
@@ -2178,10 +2439,8 @@ public class TestCoded {
     protected double det_matrix_Coded(DMatrixRMaj a) {
         // b=det(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = CommonOps_DDRM.det(a);
-        b = td1;
+        b = CommonOps_DDRM.det(a);
 
         return b;
     }
@@ -2202,10 +2461,8 @@ public class TestCoded {
     protected double det_scalar_Coded() {
         // b=det(5.6)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = 5.6;
-        b = td1;
+        b = 5.6;
 
         return b;
     }
@@ -2229,10 +2486,8 @@ public class TestCoded {
     protected double trace_matrix_Coded(DMatrixRMaj a) {
         // b=trace(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = CommonOps_DDRM.trace(a);
-        b = td1;
+        b = CommonOps_DDRM.trace(a);
 
         return b;
     }
@@ -2256,10 +2511,8 @@ public class TestCoded {
     protected double normF_matrix_Coded(DMatrixRMaj a) {
         // b=normF(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = NormOps_DDRM.normF(a);
-        b = td1;
+        b = NormOps_DDRM.normF(a);
 
         return b;
     }
@@ -2280,10 +2533,8 @@ public class TestCoded {
     protected double normF_scalar_Coded() {
         // b=normF(5.6)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = Math.abs(5.6);
-        b = td1;
+        b = Math.abs(5.6);
 
         return b;
     }
@@ -2309,10 +2560,8 @@ public class TestCoded {
     protected double normP_Coded(DMatrixRMaj a) {
         // b=normP(a,2)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = NormOps_DDRM.normP(a, 2);
-        b = td1;
+        b = NormOps_DDRM.normP(a, 2);
 
         return b;
     }
@@ -2338,10 +2587,8 @@ public class TestCoded {
     protected double sum_one_Coded(DMatrixRMaj a) {
         // b=sum(a)
         double    	b = 0;
-        double     td1 = 0;
 
-        td1 = CommonOps_DDRM.elementSum(a);
-        b = td1;
+        b = CommonOps_DDRM.elementSum(a);
 
         return b;
     }
@@ -2601,10 +2848,8 @@ public class TestCoded {
     protected int abs_int_Coded(int        A) {
         // B=abs(A)
         int       	B = 0;
-        int        ti1 = 0;
 
-        ti1 = Math.abs(A);
-        B = ti1;
+        B = Math.abs(A);
 
         return B;
     }
@@ -2631,10 +2876,8 @@ public class TestCoded {
     protected double abs_scalar_Coded(double     A) {
         // B=abs(A)
         double    	B = 0;
-        double     td1 = 0;
 
-        td1 = Math.abs(A);
-        B = td1;
+        B = Math.abs(A);
 
         return B;
     }
@@ -2663,10 +2906,8 @@ public class TestCoded {
     protected double max_matrix_Coded(DMatrixRMaj A) {
         // B=max(A)
         double    	B = 0;
-        double     td1 = 0;
 
-        td1 = CommonOps_DDRM.elementMax(A);
-        B = td1;
+        B = CommonOps_DDRM.elementMax(A);
 
         return B;
     }
@@ -2691,10 +2932,8 @@ public class TestCoded {
     protected int max_int_Coded(int        A) {
         // B=max(A)
         int       	B = 0;
-        int        ti1 = 0;
 
-        ti1 = A;
-        B = ti1;
+        B = A;
 
         return B;
     }
@@ -2719,10 +2958,8 @@ public class TestCoded {
     protected double max_scalar_Coded(double     A) {
         // B=max(A)
         double    	B = 0;
-        double     td1 = 0;
 
-        td1 = A;
-        B = td1;
+        B = A;
 
         return B;
     }
@@ -2750,10 +2987,8 @@ public class TestCoded {
     protected double min_matrix_Coded(DMatrixRMaj A) {
         // B=min(A)
         double    	B = 0;
-        double     td1 = 0;
 
-        td1 = CommonOps_DDRM.elementMin(A);
-        B = td1;
+        B = CommonOps_DDRM.elementMin(A);
 
         return B;
     }
@@ -2778,10 +3013,8 @@ public class TestCoded {
     protected int min_int_Coded(int        A) {
         // B=min(A)
         int       	B = 0;
-        int        ti1 = 0;
 
-        ti1 = A;
-        B = ti1;
+        B = A;
 
         return B;
     }
@@ -2806,10 +3039,8 @@ public class TestCoded {
     protected double min_scalar_Coded(double     A) {
         // B=min(A)
         double    	B = 0;
-        double     td1 = 0;
 
-        td1 = A;
-        B = td1;
+        B = A;
 
         return B;
     }
@@ -2970,7 +3201,13 @@ public class TestCoded {
         // A=diag(B)
         DMatrixRMaj	A = new DMatrixRMaj(1,1);
 
-        //TODO: diag;
+        if (MatrixFeatures_DDRM.isVector(B)) { //;
+        	A.reshape( B.numRows, B.numCols );
+        	CommonOps_DDRM.diag(A, B.numRows, B.data);
+        } else { //;
+        	A.reshape( B.numRows, 1 );
+        	CommonOps_DDRM.extractDiag(B, A);
+        }//;
 
         return A;
     }
@@ -3003,7 +3240,13 @@ public class TestCoded {
         // B=diag(A)
         DMatrixRMaj	B = new DMatrixRMaj(1,1);
 
-        //TODO: diag;
+        if (MatrixFeatures_DDRM.isVector(A)) { //;
+        	B.reshape( A.numRows, A.numCols );
+        	CommonOps_DDRM.diag(B, A.numRows, A.data);
+        } else { //;
+        	B.reshape( A.numRows, 1 );
+        	CommonOps_DDRM.extractDiag(A, B);
+        }//;
 
         return B;
     }
@@ -3033,10 +3276,8 @@ public class TestCoded {
     protected double dot_Coded(DMatrixRMaj A, DMatrixRMaj B) {
         // found=dot(A,B)
         double    	found = 0;
-        double     td1 = 0;
 
-        td1 = VectorVectorMult_DDRM.innerProd( A, B );
-        found = td1;
+        found = VectorVectorMult_DDRM.innerProd( A, B );
 
         return found;
     }
@@ -3066,16 +3307,13 @@ public class TestCoded {
         // x=solve(A,b)
         DMatrixRMaj	x = new DMatrixRMaj(1,1);
 
-        //TODO: solve;
+        x.reshape( A.numRows, b.numCols );
+        LinearSolverDense<DMatrixRMaj> solver = LinearSolverFactory_DDRM.leastSquares(A.numRows, A.numCols);
+        boolean ok = solver.setA(A);
+        solver.solve(b, x);
 
         return x;
     }
 
 
-
-
-	public static void main(String[] args) {
-		TestCoded test = new TestCoded();
-		test.compile_basic();
-	}
 }

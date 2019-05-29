@@ -43,13 +43,14 @@ public class OptimizeCodeOperations {
 	List<Usage> integerUsages = new ArrayList<>();
 	List<Usage> matrixUsages = new ArrayList<>();
 	
-
+	boolean lastOperationCopyR = false;
 	
 	/**
 	 * 
 	 */
 	public OptimizeCodeOperations(List<Operation> operations) {    	
     	this.operations = operations;
+    	lastOperationCopyR = operations.get(operations.size()-1).name().startsWith("copyR-");
 	}
 
 	protected void recordVariable( Variable variable ) {
@@ -186,8 +187,9 @@ public class OptimizeCodeOperations {
     	if (assignmentTarget != null) {
     		int last = operations.size()-1;
     		CodeOperation codeOp = (CodeOperation) operations.get(last);
-    		if (codeOp.name().equals("copy-mm")) {
-    			Variable fromVariable = codeOp.input.get(0);
+			Variable fromVariable = codeOp.input.get(0);
+    		switch (codeOp.name()) {
+    		case "copy-mm":
     			if (fromVariable.isTemp()) {
     				Usage fromUsage = locateUsage(matrixUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
@@ -196,6 +198,29 @@ public class OptimizeCodeOperations {
     				operations.remove(codeOp);
 					matrixUsages.remove(fromUsage);
     			}
+    			break;
+    		case "copy-ss":
+    			if (fromVariable.isTemp()) {
+    				Usage fromUsage = locateUsage(doubleUsages, fromVariable);
+    				for (Integer k : fromUsage.uses) {
+						((CodeOperation) operations.get(k)).replace(fromVariable, assignmentTarget);  
+    				}
+    				operations.remove(codeOp);
+    				doubleUsages.remove(fromUsage);
+    			}
+    			break;
+    		case "copy-ii":
+    			if (fromVariable.isTemp()) {
+    				Usage fromUsage = locateUsage(integerUsages, fromVariable);
+    				for (Integer k : fromUsage.uses) {
+						((CodeOperation) operations.get(k)).replace(fromVariable, assignmentTarget);  
+    				}
+    				operations.remove(codeOp);
+    				integerUsages.remove(fromUsage);
+    			}
+    			break;
+    		default:
+    			break;
     		}
     	}
 
@@ -249,7 +274,7 @@ public class OptimizeCodeOperations {
     
 
 	final String declFormatWithValue = "%s%s%-10s\t%s = %s";
-    final String declFormatInitialize = "%s%s%-10s\t%s = new %s(1,1)";
+    final String declFormatInitialize = "%s%s%-10s\t%s = new %s(%s)";
     final String declFormatScalar = "%s%s%-10s %s = 0";
     final String declFormat = "%s%s%-10s\t%s";
     final String returnFormat = "%s%sreturn %s;\n";
@@ -294,6 +319,18 @@ public class OptimizeCodeOperations {
     		if (variable.getName().equals("e")) {
     		} else if (variable.getName().equals("pi")) {
     		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+    			if (lastOperationCopyR) {
+        			if (notFirst)
+        				call.append(", ");
+        			if (constants.containsKey(variable.getName())) {
+        				call.append( constants.get(variable.getName()) );
+        			} else {
+    	    			call.append(variable.getName());
+    	    			if (variable.getType() == VariableType.MATRIX)
+    	    				call.append(".getDDRM()");
+        			}
+        			notFirst = true;
+    			}
     		} else {
     			if (notFirst)
     				call.append(", ");
@@ -336,17 +373,18 @@ public class OptimizeCodeOperations {
     	}
     	header.append(String.format("%sprotected %s %s(", prefix, returnType, name ) );
     	boolean notFirst = false;
+    	
     	for (Variable variable : variables.values()) {
     		if (variable.getName().equals("e")) {
-//    			body.append(String.format(declFormatWithValue, "double", "e", "Math.E") );
-//    			body.append(";\n");
     		} else if (variable.getName().equals("pi")) {
-//    			body.append(String.format(declFormatWithValue, "double", "pi", "Math.PI") );
-//    			body.append(";\n");
     		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
-//    			String type = getJavaType(assignmentTarget);
-//    			body.append(String.format(declFormatInitialize, type, variable.getName(), type) );
-//    			body.append(";\n");
+    			if (lastOperationCopyR) {
+	    			if (notFirst)
+	    				header.append(", ");
+	    			String type = getJavaType(variable);
+	   				header.append(String.format(declFormat, "", "", "final " + type, variable.getName()+"_in") );
+	    			notFirst = true;
+    			}
     		} else {
     			if (notFirst)
     				header.append(", ");
@@ -369,7 +407,11 @@ public class OptimizeCodeOperations {
 				if (type.equals("int") || type.equals("double")) {
 					body.append(String.format(declFormatWithValue, prefix, prefix, type, variable.getName(), "0") );					
 				} else {
-					body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type) );
+					String constructParameters = "1,1";
+					if (this.lastOperationCopyR) {
+						constructParameters = variable.getName() + "_in";
+					}
+					body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type, constructParameters) );
 				}
 				body.append(";\n");
 			}
@@ -384,7 +426,7 @@ public class OptimizeCodeOperations {
     	}
     	for (Usage usage : matrixUsages) {
 			String type = getJavaType(usage.variable);
-    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type) );
+    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type, "1,1") );
 			body.append(";\n");
     	}
     	body.append("\n");
