@@ -30,7 +30,7 @@ import org.ejml.simple.SimpleMatrix;
  * @author NOOK
  *
  */
-public class OptimizeCodeOperations {
+public class GenerateCodeOperations {
 
 	List<Operation> operations = new ArrayList<>();
 	List<Variable> inputs = new ArrayList<>();
@@ -48,7 +48,7 @@ public class OptimizeCodeOperations {
 	/**
 	 * 
 	 */
-	public OptimizeCodeOperations(List<Operation> operations) {    	
+	public GenerateCodeOperations(List<Operation> operations) {    	
     	this.operations = operations;
     	lastOperationCopyR = operations.get(operations.size()-1).name().startsWith("copyR-");
 	}

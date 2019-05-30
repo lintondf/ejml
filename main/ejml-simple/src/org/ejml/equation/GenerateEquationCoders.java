@@ -613,7 +613,7 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			HashMap<String, String> lookups, OptimizeCodeOperations optimizer, 
+			HashMap<String, String> lookups, GenerateCodeOperations optimizer, 
 			Equation eq, Sequence sequence, String equationText) {
 		
 		body.add("");
@@ -768,7 +768,7 @@ public class GenerateEquationCoders {
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
-					OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
+					GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
 					optimizer.mapVariableUsage();
 					String target = matcher.group(1);
 					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
