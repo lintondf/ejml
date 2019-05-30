@@ -26,17 +26,6 @@ import static org.junit.Assert.*;
 
 public class TestCoded {
 	
-	public static int[] indiciesArray( int start, int step, int end ) {
-		int n = 1+(end - start) / step;
-		int[] a = new int[n];
-		for (int i = 0; i < a.length; i++) {
-			a[i] = start;
-			start += step;
-		}
-		return a;
-	}
-	
-
 	Random rand = new Random(234);
 	
 	protected boolean isIdentical( double a, double b) {
@@ -1696,7 +1685,7 @@ public class TestCoded {
         // b(2:8)=a
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( a, b, indiciesArray(2, 1, 8), (8+1 - 2) );
+        CommonOps_DDRM.insert( a, b, IntStream.iterate(2, n -> n + 1).limit(1+(8 - 2) / 1).toArray(), (8+1 - 2) );
 
         return b;
     }
@@ -1724,7 +1713,7 @@ public class TestCoded {
         // b(2:)=a
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( a, b, indiciesArray(2, 1, b.numRows*b.numCols-1), (b.numRows*b.numCols - 2) );
+        CommonOps_DDRM.insert( a, b, IntStream.iterate(2, n -> n + 1).limit(1+(b.numRows*b.numCols - 2) / 1).toArray(), (b.numRows*b.numCols - 2) );
 
         return b;
     }
@@ -1752,7 +1741,7 @@ public class TestCoded {
         // b(2 3:)=a
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( a, b, Stream.of(new int[] {2},indiciesArray(3, 1, b.numRows*b.numCols-1)).flatMapToInt(IntStream::of).toArray(), (1+(b.numRows*b.numCols-3)) );
+        CommonOps_DDRM.insert( a, b, Stream.of(new int[] {2},IntStream.iterate(3, n -> n + 1).limit(1+(b.numRows*b.numCols - 3) / 1).toArray()).flatMapToInt(IntStream::of).toArray(), (1+(b.numRows*b.numCols-3)) );
 
         return b;
     }
@@ -1864,7 +1853,7 @@ public class TestCoded {
         // b(1:3)=4.5
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( new DMatrixRMaj(1, (3+1 - 1), 4.5), b, indiciesArray(1, 1, 3), (3+1 - 1) );
+        CommonOps_DDRM.insert( new DMatrixRMaj(1, (3+1 - 1), 4.5), b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), (3+1 - 1) );
 
         return b;
     }
@@ -1892,7 +1881,7 @@ public class TestCoded {
         // b(2 3:)=4.5
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( new DMatrixRMaj(1, (1+(b.numRows*b.numCols-3)), 4.5), b, Stream.of(new int[] {2},indiciesArray(3, 1, b.numRows*b.numCols-1)).flatMapToInt(IntStream::of).toArray(), (1+(b.numRows*b.numCols-3)) );
+        CommonOps_DDRM.insert( new DMatrixRMaj(1, (1+(b.numRows*b.numCols-3)), 4.5), b, Stream.of(new int[] {2},IntStream.iterate(3, n -> n + 1).limit(1+(b.numRows*b.numCols - 3) / 1).toArray()).flatMapToInt(IntStream::of).toArray(), (1+(b.numRows*b.numCols-3)) );
 
         return b;
     }
@@ -1951,7 +1940,7 @@ public class TestCoded {
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
         c.reshape( 1, (3+1 - 1) );
-        CommonOps_DDRM.extract( b, indiciesArray(1, 1, 3), (3+1 - 1), c );
+        CommonOps_DDRM.extract( b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), (3+1 - 1), c );
 
         return c;
     }
@@ -1981,7 +1970,7 @@ public class TestCoded {
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
         c.reshape( 1, (b.numRows*b.numCols - 4) );
-        CommonOps_DDRM.extract( b, indiciesArray(4, 1, b.numRows*b.numCols-1), (b.numRows*b.numCols - 4), c );
+        CommonOps_DDRM.extract( b, IntStream.iterate(4, n -> n + 1).limit(1+(b.numRows*b.numCols - 4) / 1).toArray(), (b.numRows*b.numCols - 4), c );
 
         return c;
     }

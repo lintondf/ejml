@@ -788,6 +788,11 @@ public class EmitCodeOperation {
 			return String.format("(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol() );
 		}
 		
+		protected String codeIndiciesArray(String start, String step, String end) {
+			return String.format("IntStream.iterate(%s, n -> n + %s).limit(1+(%s - %s) / %s).toArray()", 
+					start, step, end, start, step);
+		}
+		
 		public String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
 			StringBuilder sb = new StringBuilder();
 			if (sequence == null) {
@@ -802,7 +807,8 @@ public class EmitCodeOperation {
 	                } else {
 	                	step = seqFor.step.getOperand();
 	                }
-	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
+//	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
+   	                sb.append( codeIndiciesArray(
 	                		seqFor.start.getOperand(), step, seqFor.end.getOperand() ) );
 	                break;
 	            case RANGE:
@@ -812,7 +818,8 @@ public class EmitCodeOperation {
 	                } else {
 	                	step = seqRange.step.getOperand();
 	                }
-	                sb.append(String.format("indiciesArray(%s, %s, %s-1)", 
+//	                sb.append(String.format("indiciesArray(%s, %s, %s-1)", 
+   	                sb.append( codeIndiciesArray(
 	                		seqRange.start.getOperand(), step, lastRowsCols ) );
 	            	break;
 	            case EXPLICIT:
@@ -826,7 +833,6 @@ public class EmitCodeOperation {
 	            	sb.append("}");
 	            	break;
 	            case COMBINED:
-	            	//		int[] W = Stream.of(indiciesArray(0, 2, 5), indiciesArray(5, 3, 15), new int[] {21, 25, 29}).flatMapToInt(IntStream::of).toArray();
                     sb.append("Stream.of(");
                     IntegerSequence.Combined seqCombined = (IntegerSequence.Combined) sequence;
                     for (IntegerSequence s : seqCombined.sequences) {
@@ -1034,29 +1040,29 @@ public class EmitCodeOperation {
 		}
 	}
 	
-	public static int[] indiciesArray( int start, int step, int end ) {
-		int n = (end - start) / step;
-		int[] a = new int[n+1];
-		for (int i = 0; i < a.length; i++) {
-			a[i] = start;
-			start += step;
-		}
-		return a;
-	}
-	
-	public static void main(String[] args) {
-		int[] a = indiciesArray(0, 2, 5);
-		System.out.println( Arrays.toString( a ) );
-		int[] b = indiciesArray(5, 3, 15);
-		System.out.println( Arrays.toString( b ) );
-		int[] c = new int[] {21, 25, 29};
-		System.out.println( Arrays.toString( c ) );
-		int[] Z = Stream.of(a, b, c).flatMapToInt(IntStream::of).toArray();
-		System.out.println( Arrays.toString( Z ) );
-		int[] W = Stream.of(indiciesArray(0, 2, 5), indiciesArray(5, 3, 15), new int[] {21, 25, 29}).flatMapToInt(IntStream::of).toArray();
-		System.out.println( Arrays.toString( W ) );
-		
-		DMatrixRMaj M = new DMatrixRMaj(5, 7, 3.14);
-		System.out.println(M);
-	}
+//	public static int[] indiciesArray( int start, int step, int end ) {
+//		int n = (end - start) / step;
+//		int[] a = new int[n+1];
+//		for (int i = 0; i < a.length; i++) {
+//			a[i] = start;
+//			start += step;
+//		}
+//		return a;
+//	}
+//	
+//	public static void main(String[] args) {
+//		int[] a = indiciesArray(0, 2, 5);
+//		System.out.println( Arrays.toString( a ) );
+//		int[] b = indiciesArray(5, 3, 15);
+//		System.out.println( Arrays.toString( b ) );
+//		int[] c = new int[] {21, 25, 29};
+//		System.out.println( Arrays.toString( c ) );
+//		int[] Z = Stream.of(a, b, c).flatMapToInt(IntStream::of).toArray();
+//		System.out.println( Arrays.toString( Z ) );
+//		int[] W = Stream.of(indiciesArray(0, 2, 5), indiciesArray(5, 3, 15), new int[] {21, 25, 29}).flatMapToInt(IntStream::of).toArray();
+//		System.out.println( Arrays.toString( W ) );
+//		
+//		DMatrixRMaj M = new DMatrixRMaj(5, 7, 3.14);
+//		System.out.println(M);
+//	}
 }

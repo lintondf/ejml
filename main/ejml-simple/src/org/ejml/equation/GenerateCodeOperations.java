@@ -182,6 +182,7 @@ public class GenerateCodeOperations {
     		Usage usage = findUsage(variable);
     		matrixUsages.add(usage);
     	}
+    	//TODO restore (premature optimization, etc etc etc
     	//eliminateRedundantTemps( matrixUsages );
 
     	if (assignmentTarget != null) {
