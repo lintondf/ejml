@@ -28,15 +28,15 @@ public class CodeMatrixConstructor {
 
         executor.setToRequiredSize(executor.getOutput().matrix);
         
-        final String formatDecl = "DMatrixRMaj %s = new DMatrixRMaj(%d, %d);";
-        final String formatSet = "%s.set(new double%s {{";
+        final String formatDecl = "DMatrixRMaj %s = new DMatrixRMaj(";
+        final String formatSet = "new double%s {{";
         final String postFix = "});";
         String brackets = "[]";
         if (executor.getOutput().matrix.numCols > 1) {
         	brackets = "[][]";
         }
-        sb.append( String.format(formatDecl, executor.getOutput().getName(), executor.getOutput().matrix.numRows, executor.getOutput().matrix.numCols));
-        sb.append( String.format(formatSet, executor.getOutput().getName(), brackets ));
+        sb.append( String.format(formatDecl, executor.getOutput().getName()));
+        sb.append( String.format(formatSet, brackets ));
         for (Item item : items) {
         	if (item.endRow) {
         		sb.deleteCharAt(sb.length()-1);

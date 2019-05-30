@@ -31,8 +31,20 @@ public class VariableInteger extends VariableScalar {
         this.value = value;
     }
 
+    public static VariableInteger factory(int value) {
+    	return new VariableInteger(value, "Integer{"+value+"}");
+    }
+    
+    public static VariableInteger factory(String value) {
+    	return new VariableInteger(Integer.parseInt(value), "Integer{"+value+"}");
+    }
+
     @Override
     public double getDouble() {
         return value;
+    }
+    
+    public int getValue() {
+    	return value;
     }
 }

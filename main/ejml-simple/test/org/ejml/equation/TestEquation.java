@@ -655,7 +655,7 @@ public class TestEquation {
     }
 
     @Test
-    public void compile_double() {
+    public void compile_double_1() {
         Equation eq = new Equation();
 
         SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
@@ -674,17 +674,68 @@ public class TestEquation {
         SimpleMatrix expected = B.scale(C);
         sequence.perform();
         assertTrue(expected.isIdentical(A, 1e-15));
+    }
+    
+    @Test
+    public void compile_double_2() {
+        Equation eq = new Equation();
 
-        sequence = eq.compile("A=B*2.5");
+        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        SimpleMatrix B = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        double C = 2.5;
+        double D = 1.7;
+
+        eq.alias(A, "A");
+        eq.alias(B, "B");
+        eq.alias(D, "D");
+        eq.alias(0.0, "E");
+
+        VariableDouble E = eq.lookupVariable("E");
+        SimpleMatrix expected = B.scale(C);
+
+        Sequence sequence = eq.compile("A=B*2.5");
         sequence.perform();
         assertTrue(expected.isIdentical(A, 1e-15));
+    }
+    
+    @Test
+    public void compile_double_3() {
+        Equation eq = new Equation();
 
-        sequence = eq.compile("E=2.5*D");
+        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        SimpleMatrix B = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        double C = 2.5;
+        double D = 1.7;
+
+        eq.alias(A, "A");
+        eq.alias(B, "B");
+        eq.alias(D, "D");
+        eq.alias(0.0, "E");
+
+        VariableDouble E = eq.lookupVariable("E");
+
+        Sequence sequence = eq.compile("E=2.5*D");
         sequence.perform();
         assertEquals(C * D, E.value, UtilEjml.TEST_F64);
+    }
+    @Test
+    public void compile_double_4() {
+        Equation eq = new Equation();
+
+        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        SimpleMatrix B = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
+        double C = 2.5;
+        double D = 1.7;
+
+        eq.alias(A, "A");
+        eq.alias(B, "B");
+        eq.alias(D, "D");
+        eq.alias(0.0, "E");
+
+        VariableDouble E = eq.lookupVariable("E");
 
         // try exponential formats
-        sequence = eq.compile("E=2.001e-6*1e3");
+        Sequence sequence = eq.compile("E=2.001e-6*1e3");
         sequence.perform();
         assertEquals(2.001e-6*1e3, E.value, UtilEjml.TEST_F64);
     }

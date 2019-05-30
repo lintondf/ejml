@@ -345,9 +345,6 @@ public class OperationCodeFactory implements IOperationFactory {
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
-            VariableMatrix mA = (VariableMatrix)A;
-            Variable mB = (Variable)B;
-
             ret.addDimension(DimensionSources.LHS_ROWS);
             ret.addDimension(DimensionSources.RHS_COLS);
             ret.output = output;
@@ -363,18 +360,12 @@ public class OperationCodeFactory implements IOperationFactory {
         } else {
             final Variable output = manager.createMatrix();
             ret.output = output;
-            final Variable m;
-            final VariableScalar s;
 
             if( A instanceof VariableMatrix ) {
-                m = (Variable)A;
-                s = (VariableScalar)B;
+                ret.op = new CodeOperation("add-ms", ret);
             } else {
-                m = (Variable)B;
-                s = (VariableScalar)A;
+                ret.op = new CodeOperation("add-sm", ret);
             }
-
-            ret.op = new CodeOperation("add-ms", ret);
         }
 
         return ret;

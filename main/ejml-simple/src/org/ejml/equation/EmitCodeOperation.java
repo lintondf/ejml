@@ -398,27 +398,27 @@ public class EmitCodeOperation {
 		case "add": // Info add(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.add(m.matrix, s.getDouble(), output.matrix);
-			sb.append( String.format(formatCommonOps3, "add", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "add", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.subtract(m, v, output.matrix);
-			sb.append( String.format(formatCommonOps3, "subtract", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "subtract", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.divide(s.getDouble(), m.matrix, output.matrix);
-			sb.append( String.format(formatCommonOps3, "divide", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "divide", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
-			sb.append( String.format(formatCommonOps3, "scale", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "scale", B.getOperand(), A.getOperand(), output.getName()) );
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.elementPower(a, b, output.matrix);
-			sb.append( String.format(formatCommonOps3, "elementPower", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
 		return sb.toString();
@@ -465,27 +465,27 @@ public class EmitCodeOperation {
 		case "add": // Info add(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
 			//CommonOps_DDRM.add(m.matrix, s.getDouble(), output.matrix);
-			sb.append( String.format(formatCommonOps3, "add", B.getName(), A.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "add", B.getOperand(), A.getOperand(), output.getName()) );
 			return sb.toString();
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
-			//CommonOps_DDRM.subtract(v, m, output.matrix);
-			sb.append( String.format(formatCommonOps3, "subtract", B.getName(), A.getName(), output.getName()) );
+//			CommonOps_DDRM.subtract(v, m, output.matrix);
+			sb.append( String.format(formatCommonOps3, "subtract", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.divide(s.getDouble(), m.matrix, output.matrix);
-			sb.append( String.format(formatCommonOps3, "divide", B.getName(), A.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "divide", B.getOperand(), A.getOperand(), output.getName()) );
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
-			sb.append( String.format(formatCommonOps3, "scale", B.getName(), A.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "scale", B.getOperand(), A.getOperand(), output.getName()) );
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
 			//CommonOps_DDRM.elementPower(a, b, output.matrix);
-			sb.append( String.format(formatCommonOps3, "elementPower", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
 		return sb.toString();
@@ -818,9 +818,12 @@ public class EmitCodeOperation {
 	                } else {
 	                	step = seqRange.step.getOperand();
 	                }
+	                String start = "0";
+	                if (seqRange.start != null)
+	                	start = seqRange.start.getOperand();
 //	                sb.append(String.format("indiciesArray(%s, %s, %s-1)", 
    	                sb.append( codeIndiciesArray(
-	                		seqRange.start.getOperand(), step, lastRowsCols ) );
+	                		start, step, lastRowsCols ) );
 	            	break;
 	            case EXPLICIT:
 	            	IntegerSequence.Explicit seqExplicit = (IntegerSequence.Explicit)sequence;

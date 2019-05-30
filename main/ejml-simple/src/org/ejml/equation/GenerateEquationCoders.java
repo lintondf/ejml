@@ -613,17 +613,59 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			HashMap<String, String> lookups, GenerateCodeOperations optimizer, 
-			Equation eq, Sequence sequence, String equationText) {
-		
+			HashMap<String, String> lookups, GenerateCodeOperations optimizer, Equation eq, Sequence sequence,
+			String equationText) {
+
 		body.add("");
 		String name = String.format("%s_Coded", testName);
 		StringBuilder sb = new StringBuilder();
 		optimizer.emitJavaTest(sb, prefix, name, eq, equationText);
 		body.addAll(Arrays.asList(sb.toString().split("\n")));
-		//body.add("}");
+		// body.add("}");
 	}
-	
+
+	private static void handleAliases(Equation eq, HashMap<String, String> names, HashMap<String, String> constants,
+			ArrayList<String> integers, ArrayList<String> doubles, ArrayList<String> matrices,
+			ArrayList<String> aliases) {
+		for (String a : aliases) {
+			String[] f = a.trim().split(",");
+			for (int i = 0; i < f.length; i += 2) {
+				String var = f[i].trim();
+				String name = unquote(f[i + 1]);
+				char c = var.charAt(0);
+				if (c == '-' || c == '+' || Character.isDigit(c)) {
+					if (var.contains(".")) {
+						doubles.add(name);
+					} else {
+						integers.add(name);
+					}
+					names.put(name, name);
+					constants.put(name, var);
+				} else {
+					names.put(var, name);
+				}
+			}
+		}
+
+		for (String n : integers) {
+			if (names.containsKey(n)) {
+				Integer x = new Integer(0);
+				eq.alias(x, names.get(n));
+			}
+		}
+		for (String n : doubles) {
+			if (names.containsKey(n)) {
+				Double x = new Double(0.0);
+				eq.alias(x, names.get(n));
+			}
+		}
+		for (String n : matrices) {
+			if (names.containsKey(n)) {
+				SimpleMatrix x = new SimpleMatrix(1, 1);
+				eq.alias(x, names.get(n));
+			}
+		}
+	}
 
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
 		ArrayList<String> body = new ArrayList<>();
@@ -725,46 +767,9 @@ public class GenerateEquationCoders {
 
 				HashMap<String, String> names = new HashMap<>();
 				HashMap<String, String> constants = new HashMap<>();
-				for (String a : aliases) {
-					String[] f = a.trim().split(",");
-					for (int i = 0; i < f.length; i += 2) {
-						String var = f[i].trim();
-						String name = unquote(f[i + 1]);
-						char c = var.charAt(0);
-						if (c == '-' || c == '+' || Character.isDigit(c)) {
-							if (var.contains(".")) {
-								doubles.add(name);
-							} else {
-								integers.add(name);
-							}
-							names.put(name, name);
-							constants.put(name, var);
-						} else {
-							names.put(var, name);
-						}
-					}
-				}
-//				System.out.println(names);
-
-				for (String n : integers) {
-					if (names.containsKey(n)) {
-						Integer x = new Integer(0);
-						eq.alias(x, names.get(n));
-					}
-				}
-				for (String n : doubles) {
-					if (names.containsKey(n)) {
-						Double x = new Double(0.0);
-						eq.alias(x, names.get(n));
-					}
-				}
-				for (String n : matrices) {
-					if (names.containsKey(n)) {
-						SimpleMatrix x = new SimpleMatrix(1, 1);
-//						System.out.println(x + "->" + names.get(n));
-						eq.alias(x, names.get(n));
-					}
-				}
+				
+				handleAliases( eq, names, constants, integers, doubles, matrices, aliases );
+				
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
@@ -788,23 +793,24 @@ public class GenerateEquationCoders {
 //					throw x;
 					return false;
 				}
+			} else {
+				System.err.printf("No assignment in %s\n", testName);
 			}
 		}
-		System.err.printf("In %s: %d, %d, %d; not exactly one compile() or process()\n", testName, nCompile, nProcess, nAssign );
-//		if (testName.equals("compile_assign_submatrix")) {
-//			Random rand = new Random();
-//	        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 6, -1, 1, rand);
-//	        SimpleMatrix B = SimpleMatrix.random_DDRM(2, 5, -1, 1, rand);
-//
-//	        SimpleMatrix A_orig = A.copy();
-//
-//	        eq.alias(A, "A");
-//	        eq.alias(B, "B");
-//
-//	        Sequence sequence = eq.compile("A(2:3,0:4)=B", true, true);
-//	        List<Operation> operations = sequence.getOperations();
-//	        operations.forEach(System.out::println);
-//		}
+		if (nCompile == 0 && nProcess == 0) {
+			System.err.printf("In %s: %d, %d, %d; no compile() or process()\n", testName, nCompile, nProcess, nAssign );			
+		} else if (nCompile > 1 && nProcess == 0) {
+			System.err.printf("In %s: %d, %d, %d; more than one compile()\n", testName, nCompile, nProcess, nAssign );
+		} else if (nCompile == 0 && nProcess > 1) {
+			System.err.printf("In %s: %d, %d, %d; more than one process()\n", testName, nCompile, nProcess, nAssign );
+			body.add(endParen);
+			body.forEach(code::println);
+			code.println();
+			code.println();
+			return true;
+		} else {
+			System.err.printf("In %s: %d, %d, %d; strange brew\n", testName, nCompile, nProcess, nAssign );
+		}
 		return false;
 	}
 
@@ -813,10 +819,46 @@ public class GenerateEquationCoders {
 		skips.add("compile_parentheses_extract_IndexMath");
 		skips.add("compile_constructMatrix_commas");
 		skips.add("print");
+		skips.add("compile_output");
+		// not compiling random number support
 		skips.add("rand");
 		skips.add("randn");
-		skips.add("compile_output");
-		
+		skips.add("rng");
+		// exception throw tests
+		skips.add("assign_lazy_right");
+		skips.add("multiply_matrix1x1_matrixNxM");
+		skips.add("add_matrix1x1_matrixNxM");
+		skips.add("subtract_matrix1x1_matrixNxM");
+		skips.add("copy_double_matrix");
+		// Construction from submatrices can not be precompiled
+		skips.add("compile_constructMatrix_MatrixAndScalar");
+		skips.add("compile_constructMatrix_Operations");
+		skips.add("compile_constructMatrix_Inner");
+		skips.add("compile_constructMatrix_ForSequence_Case0");
+		skips.add("compile_constructMatrix_ParenSubMatrixAndComma");
+		// pure parsing tests
+		skips.add("handleParentheses");
+		skips.add("parseOperations");
+		skips.add("macro");
+		skips.add("extractTokens");
+		skips.add("extractTokens_elementWise");
+		skips.add("extractTokens_integers");
+		skips.add("extractTokens_doubles");
+		skips.add("extractTokens_minus");
+		skips.add("insertFunctionsAndVariables");
+		skips.add("isTargetOp");
+		skips.add("isLetter");
+		skips.add("gracefullyHandleBadCode");
+		skips.add("compile_parentheses");
+		skips.add("compile_parentheses_extract");
+		skips.add("compile_parentheses_extractSpecial");
+		skips.add("lookupVariable");
+		skips.add("createOp");
+		skips.add("compile_function_one");
+		skips.add("compile_function_N");
+		skips.add("");
+		skips.add("");
+
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
 		String[] tests = { "TestEquation.java", "TestOperation.java" };
@@ -837,21 +879,24 @@ public class GenerateEquationCoders {
 				it = lines.iterator();
 				int nTests = 0;
 				int nCoded = 0;
+				int nSkipped = 0;
 				while (it.hasNext()) {
 					String line = it.next();
 					Matcher matcher = method.matcher(line);
 					if (matcher.find()) {
 						nTests++;
-						if (skips.contains(matcher.group(1)))
+						if (skips.contains(matcher.group(1))) {
+							nSkipped++;
 							continue;
-//						if (! matcher.group(1).equals("copy_submatrix_scalar_case5"))
+						}
+//						if (!matcher.group(1).equals("subtract_matrix_scalar_2"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
 						}
 					}
 				}
-				System.out.printf("%d tests; %d coded\n", nTests, nCoded);
+				System.out.printf("%d tests; %d skipped; %d coded\n", nTests, nSkipped, nCoded);
 			}
 			code.println("}");
 		} catch (Exception x) {

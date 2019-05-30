@@ -138,7 +138,7 @@ public class TestOperation {
     }
 
     @Test
-    public void multiply_matrix_scalar() {
+    public void multiply_matrix_scalar1() {
         Equation eq = new Equation();
 
         SimpleMatrix x = SimpleMatrix.random_DDRM(5, 3, -1, 1, rand);
@@ -150,6 +150,19 @@ public class TestOperation {
 
         eq.process("x=b*A");
         assertTrue(b.scale(2.5).isIdentical(x, UtilEjml.TEST_F64));
+    }
+    
+    @Test
+    public void multiply_matrix_scalar2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix x = SimpleMatrix.random_DDRM(5, 3, -1, 1, rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(5, 3, -1, 1, rand);
+
+        eq.alias(2.5, "A");
+        eq.alias(b, "b");
+        eq.alias(x, "x");
+
         eq.process("x=A*b");
         assertTrue(b.scale(2.5).isIdentical(x, UtilEjml.TEST_F64));
     }
@@ -539,7 +552,7 @@ public class TestOperation {
     }
 
     @Test
-    public void add_matrix_scalar() {
+    public void add_matrix_scalar_1() {
         Equation eq = new Equation();
 
         SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
@@ -549,6 +562,15 @@ public class TestOperation {
 
         eq.process("a=b+2.2");
         assertTrue(b.plus(2.2).isIdentical(a, UtilEjml.TEST_F64));
+    }
+    @Test
+    public void add_matrix_scalar_2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a,"a",b,"b");
 
         eq.process("a=2.2+b");
         assertTrue(b.plus(2.2).isIdentical(a, UtilEjml.TEST_F64));
@@ -616,7 +638,7 @@ public class TestOperation {
     }
 
     @Test
-    public void subtract_matrix_scalar() {
+    public void subtract_matrix_scalar_1() {
         Equation eq = new Equation();
 
         SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
@@ -626,6 +648,15 @@ public class TestOperation {
 
         eq.process("a=b-2.2");
         assertTrue(b.plus(-2.2).isIdentical(a, UtilEjml.TEST_F64));
+    }
+    @Test
+    public void subtract_matrix_scalar_2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+
+        eq.alias(a,"a",b,"b");
 
         eq.process("a=2.2-b");
 
@@ -707,7 +738,7 @@ public class TestOperation {
     }
 
     @Test
-    public void copy_double_scalar() {
+    public void copy_double_scalar_1() {
         Equation eq = new Equation();
 
         // int to double
@@ -716,6 +747,14 @@ public class TestOperation {
 
         eq.process("a=b");
         assertEquals(3, eq.lookupDouble("a"), UtilEjml.TEST_F64);
+    }
+    @Test
+    public void copy_double_scalar_2() {
+        Equation eq = new Equation();
+
+        // int to double
+        eq.alias(2.2,"a");
+        eq.alias(3,"b");
 
         // double to double
         eq.alias(3.5, "c");
