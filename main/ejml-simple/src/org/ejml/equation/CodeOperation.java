@@ -90,13 +90,12 @@ public class CodeOperation extends Operation {
     			found = true;
     		}
     	}
-//    	if (input.contains(original)) {
-//    		input.remove(original);
-//    		input.add(replacement);
-//    		found = true;
-//    	}
     	if (output != null && output.equals(original)) {
     		output = replacement;
+    		found = true;
+    	}
+    	if (constructor != null && constructor.output != null && constructor.output.equals(original)) {
+    		constructor.output = (VariableMatrix) replacement;
     		found = true;
     	}
     	return found;

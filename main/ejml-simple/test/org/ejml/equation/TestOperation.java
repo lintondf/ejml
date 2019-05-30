@@ -79,7 +79,7 @@ public class TestOperation {
 
         eq.alias(4, "A");
         eq.alias(13, "b");
-        eq.alias(-1, "x");
+        eq.alias(13 / 4, "x");
 
         eq.process("x=b/A");
 
@@ -1051,8 +1051,8 @@ public class TestOperation {
         SimpleMatrix b = SimpleMatrix.random_DDRM(3, 4, -1, 1, rand);
 
         eq.alias(b, "b");
-        int i1 = 4; 
-        int i2 = 5;
+        int i1 = 1; 
+        int i2 = 2;
         int j1 = 1;
         int j2 = 3;
         eq.alias(i1, "i1", i2, "i2", j1, "j1", j2, "j2");

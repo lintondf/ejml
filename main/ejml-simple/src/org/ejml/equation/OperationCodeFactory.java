@@ -139,7 +139,7 @@ public class OperationCodeFactory implements IOperationFactory {
             ret.input.clear();
             ret.input.add(m);
             ret.input.add(s);
-            ret.op = new CodeOperation("divide-ms", ret);
+            ret.op = new CodeOperation("divide-sm", ret);
         } else if( A instanceof VariableInteger && B instanceof VariableInteger ) {
             final VariableInteger output = manager.createInteger();
             ret.output = output;

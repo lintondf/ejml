@@ -26,10 +26,26 @@ public class EmitCodeOperation {
 	final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );";
 	final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );";
 	
+	final static VariableInteger zero = new VariableInteger(0, "Integer{0}");
+	final static VariableInteger one = new VariableInteger(1, "Integer{1}");
+	
 	protected static boolean isNumeric(String str) {
 	    return str.matches("[+-]?\\d*(\\.\\d+)?");
 	}
 	
+	protected static void emitReshape(StringBuilder sb, Variable output, Variable A) {
+		String o = output.getOperand();
+		String a = A.getOperand();
+		if (A.getType() == VariableType.MATRIX)
+			a += ".numRows";
+		sb.append( String.format(formatGeneral2, o, "reshape", a, a) );
+	}
+
+	protected static void emitReshape(StringBuilder sb, Variable output, String a, String b) {
+		String o = output.getOperand();
+		sb.append( String.format(formatGeneral2, o, "reshape", a, b) );
+	}
+
 	protected static void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
 		String o = output.getOperand();
 		String a = A.getOperand();
@@ -39,6 +55,18 @@ public class EmitCodeOperation {
 		if (B.getType() == VariableType.MATRIX)
 			b += ".numCols";
 		sb.append( String.format(formatGeneral2, o, "reshape", a, b) );
+	}
+
+
+	protected static void emitReshapeTranspose(StringBuilder sb, Variable output, Variable A, Variable B) {
+		String o = output.getOperand();
+		String a = A.getOperand();
+		String b = B.getOperand();
+		if (A.getType() == VariableType.MATRIX)
+			a += ".numRows";
+		if (B.getType() == VariableType.MATRIX)
+			b += ".numCols";
+		sb.append( String.format(formatGeneral2, o, "reshape", b, a) );
 	}
 
 
@@ -192,7 +220,7 @@ public class EmitCodeOperation {
 	protected static String Op(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		VariableInteger one = new VariableInteger(1, "Integer{1}");
+		
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "max_cols": // Info max_two( final Variable A , final Variable P , ManagerTempVariables manager)
@@ -244,14 +272,25 @@ public class EmitCodeOperation {
 	    	
 	    	String target = codeOp.output.getName();
 	    	String source = codeOp.input.get(0).getName();
-	    	String[] lastRowsCols = { source+".numRows-1", source+".numCols-1"};
+	    	String[] lastRowsCols = { source+".numRows", source+".numCols"};
 	    	
-	    	if (codeExtents.isBlock) {
+	    	if (codeExtents.is1D) {
+		    	lastRowsCols = new String[] {"", String.format("%s.numRows*%s.numCols", source, source) };
+		    	emitReshape( sb, output, "1", codeExtents.codeNumCols(lastRowsCols) );
+	    		sb.append(String.format(formatCommonOps4, "extract", source,
+	    				codeExtents.codeComplexColIndices(lastRowsCols),
+	    				codeExtents.codeNumCols(lastRowsCols),
+	    				target) );
+	    	} else if (codeExtents.isBlock) {
+		    	emitReshape( sb, output, codeExtents.codeNumRows(lastRowsCols), codeExtents.codeNumCols(lastRowsCols) );
 	    		sb.append(String.format(formatCommonOps6, "extract", source, 
-	    				codeExtents.codeSimpleStartRow(), codeExtents.codeSimpleStartCol(),
-	    				codeExtents.codeSimpleEndRow(lastRowsCols), codeExtents.codeSimpleEndCol(lastRowsCols),
+	    				codeExtents.codeSimpleStartRow(), 
+	    				codeExtents.codeSimpleEndRow(lastRowsCols), 
+	    				codeExtents.codeSimpleStartCol(),
+	    				codeExtents.codeSimpleEndCol(lastRowsCols),
 	    				target) );
 	    	} else {
+		    	emitReshape( sb, output, codeExtents.codeNumRows(lastRowsCols), codeExtents.codeNumCols(lastRowsCols) );
 	    		sb.append(String.format(formatCommonOps6, "extract", source, 
 	    				codeExtents.codeComplexRowIndices(lastRowsCols), codeExtents.codeNumRows(lastRowsCols), 
 	    				codeExtents.codeComplexColIndices(lastRowsCols), codeExtents.codeNumCols(lastRowsCols),
@@ -369,12 +408,12 @@ public class EmitCodeOperation {
 		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.divide(s.getDouble(), m.matrix, output.matrix);
-			sb.append( String.format(formatCommonOps3, "divide", B.getName(), A.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "divide", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
-			sb.append( String.format(formatCommonOps3, "scale", B.getName(), A.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "scale", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
@@ -431,7 +470,17 @@ public class EmitCodeOperation {
 		case "subtract": // Info subtract(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
 			//CommonOps_DDRM.subtract(v, m, output.matrix);
-			sb.append( String.format(formatCommonOps3, "subtract", A.getName(), B.getName(), output.getName()) );
+			sb.append( String.format(formatCommonOps3, "subtract", B.getName(), A.getName(), output.getName()) );
+			return sb.toString();
+		case "divide": // Info divide(final Variable A, final Variable B, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.divide(s.getDouble(), m.matrix, output.matrix);
+			sb.append( String.format(formatCommonOps3, "divide", B.getName(), A.getName(), output.getName()) );
+			return sb.toString();
+		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
+			sb.append( String.format(formatCommonOps3, "scale", B.getName(), A.getName(), output.getName()) );
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
@@ -446,14 +495,13 @@ public class EmitCodeOperation {
 	protected static String mOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
-		VariableInteger one = new VariableInteger(1, "Integer{1}");
 
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "diag": // Info diag( final Variable A , ManagerTempVariables manager)
 			sb.append(String.format("if (MatrixFeatures_DDRM.isVector(%s)) { //;", A.getOperand() ));
 			sb.append("\t");
-			emitReshape(sb, output, A, A);
+			emitReshape(sb, output, A);
 			sb.append("\t");
 			sb.append(String.format("CommonOps_DDRM.diag(%s, %s.numRows, %s.data);", output.getOperand(), A.getOperand(), A.getOperand()) );
 			sb.append("} else { //;");
@@ -518,7 +566,7 @@ public class EmitCodeOperation {
 			sb.append( String.format(formatCommonOps2, "pinv", A.getName(), output.getName()) );
 			return sb.toString();
 		case "transpose": // Info transpose( final Variable A , ManagerTempVariables manager)
-			emitReshape(sb, output, A, A);
+			emitReshapeTranspose(sb, output, A, A);
 			//CommonOps_DDRM.transpose(mA.matrix, output.matrix);
 			sb.append( String.format(formatCommonOps2, "transpose", A.getName(), output.getName()) );
 			return sb.toString();
@@ -533,6 +581,7 @@ public class EmitCodeOperation {
 	
 	private static String construct(CodeOperation codeOp) {
 		StringBuilder sb = new StringBuilder();
+		//codeOp.constructor.output = (VariableMatrix) codeOp.output;
 		CodeMatrixConstructor cmc = new CodeMatrixConstructor( codeOp.constructor );
 		cmc.construct(sb);
 		return sb.toString();
@@ -540,7 +589,6 @@ public class EmitCodeOperation {
 
 	private static String copyOp(String[] operands, CodeOperation codeOp) {
 		//copy: ii, ss, sm1, none
-		//copyR: sm
 		switch (operands[1]) {
 		case "mm":
 			StringBuilder sb = new StringBuilder();
@@ -583,6 +631,11 @@ public class EmitCodeOperation {
 		protected IntegerSequence rowSequence;
 		protected IntegerSequence colSequence;
 		
+		protected boolean  is1D;
+		
+		public boolean is1D() {
+			return is1D;
+		}
 		
 		protected boolean  isBlock;
 		
@@ -607,26 +660,28 @@ public class EmitCodeOperation {
 		public CodeExtents( List<Variable> range, int iFirst ) {
 			this.range = range;
 			isBlock = false;
+			is1D = false;
 			if (range.size() == 1+iFirst) {
-				startCol = null;
-				endCol = null;
-				colSequence = null;
+				startRow = null;
+				endRow = zero;
+				rowSequence = null;
+				is1D = true;
 				Variable var = range.get(iFirst+0);
 		        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
 		            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-		            rowSequence = sequence;
+		            colSequence = sequence;
 		            switch( sequence.getType() ) {
 		            case FOR:
 		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
 		                isBlock = isSimpleStep(seqFor.step);
-		                startRow = seqFor.start;
-		                endRow = seqFor.end;
+		                startCol = seqFor.start;
+		                endCol = seqFor.end;
 		                break;
 		            case RANGE:
 		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
 		                isBlock = isSimpleStep(seqRange.step);
-		                startRow = seqRange.start;
-		                endRow = null;
+		                startCol = seqRange.start;
+		                endCol = null;
 		            	break;
 		            default:
 		            	isBlock = false;
@@ -634,8 +689,8 @@ public class EmitCodeOperation {
 		            }
 		        } else if( var.getType() == VariableType.SCALAR ) {
 		            isBlock = true;
-	                startRow = var;
-	                endRow = var;
+	                startCol = var;
+	                endCol = var;
 		        }
 			} else {
 				Variable rowVar = range.get(iFirst+0);
@@ -703,9 +758,9 @@ public class EmitCodeOperation {
 		
 		public String codeSimpleEndRow(String[] lastRowsCols) {
 			if (endRow == null) {
-				return String.format("%s", lastRowsCols[0] );
+				return lastRowsCols[0];
 			} else {
-				return endRow.getOperand();
+				return endRow.getOperand() + "+1";
 			}
 		}
 
@@ -719,18 +774,18 @@ public class EmitCodeOperation {
 		
 		public String codeSimpleEndCol(String[] lastRowsCols) {
 			if (endCol == null) {
-				return String.format("%s", lastRowsCols[1] );
+				return lastRowsCols[1];
 			} else {
-				return endCol.getOperand();
+				return endCol.getOperand() + "+1";
 			}
 		}
 		
 		public String codeSimpleRows(String[] lastRowsCols) {
-			return String.format("1+(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow() );
+			return String.format("(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow() );
 		}
 		
 		public String codeSimpleCols(String[] lastRowsCols) {
-			return String.format("1+(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol() );
+			return String.format("(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol() );
 		}
 		
 		public String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
@@ -757,7 +812,7 @@ public class EmitCodeOperation {
 	                } else {
 	                	step = seqRange.step.getOperand();
 	                }
-	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
+	                sb.append(String.format("indiciesArray(%s, %s, %s-1)", 
 	                		seqRange.start.getOperand(), step, lastRowsCols ) );
 	            	break;
 	            case EXPLICIT:
@@ -795,20 +850,20 @@ public class EmitCodeOperation {
 	            case FOR:
 	                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
 	                if (seqFor.step == null) {
-	                	sb.append(String.format("1+(%s-%s)", 
+	                	sb.append(String.format("(%s-%s)", 
 		                		seqFor.end.getOperand(), seqFor.start.getOperand() ) );
 	                } else {
-	                	sb.append(String.format("1+(%s-%s)/%s", 
+	                	sb.append(String.format("(%s-%s)/%s", 
 	                		seqFor.end.getOperand(), seqFor.start.getOperand(), seqFor.step.getOperand() ) );
 	                }
 	                break;
 	            case RANGE:
 	                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
 	                if (seqRange.step == null) {
-	                	sb.append(String.format("1+(%s-%s)", 
+	                	sb.append(String.format("(%s-%s)", 
 	                			lastRowsCols, seqRange.start.getOperand() ) );
 	                } else {
-	                	sb.append(String.format("1+(%s-%s)/%s", 
+	                	sb.append(String.format("(%s-%s)/%s", 
 	                			lastRowsCols, seqRange.start.getOperand(), seqRange.step.getOperand() ) );
 	                }
 	            	break;
@@ -866,7 +921,7 @@ public class EmitCodeOperation {
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			String[] M = {"M.numRows-1", "M.numCols-1"};
+			String[] M = {"M.numRows", "M.numCols"};
 			if (isBlock) {
 				sb.append("BLOCK{");
 				sb.append(codeSimpleStartRow());
@@ -905,7 +960,7 @@ public class EmitCodeOperation {
     	
     	String target = codeOp.output.getName();
         String source = codeOp.input.get(0).getName();
-        String[] lastRowsCols = { target+".numRows-1", target+".numCols-1"};
+        String[] lastRowsCols = { target+".numRows", target+".numCols"};
         if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
         	source = String.format("new DMatrixRMaj(%s, %s, %s)", 
         			codeExtents.codeNumRows(lastRowsCols), 
@@ -913,7 +968,17 @@ public class EmitCodeOperation {
         			codeOp.input.get(0).getOperand());
         }
     	
-    	if (codeExtents.isBlock) {
+    	if (codeExtents.is1D) {
+	    	lastRowsCols = new String[] {"", String.format("%s.numRows*%s.numCols", target, target) };
+	        if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
+	        	source = String.format("new DMatrixRMaj(1, %s, %s)", 
+	        			codeExtents.codeNumCols(lastRowsCols), 
+	        			codeOp.input.get(0).getOperand());
+	        }
+    		sb.append(String.format(formatCommonOps4, "insert", source, codeOp.output.getName(),
+    				codeExtents.codeComplexColIndices(lastRowsCols),
+    				codeExtents.codeNumCols(lastRowsCols)) );
+    	} else if (codeExtents.isBlock) {
     		sb.append(String.format(formatCommonOps4, "insert", source, codeOp.output.getName(), 
     				codeExtents.codeSimpleStartRow(), codeExtents.codeSimpleStartCol()) );
     	} else {

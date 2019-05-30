@@ -169,7 +169,7 @@ public class OperationExecuteFactory implements IOperationFactory {
             final VariableMatrix m = (VariableMatrix)B;
             final VariableScalar s = (VariableScalar)A;
             ret.output = output;
-            ret.op = new Operation("divide-ms") {
+            ret.op = new Operation("divide-sm") {
                 @Override
                 public void process() {
                     output.matrix.reshape(m.matrix.numRows,m.matrix.numCols);

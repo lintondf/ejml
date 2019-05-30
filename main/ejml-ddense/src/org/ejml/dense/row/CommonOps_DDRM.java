@@ -1266,6 +1266,25 @@ public class CommonOps_DDRM {
             dst.data[i] = src.data[indexes[i]];
         }
     }
+    
+    /**
+     * Inserts into the specified elements of dst the source matrix.
+     * @param src Source matrix. Not modified. Must be a vector of the correct length.
+     * @param dst output matrix.  
+     * @param indexes array of row indexes
+     * @param length maximum element in row array
+     */
+    public static void insert(DMatrixRMaj src ,
+                               DMatrixRMaj dst ,
+                                int indexes[] , int length) {
+    	
+        if( !MatrixFeatures_DDRM.isVector(src))
+            throw new MatrixDimensionException("src must be a vector");
+        
+        for (int i = 0; i < length; i++) {
+            src.data[i] = dst.data[indexes[i]];
+        }
+    }
 
     /**
      * Inserts into the specified elements of dst the source matrix.

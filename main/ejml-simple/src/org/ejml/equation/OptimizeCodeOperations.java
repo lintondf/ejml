@@ -182,7 +182,7 @@ public class OptimizeCodeOperations {
     		Usage usage = findUsage(variable);
     		matrixUsages.add(usage);
     	}
-    	eliminateRedundantTemps( matrixUsages );
+    	//eliminateRedundantTemps( matrixUsages );
 
     	if (assignmentTarget != null) {
     		int last = operations.size()-1;
@@ -293,9 +293,9 @@ public class OptimizeCodeOperations {
 	    			//assertTrue(new SimpleMatrix(A_coded).isIdentical(A, 1e-15));
 	    			String var = variable.getName();
 	    			String l = lookups.get(var);
-	    			if (l != null)
+	    			if (l != null) {
 	    				var = l;
-	    			if (constants.containsKey(variable.getName())) {
+	    			} else if (constants.containsKey(variable.getName())) {
 	    				var = constants.get(variable.getName());
 	    			}
 	    			
@@ -363,6 +363,19 @@ public class OptimizeCodeOperations {
     	return ret;
     }
     
+    
+    protected boolean isConstructed( Variable v ) {
+    	if (v instanceof VariableMatrix) {
+    		for (Operation operation : operations) {
+    			CodeOperation codeOp = (CodeOperation) operation;
+    			if (codeOp.constructor != null) {
+    				if (codeOp.constructor.output != null && codeOp.constructor.output.getName().equals(v.getName()))
+    					return true;
+    			}
+    		}
+    	}
+    	return false;
+    }
    
     public void emitJavaTest( StringBuilder body, String prefix, String name, Equation eq, String equationText ) {
     	HashMap<String, Variable> variables = eq.getVariables();
@@ -403,17 +416,19 @@ public class OptimizeCodeOperations {
     	body.append("\n");
     	for (Variable variable : variables.values()) {
 			if (assignmentTarget != null && variable.equals(assignmentTarget)) {
-				String type = getJavaType(assignmentTarget);
-				if (type.equals("int") || type.equals("double")) {
-					body.append(String.format(declFormatWithValue, prefix, prefix, type, variable.getName(), "0") );					
-				} else {
-					String constructParameters = "1,1";
-					if (this.lastOperationCopyR) {
-						constructParameters = variable.getName() + "_in";
+				if (! isConstructed(variable)) {
+					String type = getJavaType(assignmentTarget);
+					if (type.equals("int") || type.equals("double")) {
+						body.append(String.format(declFormatWithValue, prefix, prefix, type, variable.getName(), "0") );					
+					} else {
+						String constructParameters = "1,1";
+						if (this.lastOperationCopyR) {
+							constructParameters = variable.getName() + "_in";
+						}
+						body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type, constructParameters) );
 					}
-					body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type, constructParameters) );
+					body.append(";\n");
 				}
-				body.append(";\n");
 			}
     	}    	
     	for (Usage usage : integerUsages) {

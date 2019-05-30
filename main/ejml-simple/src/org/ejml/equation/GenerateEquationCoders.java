@@ -766,7 +766,7 @@ public class GenerateEquationCoders {
 					}
 				}
 				try {
-					Sequence sequence = eq.compile(equationText);
+					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
 					OptimizeCodeOperations optimizer = new OptimizeCodeOperations(operations);
 					optimizer.mapVariableUsage();
@@ -813,7 +813,9 @@ public class GenerateEquationCoders {
 		skips.add("compile_parentheses_extract_IndexMath");
 		skips.add("compile_constructMatrix_commas");
 		skips.add("print");
-		skips.add("");
+		skips.add("rand");
+		skips.add("randn");
+		skips.add("compile_output");
 		
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
@@ -842,7 +844,7 @@ public class GenerateEquationCoders {
 						nTests++;
 						if (skips.contains(matcher.group(1)))
 							continue;
-//						if (! matcher.group(1).equals("compile_parentheses_extractScalar"))
+//						if (! matcher.group(1).equals("copy_submatrix_scalar_case5"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
