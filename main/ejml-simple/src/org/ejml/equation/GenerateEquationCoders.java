@@ -16,9 +16,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.equation.GenerateCodeOperations.Usage;
 import org.ejml.simple.SimpleMatrix;
 
 public class GenerateEquationCoders {
@@ -666,7 +669,27 @@ public class GenerateEquationCoders {
 			}
 		}
 	}
+	
+	public static void declareTemporary( StringBuilder header, Variable variable ) {
+		switch (variable.getType()) {
+		case SCALAR:
+			VariableScalar scalar = (VariableScalar) variable;
+			if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
+				header.append( String.format("%-10s %s;\n", "int", variable.getOperand() ));
+			} else {
+				header.append( String.format("%-10s %s;\n", "double", variable.getOperand() ));    					
+			}
+			break;
+		case MATRIX:
+			header.append( String.format("%-10s %s = new DMatrixRMaj(1,1);\n", "DMatrixRMaj", variable.getName() ));
+			break;
+		default:
+			System.err.println("Unhandled variable type encountered: " + variable);
+			break;
+		}
+	}
 
+	
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
 		ArrayList<String> body = new ArrayList<>();
 		final Pattern compilePattern = Pattern.compile("(\\w+)\\.compile\\((\\\"[^\\\"]*\\\")");
@@ -680,6 +703,9 @@ public class GenerateEquationCoders {
 		final Pattern aliasPattern = Pattern.compile("\\.alias\\(([^}]*)\\)");
 		final Pattern lookupPattern = Pattern.compile("eq\\.lookup(\\w+)\\(([^\\)]*)\\)");
 		final Pattern lookupAssignPattern = Pattern.compile("(\\w+)\\s+(\\w+)\\s*=\\s*eq\\.lookup(\\w+)\\(([^\\)]*)\\)");
+		
+		//assertEquals(-2, eq.lookupInteger("A"));
+		final Pattern checkPattern = Pattern.compile("\\s*assertEquals\\((.*),\\s*eq\\.lookup(\\w+)\\(\\\"(.*)\\\"\\)\\)");
 		
 		final String prefix = "    ";
 
@@ -759,17 +785,17 @@ public class GenerateEquationCoders {
 		ManagerFunctions mf = new ManagerFunctions(factory);
 		eq.setManagerFunctions(mf);
 
+		HashMap<String, String> names = new HashMap<>();
+		HashMap<String, String> constants = new HashMap<>();
+		
+		handleAliases( eq, names, constants, integers, doubles, matrices, aliases );
+		
 		if (nCompile == 1 || nProcess == 1) {
 			equationText = equationText.replace("\\\\", "\\"); // for reasons unknown backslashes are double escaped here
 			Matcher matcher = assignmentPattern.matcher(equationText);
 			if (matcher.find()) {
 				nAssign++;
 
-				HashMap<String, String> names = new HashMap<>();
-				HashMap<String, String> constants = new HashMap<>();
-				
-				handleAliases( eq, names, constants, integers, doubles, matrices, aliases );
-				
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
@@ -807,6 +833,83 @@ public class GenerateEquationCoders {
 			body.forEach(code::println);
 			code.println();
 			code.println();
+			
+			StringBuilder test = new StringBuilder();
+			StringBuilder header = new StringBuilder();
+			
+			String indent = prefix + prefix;
+			for (String v : integers ) {
+				header.append( String.format("%s%-10s %s;\n", indent, "int", v ));
+			}
+			for (String v : doubles ) {
+				header.append( String.format("%s%-10s %s;\n", indent, "double", v ));
+			}
+			for (String v : matrices ) {
+				header.append( String.format("%s%-10s %s = new DMatrixRMaj(1,1);\n", indent, "DMatrixRMaj", v ));
+			}
+			
+			TreeSet<String> declaredTemps = new TreeSet<>();
+
+			Iterator<String> bit = body.iterator();
+			boolean ok = true;
+			while (bit.hasNext()) {
+				line = bit.next();
+				Matcher matcher = processPattern.matcher(line);
+				if (matcher.find()) {
+					equationText = unquote(matcher.group(2));
+					test.append( String.format("%s//%s\n", indent, equationText));
+					eq.resetTemps();
+					Sequence sequence = eq.compile(equationText); //, true, true);
+					List<Operation> operations = sequence.getOperations();
+					GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
+					optimizer.mapVariableUsage();
+					for (Usage usage : optimizer.integerUsages) {
+						Variable variable = usage.variable;
+						if (! declaredTemps.contains(variable.getOperand())) {
+							declaredTemps.add(variable.getOperand() );
+							declareTemporary( header, variable );
+						}
+					}
+					for (Usage usage : optimizer.doubleUsages) {
+						Variable variable = usage.variable;
+						if (! declaredTemps.contains(variable.getOperand())) {
+							declaredTemps.add(variable.getOperand() );
+							declareTemporary( header, variable );
+						}
+					}
+					for (Usage usage : optimizer.matrixUsages) {
+						Variable variable = usage.variable;
+						if (! declaredTemps.contains(variable.getOperand())) {
+							declaredTemps.add(variable.getOperand() );
+							declareTemporary( header, variable );
+						}
+					}
+					for (Operation operation : operations) {
+			    		CodeOperation codeOp = (CodeOperation) operation;
+			    		EmitCodeOperation.emitJavaOperation( test, codeOp );
+			    	}			
+					String check = bit.next().trim();
+					while (bit.hasNext() && check.isEmpty())
+						check = bit.next().trim();
+					matcher = checkPattern.matcher(check);
+					if (matcher.find()) {
+						for (int g = 0; g <= matcher.groupCount(); g++) 
+							System.out.println(matcher.group(g));
+						test.append( String.format("%sassert(isIdentical(%s, %s));\n", indent, matcher.group(1), matcher.group(3) ) );
+					} else {
+						ok = false;
+						break;
+					}
+				}
+			}
+			if (ok) {
+				code.print( String.format("%s@Test\n%spublic void %s_Coded() {\n", prefix, prefix, testName) );
+				code.print(header.toString());
+				code.print(test.toString());
+				code.println();
+				code.println();
+				code.print( String.format("%s}\n", prefix) );
+			}
 			return true;
 		} else {
 			System.err.printf("In %s: %d, %d, %d; strange brew\n", testName, nCompile, nProcess, nAssign );

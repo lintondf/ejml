@@ -3,8 +3,14 @@ package org.ejml.equation;
 import static org.junit.Assert.assertEquals;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeSet;
+
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.equation.GenerateCodeOperations.Usage;
 
 public class CodeEquationMain {
 	/*
@@ -27,9 +33,9 @@ public class CodeEquationMain {
 	 */
 	
 	public CodeEquationMain(StringBuilder block, 
-			List<VariableInteger> integers,
-			List<VariableScalar> doubles,
-			List<VariableMatrix> matrices, 
+			List<String> integers,
+			List<String> doubles,
+			List<String> matrices, 
 			List<String> equations) {
 		
 		Equation eq = new Equation();
@@ -37,36 +43,69 @@ public class CodeEquationMain {
 		ManagerFunctions mf = new ManagerFunctions(factory);
 		eq.setManagerFunctions(mf);
 		
-		for (VariableInteger v : integers ) {
-			eq.alias(v.getValue(), v.getName());
-		}
-		for (Variable v : doubles ) {
-			eq.alias(v, v.getName());
-		}
-		for (Variable v : matrices ) {
-			eq.alias(v, v.getName());
-		}
+		StringBuilder body = new StringBuilder();
+		StringBuilder header = new StringBuilder();
 		
+		for (String v : integers ) {
+			eq.alias(new Integer(0), v);
+			header.append( String.format("%-10s %s;\n", "int", v ));
+		}
+		for (String v : doubles ) {
+			eq.alias(new Double(0.0), v);
+			header.append( String.format("%-10s %s;\n", "double", v ));
+		}
+		for (String v : matrices ) {
+			eq.alias(new DMatrixRMaj(1,1), v);
+			header.append( String.format("%-10s %s = new DMatrixRMaj(1,1);\n", "DMatrixRMaj", v ));
+		}
+
+		TreeSet<String> declaredTemps = new TreeSet<>();
 		for (String equationText : equations) {
+			body.append(String.format("// %s\n",  equationText));
+			eq.resetTemps();
 			Sequence sequence = eq.compile(equationText); //, true, true);
 			List<Operation> operations = sequence.getOperations();
 			GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
 			optimizer.mapVariableUsage();
-	    	for (Operation operation : operations) {
+			for (Usage usage : optimizer.integerUsages) {
+				Variable variable = usage.variable;
+				if (! declaredTemps.contains(variable.getOperand())) {
+					declaredTemps.add(variable.getOperand() );
+					GenerateEquationCoders.declareTemporary( header, variable );
+				}
+			}
+			for (Usage usage : optimizer.doubleUsages) {
+				Variable variable = usage.variable;
+				if (! declaredTemps.contains(variable.getOperand())) {
+					declaredTemps.add(variable.getOperand() );
+					GenerateEquationCoders.declareTemporary( header, variable );
+				}
+			}
+			for (Usage usage : optimizer.matrixUsages) {
+				Variable variable = usage.variable;
+				if (! declaredTemps.contains(variable.getOperand())) {
+					declaredTemps.add(variable.getOperand() );
+					GenerateEquationCoders.declareTemporary( header, variable );
+				}
+			}
+			for (Operation operation : operations) {
 	    		CodeOperation codeOp = (CodeOperation) operation;
-	    		EmitCodeOperation.emitJavaOperation( block, codeOp );
+	    		EmitCodeOperation.emitJavaOperation( body, codeOp );
 	    	}			
 		}
+    	block.append(header);
+    	block.append(body);
+		
 	}
-
+	
 	public static void main(String[] args) {
-		List<VariableInteger> integers = new ArrayList<>();
-		List<VariableScalar> doubles = new ArrayList<>();
-		List<VariableMatrix> matrices = new ArrayList<>();
+		List<String> integers = new ArrayList<>();
+		List<String> doubles = new ArrayList<>();
+		List<String> matrices = new ArrayList<>();
 		
 		VariableInteger v = VariableInteger.factory(1);
-		integers.add(new VariableInteger(1, "A"));
-		integers.add(new VariableInteger(2, "B"));
+		integers.add("A");
+		integers.add("B");
 		
 		List<String> equations = new ArrayList<>();
 		equations.add("A=-B");
@@ -77,7 +116,17 @@ public class CodeEquationMain {
 		
 		StringBuilder block = new StringBuilder();
 		CodeEquationMain main = new CodeEquationMain( block, integers, doubles, matrices, equations);
-		System.out.println(block.toString());
+		try {
+			PrintStream code = System.out; // new PrintWriter("code.java");
+			code.println("public class code {");
+			code.println("public void test() {");
+			code.println(block.toString());
+			code.println("}");
+			code.println("}");
+			code.close();
+		} catch (Exception x) {
+			x.printStackTrace();
+		}
 	}
 
 }

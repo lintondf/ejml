@@ -272,6 +272,10 @@ public class Equation {
         alias(Math.E,"e");
     }
 
+    public void resetTemps() {
+    	managerTemp.reset();
+    }
+    
     /**
      * Consturctor which allows you to alias variables
      *

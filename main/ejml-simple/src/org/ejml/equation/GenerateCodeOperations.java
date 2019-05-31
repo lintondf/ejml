@@ -54,6 +54,7 @@ public class GenerateCodeOperations {
 	}
 
 	protected void recordVariable( Variable variable ) {
+		//System.out.println("Record: " + variable + " " + variable.isTemp());
 		if (variable.isTemp()) {
 			switch (variable.getType()) {
 			case INTEGER_SEQUENCE:
@@ -170,13 +171,13 @@ public class GenerateCodeOperations {
     		Usage usage = findUsage(variable);
     		integerUsages.add(usage);
     	}
-    	eliminateRedundantTemps( integerUsages );
+//    	eliminateRedundantTemps( integerUsages );
     	
     	for (Variable variable : doubleTemps) {
     		Usage usage = findUsage(variable);
     		doubleUsages.add(usage);
     	}
-    	eliminateRedundantTemps( doubleUsages );
+//    	eliminateRedundantTemps( doubleUsages );
 
     	for (Variable variable : matrixTemps) {
     		Usage usage = findUsage(variable);
@@ -225,24 +226,26 @@ public class GenerateCodeOperations {
     		}
     	}
 
-//    	System.out.println("INPUTS:");
-//    	for (Variable variable : inputs) {
-//    		printUsage(new Usage(variable));
-//    	}
-//    	System.out.println("INTEGER TEMPS:");
-//    	for (Usage usage : integerUsages) {
-//    		printUsage(usage);
-//    	}
-//    	System.out.println("DOUBLE TEMPS:");
-//    	for (Usage usage : doubleUsages) {
-//    		printUsage(usage);
-//    	}
-//    	System.out.println("MATRIX TEMPS:");
-//    	for (Usage usage : matrixUsages) {
-//    		printUsage(usage);
-//    	}
-//    	System.out.println("TARGET:");
-//    	printUsage(new Usage(assignmentTarget));
+    	if (false) {
+	    	System.out.println("INPUTS:");
+	    	for (Variable variable : inputs) {
+	    		printUsage(new Usage(variable));
+	    	}
+	    	System.out.println("INTEGER TEMPS:");
+	    	for (Usage usage : integerUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("DOUBLE TEMPS:");
+	    	for (Usage usage : doubleUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("MATRIX TEMPS:");
+	    	for (Usage usage : matrixUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("TARGET:");
+	    	printUsage(new Usage(assignmentTarget));
+    	}
 //    	
 //    	for (Operation operation : operations) {
 //    		CodeOperation codeOp = (CodeOperation) operation;
@@ -451,7 +454,7 @@ public class GenerateCodeOperations {
     		CodeOperation codeOp = (CodeOperation) operation;
     		StringBuilder block = new StringBuilder();
     		EmitCodeOperation.emitJavaOperation( block, codeOp );
-    		String[] lines = block.toString().split(";");
+    		String[] lines = block.toString().split("\n");
     		for (String line : lines) {
     			// prune exact sequential reshapes
     			Matcher matcher = reshapePattern.matcher(line);
@@ -470,7 +473,7 @@ public class GenerateCodeOperations {
     			body.append(prefix);
     			body.append(prefix);
     			body.append(line);
-    			body.append(";\n");
+    			body.append("\n");
     		}
     	}    	
     	if (assignmentTarget != null) {

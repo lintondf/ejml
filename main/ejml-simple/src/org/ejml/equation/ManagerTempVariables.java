@@ -30,6 +30,10 @@ import java.util.Random;
 public class ManagerTempVariables {
 	
 	private long sequence = 1;
+	
+	public void reset() {
+		sequence = 1;
+	}
 
     /**
      * Set random seed to a constant value by default for repeatable results.
