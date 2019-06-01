@@ -272,10 +272,6 @@ public class Equation {
         alias(Math.E,"e");
     }
 
-    public void resetTemps() {
-    	managerTemp.reset();
-    }
-    
     /**
      * Consturctor which allows you to alias variables
      *
@@ -1467,7 +1463,7 @@ public class Equation {
                 } else if( isSymbol(c) || Character.isWhitespace(c) ) {
                 	String representation = new String(storage, 0, length);
                     int value = Integer.parseInt(representation);
-                    tokens.add(managerTemp.createInteger(value, representation));
+                    tokens.add(managerTemp.createIntegerConstant(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process unexpected character a second time
                 } else {
@@ -1484,7 +1480,7 @@ public class Equation {
                 } else if( isSymbol(c) || Character.isWhitespace(c) ) {
                 	String representation = new String(storage, 0, length);
                     double value = Double.parseDouble( representation );
-                    tokens.add(managerTemp.createDouble(value, representation));
+                    tokens.add(managerTemp.createDoubleConstant(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process unexpected character a second time
                 } else {
@@ -1510,7 +1506,7 @@ public class Equation {
                 if( end ) {
                 	String representation = new String(storage, 0, length);
                     double value = Double.parseDouble(representation);
-                    tokens.add(managerTemp.createDouble(value, representation));
+                    tokens.add(managerTemp.createDoubleConstant(value, representation));
                     type = TokenType.UNKNOWN;
                     again = true; // process the current character again since it was unexpected
                 }
@@ -1730,4 +1726,8 @@ public class Equation {
     public ManagerFunctions getFunctions() {
         return managerFunctions;
     }
+
+	public ManagerTempVariables getTemporariesManager() {
+		return managerTemp;
+	}
 }

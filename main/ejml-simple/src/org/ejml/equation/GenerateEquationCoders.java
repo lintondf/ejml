@@ -616,13 +616,13 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			HashMap<String, String> lookups, GenerateCodeOperations optimizer, Equation eq, Sequence sequence,
+			HashMap<String, String> lookups, GenerateCodeOperations generator, Equation eq, Sequence sequence,
 			String equationText) {
 
 		body.add("");
 		String name = String.format("%s_Coded", testName);
 		StringBuilder sb = new StringBuilder();
-		optimizer.emitJavaTest(sb, prefix, name, eq, equationText);
+		generator.emitJavaTest(sb, prefix, name, eq, equationText);
 		body.addAll(Arrays.asList(sb.toString().split("\n")));
 		// body.add("}");
 	}
@@ -670,18 +670,20 @@ public class GenerateEquationCoders {
 		}
 	}
 	
-	public static void declareTemporary( StringBuilder header, Variable variable ) {
+	public static void declareTemporary( StringBuilder header, String indent, Variable variable ) {
+		if (variable.isConstant())
+			return;
 		switch (variable.getType()) {
 		case SCALAR:
 			VariableScalar scalar = (VariableScalar) variable;
 			if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
-				header.append( String.format("%-10s %s;\n", "int", variable.getOperand() ));
+				header.append( String.format("%s%-10s %s;\n", indent, "int", variable.getOperand() ));
 			} else {
-				header.append( String.format("%-10s %s;\n", "double", variable.getOperand() ));    					
+				header.append( String.format("%s%-10s %s;\n", indent, "double", variable.getOperand() ));    					
 			}
 			break;
 		case MATRIX:
-			header.append( String.format("%-10s %s = new DMatrixRMaj(1,1);\n", "DMatrixRMaj", variable.getName() ));
+			header.append( String.format("%s%-10s %s = new DMatrixRMaj(1,1);\n", indent, "DMatrixRMaj", variable.getName() ));
 			break;
 		default:
 			System.err.println("Unhandled variable type encountered: " + variable);
@@ -689,11 +691,21 @@ public class GenerateEquationCoders {
 		}
 	}
 
+	protected static void emitIndentedOperation(StringBuilder test, String indent, CodeOperation codeOp) {
+		StringBuilder sb = new StringBuilder();
+		EmitCodeOperation.emitJavaOperation( sb, codeOp );
+		for (String line : sb.toString().split("\n")) {
+			test.append(indent);
+			test.append(line);
+			test.append('\n');
+		}
+	}
+
 	
 	private static boolean copyTest(PrintStream code, Iterator<String> it, String testName, String line) {
 		ArrayList<String> body = new ArrayList<>();
-		final Pattern compilePattern = Pattern.compile("(\\w+)\\.compile\\((\\\"[^\\\"]*\\\")");
-		final Pattern processPattern = Pattern.compile("(\\w+)\\.process\\((\\\"[^\\\"]*\\\")");
+		final Pattern compilePattern = Pattern.compile("(\\w+)\\.compile\\((\\\"[^\\\"]*\\\")\\)");
+		final Pattern processPattern = Pattern.compile("(\\w+)\\.process\\((\\\"[^\\\"]*\\\")\\)");
 		final Pattern assignmentPattern = Pattern.compile("(\\w+).*=");
 
 		final Pattern declInt = Pattern.compile("int\\s+(\\w+)");
@@ -799,17 +811,18 @@ public class GenerateEquationCoders {
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
-					GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
-					optimizer.mapVariableUsage();
+					GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+					generator.optimize();
 					String target = matcher.group(1);
 					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
-					String ret = optimizer.getReturnVariable(eq);
+					String ret = generator.getReturnVariable(eq);
 					String callCompiled = String.format("%s%s%s%s_Coded(%s);", prefix, prefix, ret, testName,
-							optimizer.getCallingSequence(constants, eq));
+							generator.getCallingSequence(constants, eq));
 					body.add(callCompiled);
-					body.add(prefix+prefix + optimizer.getAssert(constants, lookups, eq));
+					body.add(prefix+prefix + generator.getAssert(constants, lookups, eq));
 					body.add(endParen);
-					writeCodedEquationMethod(body, prefix, testName, lookups, optimizer, eq, sequence, equationText);
+					writeCodedEquationMethod(body, prefix, testName, lookups, generator, eq, sequence, equationText);
+					generator.releaseTemporaries(eq);
 					body.forEach(code::println);
 					code.println();
 					code.println();
@@ -828,7 +841,6 @@ public class GenerateEquationCoders {
 		} else if (nCompile > 1 && nProcess == 0) {
 			System.err.printf("In %s: %d, %d, %d; more than one compile()\n", testName, nCompile, nProcess, nAssign );
 		} else if (nCompile == 0 && nProcess > 1) {
-			System.err.printf("In %s: %d, %d, %d; more than one process()\n", testName, nCompile, nProcess, nAssign );
 			body.add(endParen);
 			body.forEach(code::println);
 			code.println();
@@ -839,10 +851,18 @@ public class GenerateEquationCoders {
 			
 			String indent = prefix + prefix;
 			for (String v : integers ) {
-				header.append( String.format("%s%-10s %s;\n", indent, "int", v ));
+				if (constants.containsKey(v)) {
+					header.append( String.format("%s%-10s %s = %s;\n", indent, "int", v, constants.get(v) ));					
+				} else {
+					header.append( String.format("%s%-10s %s;\n", indent, "int", v ));
+				}
 			}
 			for (String v : doubles ) {
-				header.append( String.format("%s%-10s %s;\n", indent, "double", v ));
+				if (constants.containsKey(v)) {
+					header.append( String.format("%s%-10s %s = %s;\n", indent, "double", v, constants.get(v) ));					
+				} else {
+					header.append( String.format("%s%-10s %s;\n", indent, "double", v ));
+				}
 			}
 			for (String v : matrices ) {
 				header.append( String.format("%s%-10s %s = new DMatrixRMaj(1,1);\n", indent, "DMatrixRMaj", v ));
@@ -858,44 +878,42 @@ public class GenerateEquationCoders {
 				if (matcher.find()) {
 					equationText = unquote(matcher.group(2));
 					test.append( String.format("%s//%s\n", indent, equationText));
-					eq.resetTemps();
-					Sequence sequence = eq.compile(equationText); //, true, true);
+					Sequence sequence = eq.compile(equationText); //
 					List<Operation> operations = sequence.getOperations();
-					GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
-					optimizer.mapVariableUsage();
-					for (Usage usage : optimizer.integerUsages) {
+					GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+					generator.optimize();
+					for (Usage usage : generator.integerUsages) {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							declareTemporary( header, variable );
+							declareTemporary( header, indent, variable );
 						}
 					}
-					for (Usage usage : optimizer.doubleUsages) {
+					for (Usage usage : generator.doubleUsages) {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							declareTemporary( header, variable );
+							declareTemporary( header, indent, variable );
 						}
 					}
-					for (Usage usage : optimizer.matrixUsages) {
+					for (Usage usage : generator.matrixUsages) {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							declareTemporary( header, variable );
+							declareTemporary( header, indent, variable );
 						}
 					}
 					for (Operation operation : operations) {
 			    		CodeOperation codeOp = (CodeOperation) operation;
-			    		EmitCodeOperation.emitJavaOperation( test, codeOp );
-			    	}			
+			    		emitIndentedOperation( test, indent, codeOp );
+			    	}	
+					generator.releaseTemporaries(eq);
 					String check = bit.next().trim();
 					while (bit.hasNext() && check.isEmpty())
 						check = bit.next().trim();
 					matcher = checkPattern.matcher(check);
 					if (matcher.find()) {
-						for (int g = 0; g <= matcher.groupCount(); g++) 
-							System.out.println(matcher.group(g));
-						test.append( String.format("%sassert(isIdentical(%s, %s));\n", indent, matcher.group(1), matcher.group(3) ) );
+						test.append( String.format("%sassertTrue(isIdentical(%s, %s));\n", indent, matcher.group(1), matcher.group(3) ) );
 					} else {
 						ok = false;
 						break;
@@ -906,9 +924,11 @@ public class GenerateEquationCoders {
 				code.print( String.format("%s@Test\n%spublic void %s_Coded() {\n", prefix, prefix, testName) );
 				code.print(header.toString());
 				code.print(test.toString());
-				code.println();
-				code.println();
 				code.print( String.format("%s}\n", prefix) );
+				code.println();
+				code.println();
+			} else {
+				System.err.printf("In %s: %d, %d, %d; more than one process but not alternating asserts\n", testName, nCompile, nProcess, nAssign );
 			}
 			return true;
 		} else {
@@ -959,8 +979,14 @@ public class GenerateEquationCoders {
 		skips.add("createOp");
 		skips.add("compile_function_one");
 		skips.add("compile_function_N");
-		skips.add("");
-		skips.add("");
+		// integer sequence variables not compiled
+		skips.add("compile_assign_IntSequence_Case0");
+		skips.add("compile_assign_IntSequence_Case1");
+		skips.add("compile_assign_IntSequence_Case2");
+		skips.add("compile_assign_IntSequence_Case3");
+		skips.add("compile_assign_IntSequence_Case4");
+		skips.add("compile_assign_IntSequence_Case5");
+		skips.add("compile_assign_IntSequence_Case6");
 
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
@@ -992,7 +1018,7 @@ public class GenerateEquationCoders {
 							nSkipped++;
 							continue;
 						}
-//						if (!matcher.group(1).equals("subtract_matrix_scalar_2"))
+//						if (!matcher.group(1).equals("sqrt_int"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;

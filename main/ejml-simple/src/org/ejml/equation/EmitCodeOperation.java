@@ -348,7 +348,10 @@ public class EmitCodeOperation {
 			return sb.toString();
 		case "neg": // Info neg(final Variable A, ManagerTempVariables manager)
 			//%s = -%s;
-			sb.append( String.format("%s = -%s;\n", output.getOperand(), A.getOperand()) );
+			String negOp = A.getOperand();
+			if (negOp.startsWith("-"))
+				negOp = "("+negOp+")";
+			sb.append( String.format("%s = -%s;\n", output.getOperand(), negOp) );
 			return sb.toString();
 		case "det": // Info det( final Variable A , ManagerTempVariables manager)
 			//%s = %s;
@@ -437,7 +440,10 @@ public class EmitCodeOperation {
 			return sb.toString();
 		case "neg": // Info neg(final Variable A, ManagerTempVariables manager)
 			//%s = -%s;
-			sb.append( String.format("%s = -%s;\n", output.getOperand(), A.getOperand()) );
+			String negOp = A.getOperand();
+			if (negOp.startsWith("-"))
+				negOp = "("+negOp+")";
+			sb.append( String.format("%s = -%s;\n", output.getOperand(), negOp) );
 			return sb.toString();
 		case "min": // Info min( final Variable A , ManagerTempVariables manager)
 			//%s = %s;

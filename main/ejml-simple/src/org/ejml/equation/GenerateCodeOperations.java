@@ -98,6 +98,8 @@ public class GenerateCodeOperations {
 		
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
+			sb.append(this.variable.toString());
+			sb.append(": ");
 			for (Integer use : uses) {
 				sb.append(use.toString());
 				sb.append(",");
@@ -124,14 +126,37 @@ public class GenerateCodeOperations {
 		System.out.println();
 	}
 	
-	protected void eliminateRedundantTemps(List<Usage> usages) {
+	//matrix temps must not appear on both the lhs and rhs; TODO maybe codeOp dependent?
+	protected void eliminateRedundantMatrixTemps(List<Usage> usages) {
+		if (! usages.isEmpty()) {
+			for (int i = 0; i < usages.size(); i++) {
+				Usage first = usages.get(0);
+				for (int j = i+1; j < usages.size(); j++) {
+					Usage next = usages.get(j);
+					if (first.uses.getLast() < next.uses.getFirst()) { // can replace next with first
+//						System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
+						for (Integer k : next.uses) {
+							((CodeOperation) operations.get(k)).replace(next.variable, first.variable);
+							first.uses.addLast(k);
+						}
+						usages.remove(j);
+						j--;
+					}
+				}
+			}
+		}
+	}
+	
+	
+	// scalar temps can appear on both the lhs and rhs
+	protected void eliminateRedundantScalarTemps(List<Usage> usages) {
 		if (! usages.isEmpty()) {
 			for (int i = 0; i < usages.size(); i++) {
 				Usage first = usages.get(0);
 				for (int j = i+1; j < usages.size(); j++) {
 					Usage next = usages.get(j);
 					if (first.uses.getLast() <= next.uses.getFirst()) { // can replace next with first
-//						System.out.println("Replacing " + next.variable.getName() + " with " + first.variable.getName());
+//						System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
 						for (Integer k : next.uses) {
 							((CodeOperation) operations.get(k)).replace(next.variable, first.variable);
 							first.uses.addLast(k);
@@ -152,7 +177,7 @@ public class GenerateCodeOperations {
 		return null;
 	}
     
-    public void mapVariableUsage() {
+    private void mapVariableUsage() {
     	for (Operation operation : operations) {
     		CodeOperation codeOp = (CodeOperation) operation;
     		//System.out.println( codeOp );
@@ -171,23 +196,23 @@ public class GenerateCodeOperations {
     		Usage usage = findUsage(variable);
     		integerUsages.add(usage);
     	}
-//    	eliminateRedundantTemps( integerUsages );
     	
     	for (Variable variable : doubleTemps) {
     		Usage usage = findUsage(variable);
     		doubleUsages.add(usage);
     	}
-//    	eliminateRedundantTemps( doubleUsages );
 
     	for (Variable variable : matrixTemps) {
     		Usage usage = findUsage(variable);
     		matrixUsages.add(usage);
     	}
-    	//TODO restore (premature optimization, etc etc etc
-    	//eliminateRedundantTemps( matrixUsages );
-
+    }
+    
+    private void eliminateFinalCopy() {
     	if (assignmentTarget != null) {
     		int last = operations.size()-1;
+    		if (last <= 0)
+    			return;
     		CodeOperation codeOp = (CodeOperation) operations.get(last);
 			Variable fromVariable = codeOp.input.get(0);
     		switch (codeOp.name()) {
@@ -225,32 +250,6 @@ public class GenerateCodeOperations {
     			break;
     		}
     	}
-
-    	if (false) {
-	    	System.out.println("INPUTS:");
-	    	for (Variable variable : inputs) {
-	    		printUsage(new Usage(variable));
-	    	}
-	    	System.out.println("INTEGER TEMPS:");
-	    	for (Usage usage : integerUsages) {
-	    		printUsage(usage);
-	    	}
-	    	System.out.println("DOUBLE TEMPS:");
-	    	for (Usage usage : doubleUsages) {
-	    		printUsage(usage);
-	    	}
-	    	System.out.println("MATRIX TEMPS:");
-	    	for (Usage usage : matrixUsages) {
-	    		printUsage(usage);
-	    	}
-	    	System.out.println("TARGET:");
-	    	printUsage(new Usage(assignmentTarget));
-    	}
-//    	
-//    	for (Operation operation : operations) {
-//    		CodeOperation codeOp = (CodeOperation) operation;
-//    		System.out.println( codeOp );
-//    	}    	
     }
     
 
@@ -436,17 +435,23 @@ public class GenerateCodeOperations {
 			}
     	}    	
     	for (Usage usage : integerUsages) {
-    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
-			body.append(";\n");
+    		if (!usage.variable.isConstant()) {
+	    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
+				body.append(";\n");
+    		}
     	}
     	for (Usage usage : doubleUsages) {
-    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
-			body.append(";\n");
+    		if (!usage.variable.isConstant()) {
+    			body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
+    			body.append(";\n");
+    		}
     	}
     	for (Usage usage : matrixUsages) {
-			String type = getJavaType(usage.variable);
-    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type, "1,1") );
-			body.append(";\n");
+    		if (!usage.variable.isConstant()) {
+				String type = getJavaType(usage.variable);
+	    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type, "1,1") );
+				body.append(";\n");
+    		}
     	}
     	body.append("\n");
     	HashMap<String, String> reshapes = new HashMap<>();
@@ -483,5 +488,93 @@ public class GenerateCodeOperations {
 		body.append(prefix);
     	body.append("}");
     }
+
+    public void releaseTemporaries(Equation eq) {
+    	for (Variable v : integerTemps) {
+    		eq.getTemporariesManager().release( (VariableInteger) v );
+    	}
+    	for (Variable v : doubleTemps) {
+    		eq.getTemporariesManager().release( (VariableDouble) v );
+    	}
+    	for (Variable v : matrixTemps) {
+    		eq.getTemporariesManager().release( (VariableMatrix) v );
+    	}
+    }
+    
+	public void optimize() {
+		eliminateConstantExpressionTemps();
+		mapVariableUsage();
+//    	TODO (premature optimization, etc etc etc
+		eliminateFinalCopy();
+    	eliminateRedundantScalarTemps( integerUsages );
+    	eliminateRedundantScalarTemps( doubleUsages );
+    	eliminateRedundantMatrixTemps( matrixUsages );
+		
+    	if (false) {
+	    	System.out.println("INPUTS:");
+	    	for (Variable variable : inputs) {
+	    		printUsage(new Usage(variable));
+	    	}
+	    	System.out.println("INTEGER TEMPS:");
+	    	for (Usage usage : integerUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("DOUBLE TEMPS:");
+	    	for (Usage usage : doubleUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("MATRIX TEMPS:");
+	    	for (Usage usage : matrixUsages) {
+	    		printUsage(usage);
+	    	}
+	    	System.out.println("TARGET:");
+	    	printUsage(new Usage(assignmentTarget));
+	    	
+	    	for (Operation operation : operations) {
+	    		CodeOperation codeOp = (CodeOperation) operation;
+	    		System.out.println( codeOp );
+	    	}    	
+    	}
+	}
+
+	private String getConstantOperation( CodeOperation codeOp) {
+		if (codeOp.range != null)
+			return null;
+		for (Variable in : codeOp.input) {
+			if (!in.isConstant()) {
+				return null;
+			}
+		}
+		StringBuilder value = new StringBuilder();
+		EmitCodeOperation.emitJavaOperation(value, codeOp);
+		int i = value.indexOf(" = ");
+		if (i < 0)
+			return null;
+		return value.substring(i+3).replace(";\n", "");
+	}
+	
+	private void eliminateConstantExpressionTemps() {
+		Iterator<Operation> it = operations.iterator();
+    	while( it.hasNext()) {
+    		CodeOperation codeOp = (CodeOperation) it.next();
+    		if (! it.hasNext())
+    			return;  // do not eliminate constants in final step
+			if (codeOp.output.isTemp()) {
+				String value = getConstantOperation(codeOp);
+				if (value != null) {
+					if (codeOp.output.getType() == VariableType.SCALAR) {
+						VariableScalar scalar = (VariableScalar) codeOp.output;
+						if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
+							scalar.setName( String.format("Integer{(%s)}", value));
+							it.remove();
+						} else {
+							scalar.setName( String.format("Double{(%s)}", value));
+							it.remove();
+						}
+					} // output is scalar
+				} // if constant
+			} // if temp
+    	} // while
+	}
     
 }

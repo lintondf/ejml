@@ -67,4 +67,5 @@ public class Variable {
 	public boolean isConstant() {
 		return false;
 	}
+	
 }

@@ -18,6 +18,8 @@
 
 package org.ejml.equation;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Random;
 
 /**
@@ -26,15 +28,30 @@ import java.util.Random;
  *
  * @author Peter Abeles
  */
-// TODO add function to purge temporary variables.  basicaly resize and redeclare their array to size 1
+// TODO add function to purge temporary variables.  basically resize and redeclare their array to size 1
 public class ManagerTempVariables {
 	
 	private long sequence = 1;
 	
-	public void reset() {
-		sequence = 1;
+	private Deque<VariableMatrix> matrixRecycle = new ArrayDeque<>();
+	private Deque<VariableInteger> integerRecycle = new ArrayDeque<>();
+	private Deque<VariableDouble> doubleRecycle = new ArrayDeque<>();
+	
+	public ManagerTempVariables() {
 	}
-
+	
+	public void release( VariableMatrix variable) {
+		matrixRecycle.addLast(variable);
+	}
+	
+	public void release( VariableInteger variable) {
+		integerRecycle.addLast(variable);
+	}
+	
+	public void release( VariableDouble variable) {
+		doubleRecycle.addLast(variable);
+	}
+	
     /**
      * Set random seed to a constant value by default for repeatable results.
      */
@@ -45,6 +62,8 @@ public class ManagerTempVariables {
     }
 
     public VariableMatrix createMatrix() {
+    	if (! matrixRecycle.isEmpty())
+    		return matrixRecycle.removeFirst();
     	VariableMatrix ret = VariableMatrix.createTemp();
     	String name = String.format("tm%d", sequence++ );
     	ret.setName(name);
@@ -52,22 +71,26 @@ public class ManagerTempVariables {
     }
 
     public VariableDouble createDouble() {
+    	if (! doubleRecycle.isEmpty())
+    		return doubleRecycle.removeFirst();
     	VariableDouble ret = new VariableDouble(0, String.format("td%d", sequence++));
     	ret.setTemp(true);
     	return ret;
     }
 
-    public VariableDouble createDouble( double value, String representation ) {
+    public VariableDouble createDoubleConstant( double value, String representation ) {
         return new VariableDouble(value, String.format("DOUBLE{%s}", representation));
     }
 
     public VariableInteger createInteger() {
-    	VariableInteger ret = createInteger(0, String.format("ti%d", sequence++));
+    	if (! integerRecycle.isEmpty())
+    		return integerRecycle.removeFirst();
+    	VariableInteger ret = new VariableInteger(0, String.format("ti%d", sequence++));
     	ret.setTemp(true);
     	return ret;
     }
 
-    public VariableInteger createInteger( int value, String representation ) {
+    public VariableInteger createIntegerConstant( int value, String representation ) {
         return new VariableInteger(value, String.format("INTEGER{%s}", representation));
     }
 

@@ -119,6 +119,17 @@ public class CodeOperation extends Operation {
     	}
     	sb.deleteCharAt(sb.length()-1);
     	sb.append("]");
+    	if (range != null) {
+        	sb.append("<");
+        	for (Variable var : range) {
+        		sb.append(var.getName());
+        		sb.append(":");
+        		sb.append(var.getType().toString());
+        		sb.append(",");
+        	}
+        	sb.deleteCharAt(sb.length()-1);
+        	sb.append(">");    		
+    	}
     	if (output != null) {
     		sb.append("->");
     		sb.append(output.getName());

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.TreeSet;
 
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.equation.GenerateCodeOperations.Usage;
+
 
 public class CodeEquationMain {
 	/*
@@ -62,36 +64,36 @@ public class CodeEquationMain {
 		TreeSet<String> declaredTemps = new TreeSet<>();
 		for (String equationText : equations) {
 			body.append(String.format("// %s\n",  equationText));
-			eq.resetTemps();
-			Sequence sequence = eq.compile(equationText); //, true, true);
+			Sequence sequence = eq.compile(equationText);//, true, true);//); //
 			List<Operation> operations = sequence.getOperations();
-			GenerateCodeOperations optimizer = new GenerateCodeOperations(operations);
-			optimizer.mapVariableUsage();
-			for (Usage usage : optimizer.integerUsages) {
+			GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+			generator.optimize();
+			for (Usage usage : generator.integerUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					GenerateEquationCoders.declareTemporary( header, variable );
+					GenerateEquationCoders.declareTemporary( header, "", variable );
 				}
 			}
-			for (Usage usage : optimizer.doubleUsages) {
+			for (Usage usage : generator.doubleUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					GenerateEquationCoders.declareTemporary( header, variable );
+					GenerateEquationCoders.declareTemporary( header, "", variable );
 				}
 			}
-			for (Usage usage : optimizer.matrixUsages) {
+			for (Usage usage : generator.matrixUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					GenerateEquationCoders.declareTemporary( header, variable );
+					GenerateEquationCoders.declareTemporary( header, "", variable );
 				}
 			}
 			for (Operation operation : operations) {
 	    		CodeOperation codeOp = (CodeOperation) operation;
 	    		EmitCodeOperation.emitJavaOperation( body, codeOp );
-	    	}			
+	    	}	
+			generator.releaseTemporaries(eq);
 		}
     	block.append(header);
     	block.append(body);
@@ -103,16 +105,10 @@ public class CodeEquationMain {
 		List<String> doubles = new ArrayList<>();
 		List<String> matrices = new ArrayList<>();
 		
-		VariableInteger v = VariableInteger.factory(1);
-		integers.add("A");
-		integers.add("B");
+		matrices.add("A");
 		
 		List<String> equations = new ArrayList<>();
-		equations.add("A=-B");
-		equations.add("A=B--B");
-		equations.add("A=B+-B");
-		equations.add("A=B---5");
-		equations.add("A=B--5");
+		equations.add("A((1-1):2,2:3)=0.5");
 		
 		StringBuilder block = new StringBuilder();
 		CodeEquationMain main = new CodeEquationMain( block, integers, doubles, matrices, equations);
