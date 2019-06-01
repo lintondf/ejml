@@ -1,4 +1,5 @@
 dependencies {
+	compile 'com.google.googlejavaformat:google-java-format:1.7'
     compile project(':main:ejml-core')
     compile project(':main:ejml-fdense')
     compile project(':main:ejml-ddense')
