@@ -2,6 +2,12 @@ package org.ejml.equation;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Generate TestCompiled.java from TestEquation and TestOperation
+ * D. F. Linton, Blue Lightning Development, LLC. June 2019.
+ * All rights contributed to EJML project.
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -21,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.ejml.data.DMatrixRMaj;
-import org.ejml.equation.GenerateCodeOperations.Usage;
+import org.ejml.equation.CompileCodeOperations.Usage;
 import org.ejml.simple.SimpleMatrix;
 
 public class GenerateEquationCoders {
@@ -616,7 +622,7 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			HashMap<String, String> lookups, GenerateCodeOperations generator, Equation eq, Sequence sequence,
+			HashMap<String, String> lookups, CompileCodeOperations generator, Equation eq, Sequence sequence,
 			String equationText) {
 
 		body.add("");
@@ -693,7 +699,7 @@ public class GenerateEquationCoders {
 
 	protected static void emitIndentedOperation(StringBuilder test, String indent, CodeOperation codeOp) {
 		StringBuilder sb = new StringBuilder();
-		EmitCodeOperation.emitJavaOperation( sb, codeOp );
+		EmitJavaCodeOperation.emitOperation( sb, codeOp );
 		for (String line : sb.toString().split("\n")) {
 			test.append(indent);
 			test.append(line);
@@ -811,7 +817,7 @@ public class GenerateEquationCoders {
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
-					GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+					CompileCodeOperations generator = new CompileCodeOperations(operations);
 					generator.optimize();
 					String target = matcher.group(1);
 					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
@@ -880,7 +886,7 @@ public class GenerateEquationCoders {
 					test.append( String.format("%s//%s\n", indent, equationText));
 					Sequence sequence = eq.compile(equationText); //
 					List<Operation> operations = sequence.getOperations();
-					GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+					CompileCodeOperations generator = new CompileCodeOperations(operations);
 					generator.optimize();
 					for (Usage usage : generator.integerUsages) {
 						Variable variable = usage.variable;

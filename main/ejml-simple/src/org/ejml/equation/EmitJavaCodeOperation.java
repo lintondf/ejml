@@ -13,7 +13,7 @@ import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.equation.MatrixConstructor.Item;
 import org.ejml.interfaces.linsol.LinearSolverDense;
 
-public class EmitCodeOperation {
+public class EmitJavaCodeOperation {
 
 	final static String formatReshape = "%s.reshape( %s.numRows, %s.numCols );\n";
 	final static String formatGeneral3 = "%s.%s( %s, %s, %s );\n";
@@ -29,11 +29,11 @@ public class EmitCodeOperation {
 	final static VariableInteger zero = new VariableInteger(0, "Integer{0}");
 	final static VariableInteger one = new VariableInteger(1, "Integer{1}");
 	
-	protected static boolean isNumeric(String str) {
+	private static boolean isNumeric(String str) {
 	    return str.matches("[+-]?\\d*(\\.\\d+)?");
 	}
 	
-	protected static void emitReshape(StringBuilder sb, Variable output, Variable A) {
+	private static void emitReshape(StringBuilder sb, Variable output, Variable A) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		if (A.getType() == VariableType.MATRIX)
@@ -41,12 +41,12 @@ public class EmitCodeOperation {
 		sb.append( String.format(formatGeneral2, o, "reshape", a, a) );
 	}
 
-	protected static void emitReshape(StringBuilder sb, Variable output, String a, String b) {
+	private static void emitReshape(StringBuilder sb, Variable output, String a, String b) {
 		String o = output.getOperand();
 		sb.append( String.format(formatGeneral2, o, "reshape", a, b) );
 	}
 
-	protected static void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
+	private static void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		String b = B.getOperand();
@@ -58,7 +58,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static void emitReshapeTranspose(StringBuilder sb, Variable output, Variable A, Variable B) {
+	private static void emitReshapeTranspose(StringBuilder sb, Variable output, Variable A, Variable B) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		String b = B.getOperand();
@@ -70,7 +70,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String mmOp(String op, CodeOperation codeOp) {
+	private static String mmOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -129,7 +129,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String iiOp(String op, CodeOperation codeOp) {
+	private static String iiOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -178,7 +178,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String ssOp(String op, CodeOperation codeOp) {
+	private static String ssOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -217,7 +217,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String Op(String op, CodeOperation codeOp) {
+	private static String Op(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		
@@ -318,7 +318,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String sOp(String op, CodeOperation codeOp) {
+	private static String sOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -392,7 +392,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String msOp(String op, CodeOperation codeOp) {
+	private static String msOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -428,7 +428,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String iOp(String op, CodeOperation codeOp) {
+	private static String iOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -462,7 +462,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String smOp(String op, CodeOperation codeOp) {
+	private static String smOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -498,7 +498,7 @@ public class EmitCodeOperation {
 	}
 
 
-	protected static String mOp(String op, CodeOperation codeOp) {
+	private static String mOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 
@@ -1004,7 +1004,7 @@ public class EmitCodeOperation {
 		return sb.toString();
 	}
 	
-	public static void emitJavaOperation(StringBuilder body, CodeOperation codeOp) {
+	public static void emitOperation(StringBuilder body, CodeOperation codeOp) {
 		String[] fields = codeOp.name().split("-");
 		String inputs = "";
 		if (fields.length > 1) {

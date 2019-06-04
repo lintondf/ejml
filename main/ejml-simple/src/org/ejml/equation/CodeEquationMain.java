@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.ejml.data.DMatrixRMaj;
-import org.ejml.equation.GenerateCodeOperations.Usage;
+import org.ejml.equation.CompileCodeOperations.Usage;
 
 import com.google.googlejavaformat.java.Formatter;
 
@@ -148,11 +148,11 @@ public class CodeEquationMain {
 			body.append(String.format("// %s\n",  equationText));
 			Sequence sequence = eq.compile(equationText);//, true, true);//); //
 			List<Operation> operations = sequence.getOperations();
-			GenerateCodeOperations generator = new GenerateCodeOperations(operations);
+			CompileCodeOperations generator = new CompileCodeOperations(operations);
 			generator.optimize();
 			for (Operation operation : operations) {
 	    		CodeOperation codeOp = (CodeOperation) operation;
-	    		EmitCodeOperation.emitJavaOperation( body, codeOp );
+	    		EmitJavaCodeOperation.emitOperation( body, codeOp );
 	    	}	
 			for (Usage usage : generator.integerUsages) {
 				Variable variable = usage.variable;

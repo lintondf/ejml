@@ -30,7 +30,7 @@ import org.ejml.simple.SimpleMatrix;
  * @author NOOK
  *
  */
-public class GenerateCodeOperations {
+public class CompileCodeOperations {
 
 	List<Operation> operations = new ArrayList<>();
 	List<Variable> inputs = new ArrayList<>();
@@ -48,7 +48,7 @@ public class GenerateCodeOperations {
 	/**
 	 * 
 	 */
-	public GenerateCodeOperations(List<Operation> operations) {    	
+	public CompileCodeOperations(List<Operation> operations) {    	
     	this.operations = operations;
     	lastOperationCopyR = operations.get(operations.size()-1).name().startsWith("copyR-");
 	}
@@ -458,7 +458,7 @@ public class GenerateCodeOperations {
     	for (Operation operation : operations) {
     		CodeOperation codeOp = (CodeOperation) operation;
     		StringBuilder block = new StringBuilder();
-    		EmitCodeOperation.emitJavaOperation( block, codeOp );
+    		EmitJavaCodeOperation.emitOperation( block, codeOp );
     		String[] lines = block.toString().split("\n");
     		for (String line : lines) {
     			// prune exact sequential reshapes
@@ -546,7 +546,7 @@ public class GenerateCodeOperations {
 			}
 		}
 		StringBuilder value = new StringBuilder();
-		EmitCodeOperation.emitJavaOperation(value, codeOp);
+		EmitJavaCodeOperation.emitOperation(value, codeOp);
 		int i = value.indexOf(" = ");
 		if (i < 0)
 			return null;
