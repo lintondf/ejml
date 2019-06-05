@@ -1,7 +1,6 @@
 package org.ejml.equation;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -29,11 +28,11 @@ public class EmitJavaCodeOperation {
 	final static VariableInteger zero = new VariableInteger(0, "Integer{0}");
 	final static VariableInteger one = new VariableInteger(1, "Integer{1}");
 	
-	private static boolean isNumeric(String str) {
+	private boolean isNumeric(String str) {
 	    return str.matches("[+-]?\\d*(\\.\\d+)?");
 	}
 	
-	private static void emitReshape(StringBuilder sb, Variable output, Variable A) {
+	private void emitReshape(StringBuilder sb, Variable output, Variable A) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		if (A.getType() == VariableType.MATRIX)
@@ -41,12 +40,12 @@ public class EmitJavaCodeOperation {
 		sb.append( String.format(formatGeneral2, o, "reshape", a, a) );
 	}
 
-	private static void emitReshape(StringBuilder sb, Variable output, String a, String b) {
+	private void emitReshape(StringBuilder sb, Variable output, String a, String b) {
 		String o = output.getOperand();
 		sb.append( String.format(formatGeneral2, o, "reshape", a, b) );
 	}
 
-	private static void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
+	private void emitReshape(StringBuilder sb, Variable output, Variable A, Variable B) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		String b = B.getOperand();
@@ -58,7 +57,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static void emitReshapeTranspose(StringBuilder sb, Variable output, Variable A, Variable B) {
+	private void emitReshapeTranspose(StringBuilder sb, Variable output, Variable A, Variable B) {
 		String o = output.getOperand();
 		String a = A.getOperand();
 		String b = B.getOperand();
@@ -70,7 +69,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String mmOp(String op, CodeOperation codeOp) {
+	private String mmOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -129,7 +128,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String iiOp(String op, CodeOperation codeOp) {
+	private String iiOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -178,7 +177,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String ssOp(String op, CodeOperation codeOp) {
+	private String ssOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -217,7 +216,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String Op(String op, CodeOperation codeOp) {
+	private String Op(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		
@@ -318,7 +317,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String sOp(String op, CodeOperation codeOp) {
+	private String sOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -392,7 +391,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String msOp(String op, CodeOperation codeOp) {
+	private String msOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -428,7 +427,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String iOp(String op, CodeOperation codeOp) {
+	private String iOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -462,7 +461,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String smOp(String op, CodeOperation codeOp) {
+	private String smOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -498,7 +497,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private static String mOp(String op, CodeOperation codeOp) {
+	private String mOp(String op, CodeOperation codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 
@@ -533,6 +532,7 @@ public class EmitJavaCodeOperation {
 		case "inv": // Info inv( final Variable A , ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
 			sb.append(String.format("boolean ok = CommonOps_DDRM.invert(%s, %s);\n", A.getName(), output.getName()));
+			sb.append("//TODO check ok\n");
 			return sb.toString();
 		case "eye": // Info eye( final Variable A , ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
@@ -585,7 +585,7 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 	
-	private static String construct(CodeOperation codeOp) {
+	private String construct(CodeOperation codeOp) {
 		StringBuilder sb = new StringBuilder();
 		//codeOp.constructor.output = (VariableMatrix) codeOp.output;
 		CodeMatrixConstructor cmc = new CodeMatrixConstructor( codeOp.constructor );
@@ -593,7 +593,7 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 
-	private static String copyOp(String[] operands, CodeOperation codeOp) {
+	private String copyOp(String[] operands, CodeOperation codeOp) {
 		//copy: ii, ss, sm1, none
 		switch (operands[1]) {
 		case "mm":
@@ -625,349 +625,7 @@ public class EmitJavaCodeOperation {
 		return "//copyOp: " + codeOp.toString();
 	}
 	
-	private static class CodeExtents {
-		
-		protected Variable startRow;
-		protected Variable stepRow;
-		protected Variable endRow;
-		protected Variable startCol;
-		protected Variable stepCol;
-		protected Variable endCol;
-		
-		protected IntegerSequence rowSequence;
-		protected IntegerSequence colSequence;
-		
-		protected boolean  is1D;
-		
-		public boolean is1D() {
-			return is1D;
-		}
-		
-		protected boolean  isBlock;
-		
-		public boolean isBlock() {
-			return isBlock;
-		}
-		
-		protected List<Variable> range;
-		
-		private boolean isSimpleStep( Variable step ) {
-            if (step == null) {
-            	return true;
-            } else if (step.getType() == VariableType.SCALAR) {
-            	VariableScalar scalar = (VariableScalar) step;
-            	if (scalar.getScalarType() == VariableScalar.Type.INTEGER && step.isConstant()) {
-            		return step.getOperand().equals("1");
-            	}
-            } 
-            return false;
-		}
-		
-		public CodeExtents( List<Variable> range, int iFirst ) {
-			this.range = range;
-			isBlock = false;
-			is1D = false;
-			if (range.size() == 1+iFirst) {
-				startRow = null;
-				endRow = zero;
-				rowSequence = null;
-				is1D = true;
-				Variable var = range.get(iFirst+0);
-		        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
-		            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-		            colSequence = sequence;
-		            switch( sequence.getType() ) {
-		            case FOR:
-		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-		                isBlock = isSimpleStep(seqFor.step);
-		                startCol = seqFor.start;
-		                endCol = seqFor.end;
-		                break;
-		            case RANGE:
-		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
-		                isBlock = isSimpleStep(seqRange.step);
-		                startCol = seqRange.start;
-		                endCol = null;
-		            	break;
-		            default:
-		            	isBlock = false;
-		            	break;
-		            }
-		        } else if( var.getType() == VariableType.SCALAR ) {
-		            isBlock = true;
-	                startCol = var;
-	                endCol = var;
-		        }
-			} else {
-				Variable rowVar = range.get(iFirst+0);
-		        if( rowVar.getType() == VariableType.INTEGER_SEQUENCE ) {
-		            IntegerSequence sequence = ((VariableIntegerSequence)rowVar).sequence;
-		            rowSequence = sequence;
-		            switch( sequence.getType() ) {
-		            case FOR:
-		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-		                isBlock = isSimpleStep(seqFor.step);
-		                startRow = seqFor.start;
-		                endRow = seqFor.end;
-		                break;
-		            case RANGE:
-		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
-		                isBlock = isSimpleStep(seqRange.step);
-		                startRow = seqRange.start;
-		                endRow = null;
-		            	break;
-		            default:
-		            	isBlock = false;
-		            	break;
-		            }
-		        } else if( rowVar.getType() == VariableType.SCALAR ) {
-		            isBlock = true;
-	                startRow = rowVar;
-	                endRow = rowVar;
-		        }
-				Variable colVar = range.get(iFirst+1);
-		        if( colVar.getType() == VariableType.INTEGER_SEQUENCE ) {
-		            IntegerSequence sequence = ((VariableIntegerSequence)colVar).sequence;
-		            colSequence = sequence;
-		            switch( sequence.getType() ) {
-		            case FOR:
-		                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-		                isBlock = isSimpleStep(seqFor.step);
-		                startCol = seqFor.start;
-		                endCol = seqFor.end;
-		                break;
-		            case RANGE:
-		                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
-		                isBlock = isSimpleStep(seqRange.step);
-		                startCol = seqRange.start;
-		                endCol = null;
-		            	break;
-		            default:
-		            	isBlock = false;
-		            	break;
-		            }
-		        } else if( colVar.getType() == VariableType.SCALAR ) {
-		            isBlock = true;
-	                startCol = colVar;
-	                endCol = colVar;
-		        }
-			}
-		}
-		
-		public String codeSimpleStartRow() {
-			if (startRow == null) {
-				return "0";
-			} else {
-				return startRow.getOperand();
-			}
-		}
-		
-		public String codeSimpleEndRow(String[] lastRowsCols) {
-			if (endRow == null) {
-				return lastRowsCols[0];
-			} else {
-				return endRow.getOperand() + "+1";
-			}
-		}
-
-		public String codeSimpleStartCol() {
-			if (startCol == null) {
-				return "0";
-			} else {
-				return startCol.getOperand();
-			}
-		}
-		
-		public String codeSimpleEndCol(String[] lastRowsCols) {
-			if (endCol == null) {
-				return lastRowsCols[1];
-			} else {
-				return endCol.getOperand() + "+1";
-			}
-		}
-		
-		public String codeSimpleRows(String[] lastRowsCols) {
-			return String.format("(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow() );
-		}
-		
-		public String codeSimpleCols(String[] lastRowsCols) {
-			return String.format("(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol() );
-		}
-		
-		protected String codeIndiciesArray(String start, String step, String end) {
-			return String.format("IntStream.iterate(%s, n -> n + %s).limit(1+(%s - %s) / %s).toArray()", 
-					start, step, end, start, step);
-		}
-		
-		public String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
-			StringBuilder sb = new StringBuilder();
-			if (sequence == null) {
-				sb.append("new int[] {0}");
-			} else {
-				String step = null;
-	            switch( sequence.getType() ) {
-	            case FOR:
-	                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-	                if (seqFor.step == null) {
-	                	step = "1";
-	                } else {
-	                	step = seqFor.step.getOperand();
-	                }
-//	                sb.append(String.format("indiciesArray(%s, %s, %s)", 
-   	                sb.append( codeIndiciesArray(
-	                		seqFor.start.getOperand(), step, seqFor.end.getOperand() ) );
-	                break;
-	            case RANGE:
-	                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
-	                if (seqRange.step == null) {
-	                	step = "1";
-	                } else {
-	                	step = seqRange.step.getOperand();
-	                }
-	                String start = "0";
-	                if (seqRange.start != null)
-	                	start = seqRange.start.getOperand();
-//	                sb.append(String.format("indiciesArray(%s, %s, %s-1)", 
-   	                sb.append( codeIndiciesArray(
-	                		start, step, lastRowsCols ) );
-	            	break;
-	            case EXPLICIT:
-	            	IntegerSequence.Explicit seqExplicit = (IntegerSequence.Explicit)sequence;
-	            	sb.append("new int[] {");
-	            	for (VariableInteger var : seqExplicit.getSequence()) {
-	            		sb.append(var.getOperand());
-	            		sb.append(",");
-	            	}
-	            	sb.deleteCharAt(sb.length()-1);
-	            	sb.append("}");
-	            	break;
-	            case COMBINED:
-                    sb.append("Stream.of(");
-                    IntegerSequence.Combined seqCombined = (IntegerSequence.Combined) sequence;
-                    for (IntegerSequence s : seqCombined.sequences) {
-                    	sb.append(codeComplexExtent(s, lastRowsCols));
-	            		sb.append(",");
-                    }
-	            	sb.deleteCharAt(sb.length()-1);
-	            	sb.append(").flatMapToInt(IntStream::of).toArray()");
-	            	break;
-	            }
-			}
-			return sb.toString();
-		}
-		
-		public String codeComplexLength(IntegerSequence sequence, String lastRowsCols) {
-			StringBuilder sb = new StringBuilder();
-			if (sequence == null) {
-				sb.append("1");
-			} else {
-	            switch( sequence.getType() ) {
-	            case FOR:
-	                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-	                if (seqFor.step == null) {
-	                	sb.append(String.format("(%s-%s)", 
-		                		seqFor.end.getOperand(), seqFor.start.getOperand() ) );
-	                } else {
-	                	sb.append(String.format("(%s-%s)/%s", 
-	                		seqFor.end.getOperand(), seqFor.start.getOperand(), seqFor.step.getOperand() ) );
-	                }
-	                break;
-	            case RANGE:
-	                IntegerSequence.Range seqRange = (IntegerSequence.Range)sequence;
-	                if (seqRange.step == null) {
-	                	sb.append(String.format("(%s-%s)", 
-	                			lastRowsCols, seqRange.start.getOperand() ) );
-	                } else {
-	                	sb.append(String.format("(%s-%s)/%s", 
-	                			lastRowsCols, seqRange.start.getOperand(), seqRange.step.getOperand() ) );
-	                }
-	            	break;
-	            case EXPLICIT:
-	            	IntegerSequence.Explicit seqExplicit = (IntegerSequence.Explicit)sequence;
-	            	sb.append( Integer.toString( seqExplicit.getSequence().size()) );
-	            	break;
-	            case COMBINED:
-                    sb.append("(");
-                    IntegerSequence.Combined seqCombined = (IntegerSequence.Combined) sequence;
-                    for (IntegerSequence s : seqCombined.sequences) {
-                    	sb.append(codeComplexLength(s, lastRowsCols));
-	            		sb.append("+");
-                    }
-	            	sb.deleteCharAt(sb.length()-1);
-	            	sb.append(")");
-	            	break;
-	            }
-			}
-			return sb.toString();
-		}
-		
-		public String codeComplexRowIndices(String[] lastRowsCols) {
-			return codeComplexExtent(rowSequence, lastRowsCols[0]);
-		}
-
-		public String codeComplexColIndices(String[] lastRowsCols) {
-			return codeComplexExtent(colSequence, lastRowsCols[1]);
-		}
-		
-		private String codeComplexRows( String[] lastRowsCols ) {
-			return codeComplexLength(rowSequence, lastRowsCols[0]);
-		}
-		
-		private String codeComplexCols( String[] lastRowsCols ) {
-			return codeComplexLength(colSequence, lastRowsCols[1]);
-		}
-		
-		public String codeNumRows( String[] lastRowsCols ) {
-			if (isBlock()) {
-				return codeSimpleRows(lastRowsCols);
-			} else {
-				return codeComplexRows(lastRowsCols);
-			}
-		}
-		
-		public String codeNumCols( String[] lastRowsCols ) {
-			if (isBlock()) {
-				return codeSimpleCols(lastRowsCols);
-			} else {
-				return codeComplexCols(lastRowsCols);
-			}
-		}
-		
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			String[] M = {"M.numRows", "M.numCols"};
-			if (isBlock) {
-				sb.append("BLOCK{");
-				sb.append(codeSimpleStartRow());
-				sb.append(",");
-				sb.append(codeSimpleEndRow(M));
-				sb.append(",");
-				sb.append(codeSimpleStartCol());
-				sb.append(",");
-				sb.append(codeSimpleEndCol(M));
-				sb.append("} [");
-				sb.append(codeSimpleRows(M));
-				sb.append(",");
-				sb.append(codeSimpleCols(M));
-				sb.append("]");
-			} else {
-				sb.append("ELEMENTS{");
-				sb.append(codeComplexRowIndices(M));
-				sb.append(",");
-				sb.append(codeComplexColIndices(M));
-				sb.append("} [");
-				sb.append(codeComplexRows(M));
-				sb.append(",");
-				sb.append(codeComplexCols(M));
-				sb.append("]");
-			}
-			return sb.toString();
-		}
-		
-	}
-
-	private static String copyROp(String[] operands, CodeOperation codeOp) {
+	private String copyROp(String[] operands, CodeOperation codeOp) {
     	StringBuilder sb = new StringBuilder();
     	
     	CodeExtents codeExtents = new CodeExtents( codeOp.range, 0 );
@@ -1004,7 +662,7 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 	
-	public static void emitOperation(StringBuilder body, CodeOperation codeOp) {
+	public void emitOperation(StringBuilder body, CodeOperation codeOp) {
 		String[] fields = codeOp.name().split("-");
 		String inputs = "";
 		if (fields.length > 1) {

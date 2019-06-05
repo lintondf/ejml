@@ -21,25 +21,6 @@ import com.google.googlejavaformat.java.Formatter;
 
 
 public class CodeEquationMain {
-	/*
-        Equation eq = new Equation();
-
-        eq.alias(1, "A",2, "B");
-
-        eq.process("A=-B");
-        assertEquals(-2, eq.lookupInteger("A"));
-
-        eq.process("A=B--B");
-        assertEquals(4, eq.lookupInteger("A"));
-        eq.process("A=B+-B");
-        assertEquals(0,eq.lookupInteger("A"));
-        eq.process("A=B---5");
-        assertEquals(2 - 5, eq.lookupInteger("A"));
-        eq.process("A=B--5");
-        assertEquals(2+5,eq.lookupInteger("A"));
- 
-	 */
-	
 	
 	StringBuilder block;
 	String currentMethod = null;
@@ -75,15 +56,15 @@ public class CodeEquationMain {
 	 * 		<annotation> := ">" - input parameter
 	 *                      "<" - return variable
 	 */
-	public void declareIntegerVariable(List<String> declarations) {
+	public void declareIntegerVariables(List<String> declarations) {
 		declareVariables( integers, "int", declarations );
 	}
 	
-	public void declareDoubleVariable(List<String> declarations) {
+	public void declareDoubleVariables(List<String> declarations) {
 		declareVariables( doubles, "double", declarations );
 	}
 	
-	public void declareMatrixVariable(List<String> declarations) {
+	public void declareMatrixVariables(List<String> declarations) {
 		declareVariables( matrices, "DMatrixRMaj", declarations );
 	}
 	
@@ -112,6 +93,59 @@ public class CodeEquationMain {
 	}
 	
 	final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\((.+),(.+)\\)");
+	final Pattern reshapeReferencePattern = Pattern.compile("(\\w+)\\.num(\\w+)");
+	
+	private static class ReshapeSources {
+		public ReshapeSources( String target) {
+			this.target = target;
+		}
+		public String target;
+		public String rowVar;
+		public String rowWhich;
+		public String colVar;
+		public String colWhich;
+		
+		public String toString() {
+			return String.format("%s %s.%s, %s.%s", target, rowVar, rowWhich, colVar, colWhich);
+		}
+	}
+	
+	private HashMap<String, ReshapeSources> reshapeSourceMap = new HashMap<>();
+	
+	private String generateReshape( Matcher reshapeMatcher ) {
+		String var = reshapeMatcher.group(1);
+		String rows = reshapeMatcher.group(2);
+		String cols = reshapeMatcher.group(3);
+		
+		ReshapeSources reshapeSources = new ReshapeSources(var);
+		Matcher sourceMatcher = reshapeReferencePattern.matcher(rows);
+		if (sourceMatcher.find()) {
+			reshapeSources.rowVar = sourceMatcher.group(1);
+			reshapeSources.rowWhich = "num" + sourceMatcher.group(2);
+		}
+		sourceMatcher = reshapeReferencePattern.matcher(cols);
+		if (sourceMatcher.find()) {
+			reshapeSources.colVar = sourceMatcher.group(1);
+			reshapeSources.colWhich = "num" + sourceMatcher.group(2);
+		}
+		if (reshapeSources.rowVar != null && reshapeSources.colVar != null) {
+			ReshapeSources prior = reshapeSourceMap.get(reshapeSources.rowVar);
+			if (prior != null) {
+				reshapeSources.rowVar = prior.rowVar;
+				reshapeSources.rowWhich = prior.rowWhich;
+				rows = String.format("%s.%s", reshapeSources.rowVar, reshapeSources.rowWhich );
+			}
+			prior = reshapeSourceMap.get(reshapeSources.colVar);
+			if (prior != null) {
+				reshapeSources.colVar = prior.colVar;
+				reshapeSources.colWhich = prior.colWhich;
+				cols = String.format("%s.%s", reshapeSources.colVar, reshapeSources.colWhich );
+			}
+			reshapeSourceMap.put(var, reshapeSources);
+		}
+		String decl = String.format("DMatrixRMaj %s = new DMatrixRMaj(%s,%s);", var, rows, cols );
+		return decl;
+	}
 
 	public void finishMethod(List<String> equations) {
 		if (returnType == null)
@@ -144,6 +178,8 @@ public class CodeEquationMain {
 		}
 
 		TreeSet<String> declaredTemps = new TreeSet<>();
+		EmitJavaCodeOperation coder = new EmitJavaCodeOperation();
+		
 		for (String equationText : equations) {
 			body.append(String.format("// %s\n",  equationText));
 			Sequence sequence = eq.compile(equationText);//, true, true);//); //
@@ -152,7 +188,7 @@ public class CodeEquationMain {
 			generator.optimize();
 			for (Operation operation : operations) {
 	    		CodeOperation codeOp = (CodeOperation) operation;
-	    		EmitJavaCodeOperation.emitOperation( body, codeOp );
+	    		coder.emitOperation( body, codeOp );
 	    	}	
 			for (Usage usage : generator.integerUsages) {
 				Variable variable = usage.variable;
@@ -171,22 +207,6 @@ public class CodeEquationMain {
 
 			// replace first reshape with declaration of matrix variables and temporaries
 			List<String> codeLines = Arrays.asList(body.toString().split("\n"));
-			for (String v : matrices ) {
-				if (! parameters.contains(v)) {
-					for (int i = 0; i < codeLines.size(); i++) {
-						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
-						if (matcher.find()) {
-							if (matcher.group(1).equals(v)) {
-								System.out.printf("%s in %s\n", v, matcher.group(0));
-								String decl = String.format("DMatrixRMaj %s = new DMatrixRMaj(%s,%s);", v, matcher.group(2), matcher.group(3) );
-								codeLines.set(i, decl);
-								break;
-							}
-						}
-					}
-				}
-			}
-			
 			for (Usage usage : generator.matrixUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
@@ -196,8 +216,8 @@ public class CodeEquationMain {
 						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
 						if (matcher.find()) {
 							if (matcher.group(1).equals(variable.getName())) {
-								System.out.printf("%s in %s\n", variable.getName(), matcher.group(0));
-								String decl = String.format("DMatrixRMaj %s = new DMatrixRMaj(%s,%s);", variable.getName(), matcher.group(2), matcher.group(3) );
+								//System.out.printf("%s in %s\n", variable.getName(), matcher.group(0));
+								String decl = generateReshape( matcher );
 								codeLines.set(i, decl);
 								break;
 							}
@@ -205,6 +225,22 @@ public class CodeEquationMain {
 					}
 				}
 			}
+			for (String v : matrices ) {
+				if (! parameters.contains(v)) {
+					for (int i = 0; i < codeLines.size(); i++) {
+						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
+						if (matcher.find()) {
+							if (matcher.group(1).equals(v)) {
+								//System.out.printf("%s in %s [%s, %s]\n", v, matcher.group(0), matcher.group(2), matcher.group(3));
+								String decl = generateReshape( matcher );
+								codeLines.set(i, decl);
+								break;
+							}
+						}
+					}
+				}
+			}
+			
 			body = new StringBuilder();
 			body.append((String.join("\n", codeLines)));
 			generator.releaseTemporaries(eq);
@@ -237,9 +273,9 @@ public class CodeEquationMain {
 		StringBuilder block = new StringBuilder();
 		CodeEquationMain main = new CodeEquationMain( block, "code" );
 		main.startMethod("test");
-		main.declareIntegerVariable(integers);
-		main.declareDoubleVariable(doubles);
-		main.declareMatrixVariable(matrices);
+		main.declareIntegerVariables(integers);
+		main.declareDoubleVariables(doubles);
+		main.declareMatrixVariables(matrices);
 		main.finishMethod(equations);
 		main.finishClass();
 		try {

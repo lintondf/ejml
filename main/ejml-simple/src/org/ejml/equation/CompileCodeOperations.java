@@ -454,11 +454,12 @@ public class CompileCodeOperations {
     		}
     	}
     	body.append("\n");
+    	EmitJavaCodeOperation coder = new EmitJavaCodeOperation();
     	HashMap<String, String> reshapes = new HashMap<>();
     	for (Operation operation : operations) {
     		CodeOperation codeOp = (CodeOperation) operation;
     		StringBuilder block = new StringBuilder();
-    		EmitJavaCodeOperation.emitOperation( block, codeOp );
+    		coder.emitOperation( block, codeOp );
     		String[] lines = block.toString().split("\n");
     		for (String line : lines) {
     			// prune exact sequential reshapes
@@ -546,7 +547,8 @@ public class CompileCodeOperations {
 			}
 		}
 		StringBuilder value = new StringBuilder();
-		EmitJavaCodeOperation.emitOperation(value, codeOp);
+		EmitJavaCodeOperation coder = new EmitJavaCodeOperation();
+		coder.emitOperation(value, codeOp);
 		int i = value.indexOf(" = ");
 		if (i < 0)
 			return null;

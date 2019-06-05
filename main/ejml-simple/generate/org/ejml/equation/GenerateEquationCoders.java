@@ -699,7 +699,8 @@ public class GenerateEquationCoders {
 
 	protected static void emitIndentedOperation(StringBuilder test, String indent, CodeOperation codeOp) {
 		StringBuilder sb = new StringBuilder();
-		EmitJavaCodeOperation.emitOperation( sb, codeOp );
+		EmitJavaCodeOperation coder = new EmitJavaCodeOperation();
+		coder.emitOperation( sb, codeOp );
 		for (String line : sb.toString().split("\n")) {
 			test.append(indent);
 			test.append(line);
