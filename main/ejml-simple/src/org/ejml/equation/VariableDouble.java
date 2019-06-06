@@ -31,6 +31,10 @@ public class VariableDouble extends VariableScalar {
         this.value = value;
     }
 
+    public VariableDouble(double value) {
+    	this(value, "");
+    }
+    
     @Override
     public double getDouble() {
         return value;

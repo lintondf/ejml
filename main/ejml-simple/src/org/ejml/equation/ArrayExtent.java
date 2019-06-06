@@ -8,10 +8,6 @@ public class ArrayExtent {
         array = new int[1];
     }
     
-    public ArrayExtent( int dimension, int[] sequence ) {
-    	
-    }
-
     public void setLength( int length ) {
         if( length > array.length ) {
             array = new int[ length ];

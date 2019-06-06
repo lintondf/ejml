@@ -4,7 +4,8 @@ package org.ejml.equation;
 public class Extents {
 	public int row0,row1;
 	public int col0,col1;
-
+	
+	
     /**
      * See if a simple sequence can be used to extract the array.  A simple extent is a continuous block from
      * a min to max index

@@ -29,4 +29,8 @@ public class VariableIntegerSequence extends Variable {
         super(VariableType.INTEGER_SEQUENCE, name);
         this.sequence = sequence;
     }
+    
+    protected VariableIntegerSequence(IntegerSequence sequence ) {
+    	this(sequence, "");
+    }
 }
