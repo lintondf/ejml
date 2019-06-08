@@ -1,14 +1,23 @@
-package org.ejml.equation;
-
-import static org.junit.Assert.assertEquals;
-
-/**
- * Generate TestCompiled.java from TestEquation and TestOperation
- * D. F. Linton, Blue Lightning Development, LLC. June 2019.
- * All rights contributed to EJML project.
+/*
+ * Copyright (c) 2009-2018, Peter Abeles. All Rights Reserved.
+ *
+ * This file is part of Efficient Java Matrix Library (EJML).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-import java.io.File;
+package org.ejml.equation;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -21,16 +30,260 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.ejml.data.DMatrixRMaj;
 import org.ejml.equation.CompileCodeOperations.Usage;
 import org.ejml.simple.SimpleMatrix;
 
+/**
+ * Generate TestCompiled.java from TestEquation and TestOperation
+ * D. F. Linton, Blue Lightning Development, LLC. June 2019.
+ * All rights contributed to EJML project.
+ */
+
 public class GenerateEquationCoders {
+	
+	private static class GeneratorCompileCodeOperations extends CompileCodeOperations {
+	    
+		public GeneratorCompileCodeOperations(List<Operation> operations) {
+			super(operations);
+		}
+		
+	    String getJavaType( Variable variable ) {
+			switch (variable.getType()) {
+			case INTEGER_SEQUENCE:
+				return ""; // TODO
+			case SCALAR:
+				VariableScalar scalar = (VariableScalar) variable;
+				switch (scalar.getScalarType()) {
+				case INTEGER:
+					return "int";
+				case DOUBLE:
+					return "double";
+				case COMPLEX:
+					return ""; // TODO
+				}
+				break;
+			case MATRIX:
+				return "DMatrixRMaj";
+			}
+			return "";
+	    }
+	    
+	    public String getAssert( HashMap<String, String> constants, HashMap<String, String> lookups, Equation eq ) {
+	    	String ret = "";
+	    	if (assignmentTarget != null) {
+		    	HashMap<String, Variable> variables = eq.getVariables();
+		    	StringBuilder call = new StringBuilder();
+		    	for (Variable variable : variables.values()) {
+		    		if (variable.getName().equals("e")) {
+		    		} else if (variable.getName().equals("pi")) {
+		    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+		    			//assertTrue(new SimpleMatrix(A_coded).isIdentical(A, 1e-15));
+		    			String var = variable.getName();
+		    			String l = lookups.get(var);
+		    			if (l != null) {
+		    				var = l;
+		    			} else if (constants.containsKey(variable.getName())) {
+		    				var = constants.get(variable.getName());
+		    			}
+		    			
+		    			ret = String.format("assertTrue(isIdentical(%s_coded, %s));", variable.getName(), var);
+//		    			if (assignmentTarget.getType() != VariableType.MATRIX) {
+//		    				System.out.println( assignmentTarget.type.toString() + " " + ret);
+//		    				ret += " // " + assignmentTarget.getClass()
+//		    			}
+		    		}
+		    	}
+	    	}
+	    	return ret;
+	    }
+	    
+	   
+	    public String getCallingSequence( HashMap<String, String> constants, Equation eq) {
+	    	HashMap<String, Variable> variables = eq.getVariables();
+	    	StringBuilder call = new StringBuilder();
+	    	boolean notFirst = false;
+	    	for (Variable variable : variables.values()) {
+	    		if (variable.getName().equals("e")) {
+	    		} else if (variable.getName().equals("pi")) {
+	    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+	    			if (lastOperationCopyR) {
+	        			if (notFirst)
+	        				call.append(", ");
+	        			if (constants.containsKey(variable.getName())) {
+	        				call.append( constants.get(variable.getName()) );
+	        			} else {
+	    	    			call.append(variable.getName());
+	    	    			if (variable.getType() == VariableType.MATRIX)
+	    	    				call.append(".getDDRM()");
+	        			}
+	        			notFirst = true;
+	    			}
+	    		} else {
+	    			if (notFirst)
+	    				call.append(", ");
+	    			if (constants.containsKey(variable.getName())) {
+	    				call.append( constants.get(variable.getName()) );
+	    			} else {
+		    			call.append(variable.getName());
+		    			if (variable.getType() == VariableType.MATRIX)
+		    				call.append(".getDDRM()");
+	    			}
+	    			notFirst = true;
+	    		}
+	    	}
+	    	return call.toString();
+	    }
+	    
+	    public String getReturnVariable( Equation eq ) {
+	    	String ret = "";
+	    	if (assignmentTarget != null) {
+		    	HashMap<String, Variable> variables = eq.getVariables();
+		    	StringBuilder call = new StringBuilder();
+		    	for (Variable variable : variables.values()) {
+		    		if (variable.getName().equals("e")) {
+		    		} else if (variable.getName().equals("pi")) {
+		    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+		    			ret = String.format("%s %s_coded = ", getJavaType(assignmentTarget), variable.getName());
+		    		}
+		    	}
+	    	}
+	    	return ret;
+	    }
+	    
+		final String declFormatWithValue = "%s%s%-10s\t%s = %s";
+	    final String declFormatInitialize = "%s%s%-10s\t%s = new %s(%s)";
+	    final String declFormatScalar = "%s%s%-10s %s = 0";
+	    final String declFormat = "%s%s%-10s\t%s";
+	    final String returnFormat = "%s%sreturn %s;\n";
+	    
+	    final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\(\\s*(\\w+)\\.numRows\\,\\s*(\\w+)\\.numCols");
+	    
+	    protected boolean isConstructed( Variable v ) {
+	    	if (v instanceof VariableMatrix) {
+	    		for (Operation operation : operations) {
+	    			CodeOperation codeOp = (CodeOperation) operation;
+	    			if (codeOp.constructor != null) {
+	    				if (codeOp.constructor.output != null && codeOp.constructor.output.getName().equals(v.getName()))
+	    					return true;
+	    			}
+	    		}
+	    	}
+	    	return false;
+	    }
+	   
+	    public void emitJavaTest( StringBuilder body, String prefix, String name, Equation eq, String equationText ) {
+	    	HashMap<String, Variable> variables = eq.getVariables();
+	    	StringBuilder header = new StringBuilder();
+	    	String returnType = "void";
+	    	if (assignmentTarget != null) {
+	    		returnType = getJavaType(assignmentTarget);
+	    	}
+	    	header.append(String.format("%sprotected %s %s(", prefix, returnType, name ) );
+	    	boolean notFirst = false;
+	    	
+	    	for (Variable variable : variables.values()) {
+	    		if (variable.getName().equals("e")) {
+	    		} else if (variable.getName().equals("pi")) {
+	    		} else if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+	    			if (lastOperationCopyR) {
+		    			if (notFirst)
+		    				header.append(", ");
+		    			String type = getJavaType(variable);
+		   				header.append(String.format(declFormat, "", "", "final " + type, variable.getName()+"_in") );
+		    			notFirst = true;
+	    			}
+	    		} else {
+	    			if (notFirst)
+	    				header.append(", ");
+	    			String type = getJavaType(variable);
+	   				header.append(String.format(declFormat, "", "", type, variable.getName()) );
+	    			notFirst = true;
+	    		}
+	    	}
+	    	
+	    	header.append(") {\n");
+	    	body.append(header.toString().replaceAll("\t", " "));
+	    	body.append(prefix);
+	    	body.append(prefix);
+	    	body.append("// ");
+	    	body.append( equationText);
+	    	body.append("\n");
+	    	for (Variable variable : variables.values()) {
+				if (assignmentTarget != null && variable.equals(assignmentTarget)) {
+					if (! isConstructed(variable)) {
+						String type = getJavaType(assignmentTarget);
+						if (type.equals("int") || type.equals("double")) {
+							body.append(String.format(declFormatWithValue, prefix, prefix, type, variable.getName(), "0") );					
+						} else {
+							String constructParameters = "1,1";
+							if (this.lastOperationCopyR) {
+								constructParameters = variable.getName() + "_in";
+							}
+							body.append(String.format(declFormatInitialize, prefix, prefix, type, variable.getName(), type, constructParameters) );
+						}
+						body.append(";\n");
+					}
+				}
+	    	}    	
+	    	for (Usage usage : integerUsages) {
+	    		if (!usage.variable.isConstant()) {
+		    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
+					body.append(";\n");
+	    		}
+	    	}
+	    	for (Usage usage : doubleUsages) {
+	    		if (!usage.variable.isConstant()) {
+	    			body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
+	    			body.append(";\n");
+	    		}
+	    	}
+	    	for (Usage usage : matrixUsages) {
+	    		if (!usage.variable.isConstant()) {
+					String type = getJavaType(usage.variable);
+		    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type, "1,1") );
+					body.append(";\n");
+	    		}
+	    	}
+	    	body.append("\n");
+	    	HashMap<String, String> reshapes = new HashMap<>();
+	    	for (Operation operation : operations) {
+	    		CodeOperation codeOp = (CodeOperation) operation;
+	    		StringBuilder block = new StringBuilder();
+	    		coder.emitOperation( block, codeOp );
+	    		String[] lines = block.toString().split("\n");
+	    		for (String line : lines) {
+	    			// prune exact sequential reshapes
+	    			Matcher matcher = reshapePattern.matcher(line);
+	    			if (matcher.find()) {
+	    				if (reshapes.containsKey(matcher.group(1))) {
+	    					if (line.equals(reshapes.get(matcher.group(1))))
+	    						continue;
+	    				}
+	    				if (matcher.group(1).equals(matcher.group(2)) && matcher.group(1).equals(matcher.group(3))) {
+	    					continue; // skip self reshapes
+	    				}
+	    				
+	    				//TODO skip reshape if array is an input to the next operation
+						reshapes.put(matcher.group(1), line);
+	    			}
+	    			body.append(prefix);
+	    			body.append(prefix);
+	    			body.append(line);
+	    			body.append("\n");
+	    		}
+	    	}    	
+	    	if (assignmentTarget != null) {
+	    		body.append("\n");
+	    		body.append( String.format(returnFormat, prefix, prefix, assignmentTarget.getName()) );
+	    	}
+			body.append(prefix);
+	    	body.append("}");
+	    }
+	}
 
 	private static class Execution {
 		public String method;
@@ -515,6 +768,16 @@ public class GenerateEquationCoders {
 			return String.format("%s-%s: %s", name, inputs, body.toString());
 		}
 	}
+	
+
+	final String declFormatWithValue = "%s%s%-10s\t%s = %s";
+    final String declFormatInitialize = "%s%s%-10s\t%s = new %s(%s)";
+    final String declFormatScalar = "%s%s%-10s %s = 0";
+    final String declFormat = "%s%s%-10s\t%s";
+    final String returnFormat = "%s%sreturn %s;\n";
+    
+    final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\(\\s*(\\w+)\\.numRows\\,\\s*(\\w+)\\.numCols");
+    
 
 	private static HashMap<String, HashMap<String, Execution>> byInputs = new HashMap<>();
 
@@ -622,7 +885,7 @@ public class GenerateEquationCoders {
 	}
 
 	private static void writeCodedEquationMethod(ArrayList<String> body, String prefix, String testName,
-			HashMap<String, String> lookups, CompileCodeOperations generator, Equation eq, Sequence sequence,
+			HashMap<String, String> lookups, GeneratorCompileCodeOperations generator, Equation eq, Sequence sequence,
 			String equationText) {
 
 		body.add("");
@@ -818,7 +1081,7 @@ public class GenerateEquationCoders {
 				try {
 					Sequence sequence = eq.compile(equationText); //, true, true);
 					List<Operation> operations = sequence.getOperations();
-					CompileCodeOperations generator = new CompileCodeOperations(operations);
+					GeneratorCompileCodeOperations generator = new GeneratorCompileCodeOperations(operations);
 					generator.optimize();
 					String target = matcher.group(1);
 					body.add(String.format("%s%s// %s: %s -> %s", prefix, prefix, equationVariable, equationText, target));
@@ -887,7 +1150,7 @@ public class GenerateEquationCoders {
 					test.append( String.format("%s//%s\n", indent, equationText));
 					Sequence sequence = eq.compile(equationText); //
 					List<Operation> operations = sequence.getOperations();
-					CompileCodeOperations generator = new CompileCodeOperations(operations);
+					GeneratorCompileCodeOperations generator = new GeneratorCompileCodeOperations(operations);
 					generator.optimize();
 					for (Usage usage : generator.integerUsages) {
 						Variable variable = usage.variable;

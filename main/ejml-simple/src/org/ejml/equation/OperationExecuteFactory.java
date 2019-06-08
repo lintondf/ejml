@@ -42,28 +42,6 @@ public class OperationExecuteFactory implements IOperationFactory {
 	public OperationExecuteFactory() {
 	}
 
-//    public static class Extents
-//    {
-//        int row0,row1;
-//        int col0,col1;
-//    }
-//
-//    public static class ArrayExtent
-//    {
-//        int array[];
-//        int length;
-//
-//        public ArrayExtent() {
-//            array = new int[1];
-//        }
-//
-//        public void setLength( int length ) {
-//            if( length > array.length ) {
-//                array = new int[ length ];
-//            }
-//            this.length = length;
-//        }
-//    }
 
     /* (non-Javadoc)
 	 * @see org.ejml.equation.IOperationFactory#multiply(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
@@ -1832,60 +1810,6 @@ public class OperationExecuteFactory implements IOperationFactory {
         return ret;
     }
 
-//    /**
-//     * See if a simple sequence can be used to extract the array.  A simple extent is a continuous block from
-//     * a min to max index
-//     *
-//     * @return true if it is a simple range or false if not
-//     */
-//    private boolean extractSimpleExtents(Variable var, Extents extents, boolean row, int length) {
-//        int lower;
-//        int upper;
-//        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
-//            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-//            if( sequence.getType() == IntegerSequence.Type.FOR ) {
-//                IntegerSequence.For seqFor = (IntegerSequence.For)sequence;
-//                seqFor.initialize(length);
-//                if( seqFor.getStep() == 1 ) {
-//                    lower = seqFor.getStart();
-//                    upper = seqFor.getEnd();
-//                } else {
-//                    return false;
-//                }
-//            } else {
-//                return false;
-//            }
-//        } else if( var.getType() == VariableType.SCALAR ) {
-//            lower = upper = ((VariableInteger)var).value;
-//        } else {
-//            throw new RuntimeException("How did a bad variable get put here?!?!");
-//        }
-//        if( row ) {
-//            extents.row0 = lower;
-//            extents.row1 = upper;
-//        } else {
-//            extents.col0 = lower;
-//            extents.col1 = upper;
-//        }
-//        return true;
-//    }
-//
-//    private void extractArrayExtent( Variable var , int length , ArrayExtent extent ) {
-//        if( var.getType() == VariableType.INTEGER_SEQUENCE ) {
-//            IntegerSequence sequence = ((VariableIntegerSequence)var).sequence;
-//            sequence.initialize(length-1);
-//            extent.setLength(sequence.length());
-//            int index = 0;
-//            while( sequence.hasNext() ) {
-//                extent.array[index++] = sequence.next();
-//            }
-//        } else if( var.getType() == VariableType.SCALAR ) {
-//            extent.setLength(1);
-//            extent.array[0] = ((VariableInteger)var).value;
-//        } else {
-//            throw new RuntimeException("How did a bad variable get put here?!?!");
-//        }
-//    }
 
     /* (non-Javadoc)
 	 * @see org.ejml.equation.IOperationFactory#matrixConstructor(org.ejml.equation.MatrixConstructor)

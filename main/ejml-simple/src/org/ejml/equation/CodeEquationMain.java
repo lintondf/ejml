@@ -2,6 +2,7 @@ package org.ejml.equation;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.Console;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
@@ -258,29 +259,71 @@ public class CodeEquationMain {
 	}
 	
 	public static void main(String[] args) {
-		List<String> integers = new ArrayList<>();
-		List<String> doubles = new ArrayList<>();
-		List<String> matrices = new ArrayList<>();
-		
-		matrices.add("<K");
-		matrices.add(">P");
-		matrices.add(">H");
-		matrices.add(">R");
-		
-		List<String> equations = new ArrayList<>();
-		equations.add("K = P*H'*inv( H*P*H' + R )");
-		
+		Console console = System.console();
+		final String instructions =
+				"Generates a java class source file from compiled EJML equations\n" +
+				"First, input a class name.  The resulting source will be written to <name>.java.\n" +
+				"Next, define one or more methods, each of which can implement one or more EJML equations.\n" +
+				"For each method, input declarations of all integer, double, and matrix variables used.\n" +
+				"Variable names for each type are entered separately in a comma-separated list.\n" +
+				"Press <Enter> alone if no variables of the type are used.\n" +
+				"Variables that are input parameters to a method are preceeded by a '>'\n" +
+				"A return variable may be indicated by a preceeding '<'.\n" +
+				"Input parameters that are returned are preceeded by '<>'.\n" +
+				"\n"; 
+		System.out.print(instructions);
+		String className = console.readLine("Class name: ");
+		String path = String.format("%s.java", className);
 		StringBuilder block = new StringBuilder();
-		CodeEquationMain main = new CodeEquationMain( block, "code" );
-		main.startMethod("test");
-		main.declareIntegerVariables(integers);
-		main.declareDoubleVariables(doubles);
-		main.declareMatrixVariables(matrices);
-		main.finishMethod(equations);
-		main.finishClass();
+		CodeEquationMain main = new CodeEquationMain( block, className );
+
 		try {
+			PrintStream code = new PrintStream(path);
+			while (true) {
+				String methodName = console.readLine(" Method name: " );
+				if (methodName.isEmpty())
+					break;
+				main.startMethod(methodName);
+				List<String> integers = new ArrayList<>();
+				List<String> doubles = new ArrayList<>();
+				List<String> matrices = new ArrayList<>();
+				String integerNames = console.readLine("  Integer variable names: ");
+				if (! integerNames.isEmpty()) {
+					String[] names = integerNames.split(",");
+					for (String name : names) {
+						integers.add( name.trim() );
+					}
+				}
+				String doubleNames = console.readLine("  Double variable names: ");
+				if (! doubleNames.isEmpty()) {
+					String[] names = doubleNames.split(",");
+					for (String name : names) {
+						doubles.add( name.trim() );
+					}
+				}
+				String matrixNames = console.readLine("  Matrix variable names: ");
+				if (! matrixNames.isEmpty()) {
+					String[] names = matrixNames.split(",");
+					for (String name : names) {
+						matrices.add( name.trim() );
+					}
+				}
+				System.out.print("  Enter the equations to compile for this method.  One per line.  Enter alone when done.\n");
+				List<String> equations = new ArrayList<>();
+				while (true) {
+					String equation = console.readLine("  Equation: ");
+					if (equation.isEmpty())
+						break;
+					equations.add( equation.trim() );
+				}
+				
+				main.declareIntegerVariables(integers);
+				main.declareDoubleVariables(doubles);
+				main.declareMatrixVariables(matrices);
+				main.finishMethod(equations);
+			} // while adding methods
+			main.finishClass();
 			String pretty = new Formatter().formatSource(block.toString());
-			PrintStream code = System.out; // new PrintWriter("code.java");
 			code.println(pretty);
 			code.close();
 		} catch (Exception x) {

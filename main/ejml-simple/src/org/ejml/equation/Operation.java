@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Performs math operations.
+ * Base class for both executing and compiling EJML equations.
  *
  * @author Peter Abeles
  */

@@ -29,9 +29,9 @@ public class TestIntegerSequence {
     @Test
     public void explicit() {
 
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
-        TokenList.Token b = new TokenList.Token(new VariableInteger(6, ""));
-        TokenList.Token c = new TokenList.Token(new VariableInteger(-3, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
+        TokenList.Token b = new TokenList.Token(new VariableInteger(6));
+        TokenList.Token c = new TokenList.Token(new VariableInteger(-3));
 
         a.next = a;
         compare(new IntegerSequence.Explicit(a), 4);
@@ -43,17 +43,17 @@ public class TestIntegerSequence {
 
     @Test
     public void checkFor_two() {
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
-        TokenList.Token b = new TokenList.Token(new VariableInteger(7, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
+        TokenList.Token b = new TokenList.Token(new VariableInteger(7));
 
         compare(new IntegerSequence.For(a,null,b), 4,5,6,7);
     }
 
     @Test
     public void checkFor_three() {
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
-        TokenList.Token b = new TokenList.Token(new VariableInteger(2, ""));
-        TokenList.Token c = new TokenList.Token(new VariableInteger(12, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
+        TokenList.Token b = new TokenList.Token(new VariableInteger(2));
+        TokenList.Token c = new TokenList.Token(new VariableInteger(12));
 
         compare(new IntegerSequence.For(a,b,c), 4,6,8,10,12);
     }
@@ -65,25 +65,25 @@ public class TestIntegerSequence {
 
     @Test
     public void range_one() {
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
 
         compare(new IntegerSequence.Range(a,null), 4,5,6,7,8,9,10);
     }
 
     @Test
     public void range_two() {
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
-        TokenList.Token b = new TokenList.Token(new VariableInteger(2, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
+        TokenList.Token b = new TokenList.Token(new VariableInteger(2));
         compare(new IntegerSequence.Range(a,b), 4,6,8,10);
     }
 
     @Test
     public void combined() {
-        TokenList.Token a = new TokenList.Token(new VariableInteger(4, ""));
-        TokenList.Token b = new TokenList.Token(new VariableInteger(7, ""));
+        TokenList.Token a = new TokenList.Token(new VariableInteger(4));
+        TokenList.Token b = new TokenList.Token(new VariableInteger(7));
 
-        VariableIntegerSequence varA = new VariableIntegerSequence(new IntegerSequence.For(a,null,b), "");
-        VariableScalar varB = new VariableInteger(7, "");
+        VariableIntegerSequence varA = new VariableIntegerSequence(new IntegerSequence.For(a,null,b));
+        VariableScalar varB = new VariableInteger(7);
 
         TokenList.Token tokenA = new TokenList.Token(varA);
         TokenList.Token tokenB = new TokenList.Token(varB);

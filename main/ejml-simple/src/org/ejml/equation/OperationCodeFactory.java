@@ -1,6 +1,21 @@
-/**
- * 
+/*
+ * Copyright (c) 2009-2018, Peter Abeles. All Rights Reserved.
+ *
+ * This file is part of Efficient Java Matrix Library (EJML).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package org.ejml.equation;
 
 import java.util.ArrayList;
@@ -18,8 +33,6 @@ import org.ejml.dense.row.RandomMatrices_DDRM;
 import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.dense.row.mult.VectorVectorMult_DDRM;
 import org.ejml.equation.Operation.Info;
-import org.ejml.equation.OperationCodeFactory.ArrayExtent;
-import org.ejml.equation.OperationCodeFactory.Extents;
 import org.ejml.interfaces.linsol.LinearSolverDense;
 import org.ejml.simple.SimpleMatrix;
 
@@ -27,41 +40,16 @@ import org.ejml.equation.CodeOperation.CodeInfo;
 import org.ejml.equation.CodeOperation.DimensionSources;
 
 
-/**
- * @author NOOK
- *
+/** Implement IOperationFactory for compilation of EJML equations to procedural java
+ * 
+ * @author D. F. Linton, Blue Lightning Development, LLC 2019.
  */
 public class OperationCodeFactory implements IOperationFactory {
-	
-    public static class Extents
-    {
-        int row0,row1;
-        int col0,col1;
-    }
-
-    public static class ArrayExtent
-    {
-        int array[];
-        int length;
-
-        public ArrayExtent() {
-            array = new int[1];
-        }
-
-        public void setLength( int length ) {
-            if( length > array.length ) {
-                array = new int[ length ];
-            }
-            this.length = length;
-        }
-    }
-
 
 	/**
 	 * 
 	 */
 	public OperationCodeFactory() {
-		// TODO Auto-generated constructor stub
 	}
 
     /* (non-Javadoc)
@@ -308,7 +296,7 @@ public class OperationCodeFactory implements IOperationFactory {
             ret.output = output;
             ret.op = new CodeOperation("exp-m", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalars or matrices are supported");
         }
 
         return ret;
@@ -330,7 +318,7 @@ public class OperationCodeFactory implements IOperationFactory {
             ret.output = output;
             ret.op = new CodeOperation("log-m", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalars or matrices are supported");
         }
 
         return ret;
@@ -369,14 +357,6 @@ public class OperationCodeFactory implements IOperationFactory {
         }
 
         return ret;
-    }
-
-    private void checkThrow1x1AgainstNxM( Matrix A , Matrix B , String operation ) {
-        if((A.getNumCols() == 1&&A.getNumRows()==1) || (B.getNumCols() == 1&&B.getNumRows() == 1)) {
-            throw new MatrixDimensionException("Trying to "+operation+" a 1x1 matrix to every element in a " +
-                    "MxN matrix? Turn the 1x1 matrix into a scalar by accessing its element. This is " +
-                    "stricter than matlab to catch more accidental math errors.");
-        }
     }
 
     /* (non-Javadoc)
