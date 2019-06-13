@@ -40,6 +40,17 @@ public class ManagerTempVariables {
 	public ManagerTempVariables() {
 	}
 	
+	public void clear() {
+		sequence = 1;
+		matrixRecycle.clear();
+		integerRecycle.clear();
+		doubleRecycle.clear();
+	}
+	
+	public String toString() {
+		return String.format("%s: %d issued; recycled: %d, %d, %d", this.hashCode(), sequence, integerRecycle.size(), doubleRecycle.size(), matrixRecycle.size() );
+	}
+	
 	public void release( VariableMatrix variable) {
 		matrixRecycle.addLast(variable);
 	}

@@ -53,7 +53,7 @@ public class Variable {
     }
 
     public String toString() {
-        return name + " : VAR_"  + type + " " + temp;
+        return name + " : VAR_"  + type + ((temp) ? " TEMP" : "");
     }
 
 	public boolean isTemp() {

@@ -39,6 +39,11 @@ public class MatrixConstructor {
         this.output = manager.createMatrix();
     }
 
+	@Override
+	public String toString() {
+		return String.format("CONSTRUCT(%s)", output);
+	}
+	
     public void addToRow(Variable variable) {
         if( variable.getType() == VariableType.INTEGER_SEQUENCE ) {
             if( ((VariableIntegerSequence)variable).sequence.requiresMaxIndex() )

@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.equation.CompileCodeOperations.Usage;
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;
 
 import com.google.googlejavaformat.java.Formatter;
 
@@ -184,12 +186,10 @@ public class CodeEquationMain {
 		for (String equationText : equations) {
 			body.append(String.format("// %s\n",  equationText));
 			Sequence sequence = eq.compile(equationText);//, true, true);//); //
-			List<Operation> operations = sequence.getOperations();
-			CompileCodeOperations generator = new CompileCodeOperations(operations);
+			CompileCodeOperations generator = new CompileCodeOperations(sequence, eq.getTemporariesManager());
 			generator.optimize();
-			for (Operation operation : operations) {
-	    		CodeOperation codeOp = (CodeOperation) operation;
-	    		coder.emitOperation( body, codeOp );
+			for (Info info : sequence.getInfos()) {
+	    		coder.emitOperation( body, info );
 	    	}	
 			for (Usage usage : generator.integerUsages) {
 				Variable variable = usage.variable;

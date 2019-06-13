@@ -20,7 +20,7 @@ package org.ejml.equation;
 
 import java.util.List;
 
-import org.ejml.equation.Operation.Info;
+import org.ejml.equation.Info;
 
 /** Interface derived from original Operation.java
  * 
@@ -164,7 +164,7 @@ public interface IOperationFactory {
 	 * @param dst
 	 * @return
 	 */
-	Operation copy(Variable src, Variable dst);
+	Info copy(Variable src, Variable dst);
 
 	/**
 	 * Copy src into the submatrix of dst defined by range
@@ -173,7 +173,7 @@ public interface IOperationFactory {
 	 * @param range
 	 * @return
 	 */
-	Operation copy(Variable src, Variable dst, List<Variable> range);
+	Info copy(Variable src, Variable dst, List<Variable> range);
 
 	/**
 	 * Transpose A

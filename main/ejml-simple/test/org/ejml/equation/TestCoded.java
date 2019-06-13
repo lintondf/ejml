@@ -590,6 +590,7 @@ public class TestCoded {
         CommonOps_DDRM.add( tm1, C, tm2 );
         tm1.reshape( B.numRows, B.numCols );
         boolean ok = CommonOps_DDRM.invert(B, tm1);
+        //TODO check ok
         tm4.reshape( A.numCols, A.numRows );
         CommonOps_DDRM.transpose( A, tm4 );
         tm5.reshape( tm2.numCols, tm2.numRows );
@@ -2799,6 +2800,7 @@ public class TestCoded {
 
         b.reshape( a.numRows, a.numCols );
         boolean ok = CommonOps_DDRM.invert(a, b);
+        //TODO check ok
 
         return b;
     }
@@ -2964,6 +2966,31 @@ public class TestCoded {
         double    	b = 0;
 
         b = (5.6);
+
+        return b;
+    }
+
+
+    @Test
+    public void trace_scalar() {
+        Equation eq = new Equation();
+
+        double a = 3.14;
+
+        eq.alias(a,"a");
+        eq.process("b=trace(a)");
+
+        assertEquals(a, eq.lookupDouble("b"), UtilEjml.TEST_F64);    	
+        // eq: b=trace(a) -> b
+        double b_coded = trace_scalar_Coded(a);
+        assertTrue(isIdentical(b_coded, eq.lookupDouble("b")));
+    }
+
+    protected double trace_scalar_Coded(double     a) {
+        // b=trace(a)
+        double    	b = 0;
+
+        b = a;
 
         return b;
     }
@@ -3289,6 +3316,33 @@ public class TestCoded {
         DMatrixRMaj	a = new DMatrixRMaj(1,1);
 
         a.reshape(3, 3);
+        CommonOps_DDRM.setIdentity( a );
+
+        return a;
+    }
+
+
+    @Test
+    public void eye_matrix() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(5,5,-1,1,rand);
+
+        eq.alias(a,"a", b, "b");
+        eq.process("a=eye(b)");
+
+        assertTrue(SimpleMatrix.identity(b.numCols()).isIdentical(a, UtilEjml.TEST_F64));    	
+        // eq: a=eye(b) -> a
+        DMatrixRMaj a_coded = eye_matrix_Coded(b.getDDRM());
+        assertTrue(isIdentical(a_coded, a));
+    }
+
+    protected DMatrixRMaj eye_matrix_Coded(DMatrixRMaj b) {
+        // a=eye(b)
+        DMatrixRMaj	a = new DMatrixRMaj(1,1);
+
+        a.reshape( b.numRows, b.numCols );
         CommonOps_DDRM.setIdentity( a );
 
         return a;

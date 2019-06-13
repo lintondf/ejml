@@ -24,12 +24,16 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 
-/** Compiles a list of CodeOperation objects with optimizations
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;;
+
+/** Optimizes a compiled sequence
  * 
  * @author D. F. Linton, Blue Lightning Development, LLC 2019.
  */
 public class CompileCodeOperations {
 
+	List<Info> infos = new ArrayList<>();
 	List<Operation> operations = new ArrayList<>();
 	List<Variable> inputs = new ArrayList<>();
 	List<Variable> doubleTemps = new ArrayList<>();
@@ -43,14 +47,56 @@ public class CompileCodeOperations {
 	
 	boolean lastOperationCopyR = false;
 	EmitJavaCodeOperation coder;
+	ManagerTempVariables tempManager;
+	
+	static class Statistics {
+		static class Counts {
+			public int operations;
+			public int integerTemps;
+			public int doubleTemps;
+			public int matrixTemps;
+		}
+		Counts input = new Counts();
+		Counts output = new Counts();
+		int constantExpressions;
+		int integerTemps;
+		int doubleTemps;
+		int matrixTemps;	
+		int finalCopy;
+		
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(String.format("INPUT:  %5d operations, %2d integer temps, %2d double temps, %2d matrix temps\n", input.operations, input.integerTemps, input.doubleTemps, input.matrixTemps));
+			sb.append("OPTIMIZATIONS:\n");
+			if (constantExpressions > 0) 
+				sb.append(String.format("  removed %5d constant expressions\n", this.constantExpressions));
+			if (integerTemps > 0) 
+				sb.append(String.format("  removed %5d integer temporaries\n", this.integerTemps));
+			if (doubleTemps > 0) 
+				sb.append(String.format("  removed %5d double temporarie\n", this.doubleTemps));
+			if (matrixTemps > 0) 
+				sb.append(String.format("  removed %5d matrix temporaries\n", this.matrixTemps));
+			if (finalCopy > 0) 
+				sb.append("  removed final copy from temp\n");
+			sb.append(String.format("OUTPUT: %5d operations, %2d integer temps, %2d double temps, %2d matrix temps\n", input.operations, input.integerTemps, input.doubleTemps, input.matrixTemps));
+			return sb.toString();
+		}
+	}
+	
+	Statistics stats = new Statistics();
 	
 	/**
 	 * Constructs the compiler
+	 * @param tempManager 
 	 * @param operations - List of CodeOperation objects 
 	 */
-	public CompileCodeOperations(List<Operation> operations) {    	
+	public CompileCodeOperations(Sequence sequence, ManagerTempVariables tempManager) {    	
 		coder = new EmitJavaCodeOperation();
-    	this.operations = operations;
+		this.infos = sequence.getInfos();
+    	this.operations = sequence.getOperations();
+    	this.tempManager = tempManager;
+    	stats.input.operations = this.infos.size();
+    	
     	lastOperationCopyR = operations.get(operations.size()-1).name().startsWith("copyR-");
 	}
 
@@ -114,9 +160,9 @@ public class CompileCodeOperations {
 	
 	Usage findUsage( Variable variable) {
 		Usage usage = new Usage(variable);
-		for (int i = 0; i < operations.size(); i++) {
-			CodeOperation codeOp = (CodeOperation) operations.get(i);
-			if (codeOp.uses(variable)) {
+		for (int i = 0; i < infos.size(); i++) {
+			Info info = infos.get(i);
+			if (info.uses(variable)) {
 				usage.uses.addLast(i);
 			}
 		}
@@ -130,17 +176,16 @@ public class CompileCodeOperations {
 	 * allocation algorithm of Poletto and Sarkar (ACM Transactions V21N5, Sept 1999)
 	 */
     void mapVariableUsage() {
-    	for (Operation operation : operations) {
-    		CodeOperation codeOp = (CodeOperation) operation;
+    	for (Info info : infos) {
     		//System.out.println( codeOp );
-    		for (Variable var : codeOp.input) {
+    		for (Variable var : info.input) {
     			recordVariable(var);
     		}
-    		if (codeOp.output != null) {
-    			if (codeOp.output.isTemp()) {
-    				recordVariable( codeOp.output );    				
+    		if (info.output != null) {
+    			if (info.output.isTemp()) {
+    				recordVariable( info.output );    				
     			} else {
-    				assignmentTarget = codeOp.output;
+    				assignmentTarget = info.output;
     			}
     		}
     	}
@@ -158,10 +203,13 @@ public class CompileCodeOperations {
     		Usage usage = findUsage(variable);
     		matrixUsages.add(usage);
     	}
+    	stats.input.integerTemps = integerTemps.size();
+    	stats.input.doubleTemps = doubleTemps.size();
+    	stats.input.matrixTemps = matrixTemps.size();
     }
     
 	
-	//matrix temps must not appear on both the lhs and rhs; TODO maybe codeOp dependent?
+	//matrix temps must not appear on both the lhs and rhs; TODO maybe operation semantics dependent?
 	void eliminateRedundantMatrixTemps(List<Usage> usages) {
 		if (! usages.isEmpty()) {
 			for (int i = 0; i < usages.size(); i++) {
@@ -171,10 +219,15 @@ public class CompileCodeOperations {
 					if (first.uses.getLast() < next.uses.getFirst()) { // can replace next with first
 //						System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
 						for (Integer k : next.uses) {
-							((CodeOperation) operations.get(k)).replace(next.variable, first.variable);
+							infos.get(k).replace(next.variable, first.variable);
 							first.uses.addLast(k);
 						}
 						usages.remove(j);
+						matrixUsages.remove(next.variable);
+						stats.matrixTemps++;
+						if (tempManager != null) {
+							tempManager.release((VariableMatrix) next.variable); 
+						}
 						j--;
 					}
 				}
@@ -193,8 +246,21 @@ public class CompileCodeOperations {
 					if (first.uses.getLast() <= next.uses.getFirst()) { // can replace next with first
 //						System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
 						for (Integer k : next.uses) {
-							((CodeOperation) operations.get(k)).replace(next.variable, first.variable);
+							infos.get(k).replace(next.variable, first.variable);
 							first.uses.addLast(k);
+						}
+						if (next.variable instanceof VariableInteger) {
+							integerTemps.remove(next.variable);
+							stats.integerTemps++;
+							if (tempManager != null) {
+								tempManager.release((VariableInteger) next.variable);
+							}
+						} else {
+							doubleTemps.remove(next.variable);
+							stats.doubleTemps++;
+							if (tempManager != null) {
+								tempManager.release((VariableDouble) next.variable);
+							}
 						}
 						usages.remove(j);
 						j--;
@@ -225,40 +291,46 @@ public class CompileCodeOperations {
 	 */
     void eliminateFinalCopy() {
     	if (assignmentTarget != null) {
-    		int last = operations.size()-1;
+    		int last = infos.size()-1;
     		if (last <= 0)
     			return;
-    		CodeOperation codeOp = (CodeOperation) operations.get(last);
-			Variable fromVariable = codeOp.input.get(0);
-    		switch (codeOp.name()) {
+    		Info info = infos.get(last);
+			Variable fromVariable = info.input.get(0);
+    		switch (info.op.name()) {
     		case "copy-mm":
     			if (fromVariable.isTemp()) {
     				Usage fromUsage = locateUsage(matrixUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
-						((CodeOperation) operations.get(k)).replace(fromVariable, assignmentTarget);  
+						infos.get(k).replace(fromVariable, assignmentTarget);  
     				}
-    				operations.remove(codeOp);
+    				operations.remove(info.op);
+    				infos.remove(info);
 					matrixUsages.remove(fromUsage);
+					stats.finalCopy++;
     			}
     			break;
     		case "copy-ss":
     			if (fromVariable.isTemp()) {
     				Usage fromUsage = locateUsage(doubleUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
-						((CodeOperation) operations.get(k)).replace(fromVariable, assignmentTarget);  
+						infos.get(k).replace(fromVariable, assignmentTarget);  
     				}
-    				operations.remove(codeOp);
+    				operations.remove(info.op);
+    				infos.remove(info);
     				doubleUsages.remove(fromUsage);
+					stats.finalCopy++;
     			}
     			break;
     		case "copy-ii":
     			if (fromVariable.isTemp()) {
     				Usage fromUsage = locateUsage(integerUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
-						((CodeOperation) operations.get(k)).replace(fromVariable, assignmentTarget);  
+						infos.get(k).replace(fromVariable, assignmentTarget);  
     				}
-    				operations.remove(codeOp);
+    				operations.remove(info.op);
+    				infos.remove(info);
     				integerUsages.remove(fromUsage);
+					stats.finalCopy++;
     			}
     			break;
     		default:
@@ -289,20 +361,24 @@ public class CompileCodeOperations {
      * If there is no associated submatrix range and every variable is a constant
      * compile the operation and return the code string
      * 
-     * @param codeOp
+     * @param info
      * @return null if not a constant operation; java code otherwise
      */
-	String getConstantOperation( CodeOperation codeOp) {
-		if (codeOp.range != null)
+	String getConstantOperation( Info info) {
+		if (info.op == null)
 			return null;
-		for (Variable in : codeOp.input) {
+//		if (!codeOp.op instanceof CodeOperation) 
+//			return null
+		if (info.range != null)
+			return null;
+		for (Variable in : info.input) {
 			if (!in.isConstant()) {
 				return null;
 			}
 		}
 		StringBuilder value = new StringBuilder();
 		
-		coder.emitOperation(value, codeOp);
+		coder.emitOperation(value, info );
 		int i = value.indexOf(" = ");
 		if (i < 0)
 			return null;
@@ -314,17 +390,18 @@ public class CompileCodeOperations {
 	 * 
 	 * Convert the output temp to a scalar constant holding the constant expression.
 	 */
-	void eliminateConstantExpressionTemps() {
-		Iterator<Operation> it = operations.iterator();
+	void eliminateConstantExpressions() {
+		Iterator<Info> it = infos.iterator();
     	while( it.hasNext()) {
-    		CodeOperation codeOp = (CodeOperation) it.next();
+    		Info info = it.next();
     		if (! it.hasNext())
     			return;  // do not eliminate constants in final step
-			if (codeOp.output.isTemp()) {
-				String value = getConstantOperation(codeOp);
+			if (info.output.isTemp()) {
+				String value = getConstantOperation(info);
 				if (value != null) {
-					if (codeOp.output.getType() == VariableType.SCALAR) {
-						VariableScalar scalar = (VariableScalar) codeOp.output;
+					if (info.output.getType() == VariableType.SCALAR) {
+						stats.constantExpressions++;
+						VariableScalar scalar = (VariableScalar) info.output;
 						if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
 							scalar.setName( String.format("Integer{(%s)}", value));
 							it.remove();
@@ -339,12 +416,15 @@ public class CompileCodeOperations {
 	}
     
 	public void optimize() {
-		eliminateConstantExpressionTemps();
+		eliminateConstantExpressions();
 		mapVariableUsage();
 		eliminateFinalCopy();
     	eliminateRedundantScalarTemps( integerUsages );
     	eliminateRedundantScalarTemps( doubleUsages );
     	eliminateRedundantMatrixTemps( matrixUsages );
+    	stats.output.integerTemps = integerTemps.size();
+    	stats.output.doubleTemps = doubleTemps.size();
+    	stats.output.matrixTemps = matrixTemps.size();
 	}
 	
 	void printUsage( StringBuilder out, Usage usage ) {
@@ -356,6 +436,7 @@ public class CompileCodeOperations {
 	@Override
 	public String toString() {
 		StringBuilder out = new StringBuilder();
+		out.append(stats.toString());
     	out.append("INPUTS:\n");
     	for (Variable variable : inputs) {
     		printUsage(out, new Usage(variable));
@@ -375,9 +456,8 @@ public class CompileCodeOperations {
     	out.append("TARGET:\n");
     	printUsage(out, new Usage(assignmentTarget));
     	
-    	for (Operation operation : operations) {
-    		CodeOperation codeOp = (CodeOperation) operation;
-    		out.append( codeOp );
+    	for (Info info : infos) {
+    		out.append( info.toString() );
     		out.append( '\n' );
     	}    	
 		return out.toString();

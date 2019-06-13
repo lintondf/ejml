@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;
+
 import static org.ejml.equation.TokenList.Type;
 
 /**
@@ -479,13 +482,13 @@ public class Equation {
             }
 
             if (debug) {
-                System.out.println("Operations:\n------------");
-                for (int i = 0; i < sequence.operations.size(); i++) {
-                    System.out.println(sequence.operations.get(i).name());
+                System.out.printf("Operations: %s\n------------\n", this.equationText );
+                for (int i = 0; i < sequence.infos.size(); i++) {
+                    System.out.println(sequence.infos.get(i).toString());
                 }
             }
         }
-
+        this.managerTemp.clear();  // allow reuse of temporary names between equations
         return sequence;
     }
 
@@ -503,8 +506,9 @@ public class Equation {
         // Parse the right side of the equation
         TokenList tokensRight = tokens.extractSubList(t1.next, tokens.last);
         compileTokens(sequence, tokensRight);
-        if (tokensRight.getLast().getType() != Type.VARIABLE)
-            throw new RuntimeException("BUG the last token must be a variable");
+        if (tokensRight.getLast().getType() != Type.VARIABLE) {
+            throw new RuntimeException("BUG the last token must be a variable!");
+        }
 
         // copy the results into the output
         Variable variableRight = tokensRight.getFirst().getVariable();
@@ -562,7 +566,9 @@ public class Equation {
         t = t.next;
         macro.tokens = new TokenList(t,tokens.last);
 
-        sequence.addOperation(macro.createOperation(macros));
+        Info info = new Info();
+        macro.createOperation(info, macros);
+        sequence.addOperation(info);
     }
 
 
@@ -820,7 +826,7 @@ public class Equation {
         }
 
         // first parameter is the matrix it will be extracted from.  rest specify range
-        Operation.Info info;
+        Info info;
 
         // only one variable means its referencing elements
         // two variables means its referencing a sub matrix
@@ -844,7 +850,7 @@ public class Equation {
             throw new ParseError("Expected 2 inputs to sub-matrix");
         }
 
-        sequence.addOperation(info.op);
+        sequence.addOperation(info);
 
         return new TokenList.Token(info.output);
     }
@@ -1158,8 +1164,8 @@ public class Equation {
                 MatrixConstructor constructor = constructMatrix(bracketLet);
 
                 // define the matrix op and inject into token list
-                Operation.Info info = managerFunctions.getFactory().matrixConstructor(constructor);
-                sequence.addOperation(info.op);
+                Info info = managerFunctions.getFactory().matrixConstructor(constructor);
+                sequence.addOperation(info);
 
                 tokens.insert(start.previous, new TokenList.Token(info.output));
 
@@ -1226,9 +1232,9 @@ public class Equation {
                     throw new RuntimeException("Crap bug rethink this function");
 
                 // create the operation
-                Operation.Info info = managerFunctions.getFactory().neg(token.next.getVariable(),managerFunctions.getManagerTemp());
+                Info info = managerFunctions.getFactory().neg(token.next.getVariable(),managerFunctions.getManagerTemp());
                 // add the operation to the sequence
-                sequence.addOperation(info.op);
+                sequence.addOperation(info);
                 // update the token list
                 TokenList.Token t = new TokenList.Token(info.output);
                 tokens.insert(token.next,t);
@@ -1316,9 +1322,9 @@ public class Equation {
     protected TokenList.Token insertTranspose( TokenList.Token variable ,
                                                TokenList tokens , Sequence sequence )
     {
-        Operation.Info info = managerFunctions.create('\'',variable.getVariable());
+        Info info = managerFunctions.create('\'',variable.getVariable());
 
-        sequence.addOperation(info.op);
+        sequence.addOperation(info);
 
         // replace the symbols with their output
         TokenList.Token t = new TokenList.Token(info.output);
@@ -1337,9 +1343,9 @@ public class Equation {
     protected TokenList.Token createOp( TokenList.Token left , TokenList.Token op , TokenList.Token right ,
                                       TokenList tokens , Sequence sequence )
     {
-        Operation.Info info = managerFunctions.create(op.symbol, left.getVariable(), right.getVariable());
+        Info info = managerFunctions.create(op.symbol, left.getVariable(), right.getVariable());
 
-        sequence.addOperation(info.op);
+        sequence.addOperation(info);
 
         // replace the symbols with their output
         TokenList.Token t = new TokenList.Token(info.output);
@@ -1356,7 +1362,7 @@ public class Equation {
      */
     protected TokenList.Token createFunction( TokenList.Token name , List<TokenList.Token> inputs , TokenList tokens , Sequence sequence )
     {
-        Operation.Info info;
+        Info info;
         if( inputs.size() == 1 )
             info = managerFunctions.create(name.getFunction().getName(),inputs.get(0).getVariable());
         else {
@@ -1367,7 +1373,7 @@ public class Equation {
             info = managerFunctions.create(name.getFunction().getName(), vars );
         }
 
-        sequence.addOperation(info.op);
+        sequence.addOperation(info);
 
         // replace the symbols with the function's output
         TokenList.Token t = new TokenList.Token(info.output);

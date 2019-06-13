@@ -11,6 +11,8 @@ import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.equation.MatrixConstructor.Item;
 import org.ejml.interfaces.linsol.LinearSolverDense;
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;;
 
 public class EmitJavaCodeOperation {
 
@@ -69,7 +71,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String mmOp(String op, CodeOperation codeOp) {
+	private String mmOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -128,7 +130,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String iiOp(String op, CodeOperation codeOp) {
+	private String iiOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -177,7 +179,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String ssOp(String op, CodeOperation codeOp) {
+	private String ssOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -216,7 +218,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String Op(String op, CodeOperation codeOp) {
+	private String Op(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		
@@ -317,7 +319,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String sOp(String op, CodeOperation codeOp) {
+	private String sOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -391,7 +393,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String msOp(String op, CodeOperation codeOp) {
+	private String msOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -427,7 +429,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String iOp(String op, CodeOperation codeOp) {
+	private String iOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		StringBuilder sb = new StringBuilder();
@@ -461,7 +463,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String smOp(String op, CodeOperation codeOp) {
+	private String smOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		Variable B = codeOp.input.get(1);
@@ -497,7 +499,7 @@ public class EmitJavaCodeOperation {
 	}
 
 
-	private String mOp(String op, CodeOperation codeOp) {
+	private String mOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 
@@ -585,7 +587,7 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 	
-	private String construct(CodeOperation codeOp) {
+	private String construct(Info codeOp) {
 		StringBuilder sb = new StringBuilder();
 		//codeOp.constructor.output = (VariableMatrix) codeOp.output;
 		CodeMatrixConstructor cmc = new CodeMatrixConstructor( codeOp.constructor );
@@ -593,7 +595,7 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 
-	private String copyOp(String[] operands, CodeOperation codeOp) {
+	private String copyOp(String[] operands, Info codeOp) {
 		//copy: ii, ss, sm1, none
 		switch (operands[1]) {
 		case "mm":
@@ -625,7 +627,7 @@ public class EmitJavaCodeOperation {
 		return "//copyOp: " + codeOp.toString();
 	}
 	
-	private String copyROp(String[] operands, CodeOperation codeOp) {
+	private String copyROp(String[] operands, Info codeOp) {
     	StringBuilder sb = new StringBuilder();
     	
     	CodeExtents codeExtents = new CodeExtents( codeOp.range, 0 );
@@ -662,13 +664,13 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 	
-	public void emitOperation(StringBuilder body, CodeOperation codeOp) {
-		String[] fields = codeOp.name().split("-");
+	public void emitOperation(StringBuilder body, Info codeOp) {
+		String[] fields = codeOp.op.name().split("-");
 		String inputs = "";
 		if (fields.length > 1) {
 			inputs = fields[1];
 		}
-		if (codeOp.name().equals("matrixConstructor")) {
+		if (codeOp.op.name().equals("matrixConstructor")) {
 			body.append( construct( codeOp ) );
 		} else if (fields[0].equals("copy")) {
 			body.append( copyOp( fields, codeOp) );

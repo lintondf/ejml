@@ -71,7 +71,7 @@ public class ManagerFunctions {
      * @param var0 Input variable
      * @return Resulting operation
      */
-    public Operation.Info create( String name , Variable var0 ) {
+    public Info create( String name , Variable var0 ) {
         Input1 func = input1.get(name);
         if( func == null )
             return null;
@@ -84,7 +84,7 @@ public class ManagerFunctions {
      * @param vars Input variables
      * @return Resulting operation
      */
-    public Operation.Info create( String name , List<Variable> vars ) {
+    public Info create( String name , List<Variable> vars ) {
         InputN func = inputN.get(name);
         if( func == null )
             return null;
@@ -97,7 +97,7 @@ public class ManagerFunctions {
      * @param input Input variable
      * @return Resulting operation
      */
-    public Operation.Info create( char op , Variable input ) {
+    public Info create( char op , Variable input ) {
         switch( op ) {
             case '\'':
                 return factory.transpose(input, managerTemp);
@@ -114,7 +114,7 @@ public class ManagerFunctions {
      * @param right Input variable on right
      * @return Resulting operation
      */
-    public Operation.Info create( Symbol op , Variable left , Variable right ) {
+    public Info create( Symbol op , Variable left , Variable right ) {
         switch( op ) {
             case PLUS:
                 return factory.add(left, right, managerTemp);
@@ -279,13 +279,13 @@ public class ManagerFunctions {
      * Creates new instances of functions from a single variable
      */
     public static interface Input1 {
-        Operation.Info create(Variable A, ManagerTempVariables manager);
+        Info create(Variable A, ManagerTempVariables manager);
     }
 
     /**
      * Creates a new instance of functions from two variables
      */
     public static interface InputN {
-        Operation.Info create(List<Variable> inputs, ManagerTempVariables manager);
+        Info create(List<Variable> inputs, ManagerTempVariables manager);
     }
 }

@@ -1253,6 +1253,18 @@ public class TestOperation {
 
         assertEquals(5.6, eq.lookupDouble("b"), UtilEjml.TEST_F64);
     }
+    
+    @Test
+    public void trace_scalar() {
+        Equation eq = new Equation();
+
+        double a = 3.14;
+
+        eq.alias(a,"a");
+        eq.process("b=trace(a)");
+
+        assertEquals(a, eq.lookupDouble("b"), UtilEjml.TEST_F64);    	
+    }
 
     @Test
     public void trace_matrix() {
@@ -1415,6 +1427,19 @@ public class TestOperation {
         eq.process("a=eye(3)");
 
         assertTrue(SimpleMatrix.identity(3).isIdentical(a, UtilEjml.TEST_F64));
+    }
+    
+    @Test
+    public void eye_matrix() {
+        Equation eq = new Equation();
+
+        SimpleMatrix a = SimpleMatrix.random_DDRM(3,4,-1,1,rand);
+        SimpleMatrix b = SimpleMatrix.random_DDRM(5,5,-1,1,rand);
+
+        eq.alias(a,"a", b, "b");
+        eq.process("a=eye(b)");
+
+        assertTrue(SimpleMatrix.identity(b.numCols()).isIdentical(a, UtilEjml.TEST_F64));    	
     }
 
     @Test

@@ -19,8 +19,13 @@
 package org.ejml.equation;
 
 import org.junit.Test;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.RandomMatrices_DDRM;
+import org.ejml.equation.Info;
 
 import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
 
 /**
  * @author Peter Abeles
@@ -35,20 +40,30 @@ public class TestSequence {
     @Test
     public void order() {
         Sequence s = new Sequence();
-        s.addOperation(new Foo("a",0));
-        s.addOperation(new Foo("b",1));
+        /*
+         * The inversion of the Info/Operation hierarchy made this more complex.
+         * An type derived from Info.Operation must have an Info parameter for its
+         * super() invocation and static factory methods are not possible for such
+         * subtypes.  The order2 test below shows an alternate implementation.
+         */
+        Info info = new Info();
+        info.op = new Foo(info, "a",0);
+        s.addOperation( info );
+        info = new Info();
+        info.setOperation(new Foo(info, "b",1));;
+        s.addOperation( info );
 
         total = 0;
         s.perform();
         assertEquals(2,total);
     }
 
-    public class Foo extends Operation {
+    public class Foo extends Info.Operation {
 
         int expected;
 
-        protected Foo(String name , int expected ) {
-            super(name);
+        protected Foo(Info info, String name, int expected ) {
+            info.super(name);
             this.expected = expected;
         }
 
@@ -57,6 +72,98 @@ public class TestSequence {
             assertEquals(expected, total);
             total++;
         }
+        
+    }
+    
+    @Test
+    public void order2() {
+        Sequence s = new Sequence();
+        s.addOperation( new Foo2("a", 0) );
+        s.addOperation( new Foo2("b", 1));;
+
+        total = 0;
+        s.perform();
+        assertEquals(2,total);
     }
 
+    public class Foo2 extends Info {
+    	
+    	public Foo2(String name, int expected) {
+    		this.op = new Operation( name, expected );
+    	}
+    	
+    	public class Operation extends Info.Operation {
+
+            int expected;
+
+			protected Operation(String name, int expected) {
+	            super(name);
+	            this.expected = expected;
+			}
+    		
+	        @Override
+	        public void process() {
+	            assertEquals(expected, total);
+	            total++;
+	        }
+    	}
+    }
+
+    @Test 
+    public void testOutput() {
+    	Sequence s = new Sequence();
+    	Variable x = new VariableInteger(1);
+    	s.output = x;
+    	assert( s.getOutput() == x);
+    }
+    
+    @Test
+    public void testOptimize() {
+    	Random rand = new Random(234);
+    	Equation eq;
+    	Sequence updateK, updateP;
+    	ManagerTempVariables tempManager;
+    	
+    	DMatrixRMaj K,P, H, R;
+		final int N = 6;
+		final int M = 3;
+		P = RandomMatrices_DDRM.symmetricPosDef( N, rand );
+		R = RandomMatrices_DDRM.symmetricPosDef( M, rand );
+		H = RandomMatrices_DDRM.rectangle(M, N, rand);
+		K = new DMatrixRMaj(N, N);
+		eq = new Equation();
+		tempManager = eq.getTemporariesManager();
+		eq.alias(K, "K", P, "P", H, "H", R, "R");
+		updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
+		String actual = updateK.optimize(tempManager);
+		String expected = "INPUT:      9 operations,  0 integer temps,  0 double temps,  8 matrix temps\n" + 
+				"OPTIMIZATIONS:\n" + 
+				"  removed     2 matrix temporaries\n" + 
+				"  removed final copy from temp\n" + 
+				"OUTPUT:     9 operations,  0 integer temps,  0 double temps,  8 matrix temps\n" + 
+				"INPUTS:\n" + 
+				"  H : VAR_MATRIX                 : H : VAR_MATRIX: \n" + 
+				"  P : VAR_MATRIX                 : P : VAR_MATRIX: \n" + 
+				"  R : VAR_MATRIX                 : R : VAR_MATRIX: \n" + 
+				"INTEGER TEMPS:\n" + 
+				"DOUBLE TEMPS:\n" + 
+				"MATRIX TEMPS:\n" + 
+				"  tm1 : VAR_MATRIX TEMP          : tm1 : VAR_MATRIX TEMP: 0,2,3,4,5,6,\n" + 
+				"  tm2 : VAR_MATRIX TEMP          : tm2 : VAR_MATRIX TEMP: 1,2,\n" + 
+				"  tm3 : VAR_MATRIX TEMP          : tm3 : VAR_MATRIX TEMP: 2,3,\n" + 
+				"  tm5 : VAR_MATRIX TEMP          : tm5 : VAR_MATRIX TEMP: 4,7,\n" + 
+				"  tm7 : VAR_MATRIX TEMP          : tm7 : VAR_MATRIX TEMP: 6,7,\n" + 
+				"TARGET:\n" + 
+				"  K : VAR_MATRIX                 : K : VAR_MATRIX: \n" + 
+				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
+				"multiply-mm[H:MATRIX,P:MATRIX]->tm2:MATRIX\n" + 
+				"multiply-mm[tm2:MATRIX,tm1:MATRIX]->tm3:MATRIX\n" + 
+				"add-mm[tm3:MATRIX,R:MATRIX]->tm1:MATRIX\n" + 
+				"inv-m[tm1:MATRIX]->tm5:MATRIX\n" + 
+				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
+				"multiply-mm[P:MATRIX,tm1:MATRIX]->tm7:MATRIX\n" + 
+				"multiply-mm[tm7:MATRIX,tm5:MATRIX]->K:MATRIX\n";
+		assertEquals(actual, expected);
+		updateK.print();
+    }
 }

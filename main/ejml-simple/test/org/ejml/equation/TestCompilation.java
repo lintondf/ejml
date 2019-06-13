@@ -20,7 +20,11 @@
 package org.ejml.equation;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +59,7 @@ public class TestCompilation {
 		main.finishMethod(equations);
 		main.finishClass();
 
+		System.out.println(block.toString());
 		String expected = "public class code {\n" + 
 				"public DMatrixRMaj test(DMatrixRMaj P, DMatrixRMaj H, DMatrixRMaj R) {\n" + 
 				"// K = P*H'*inv( H*P*H' + R )\n" + 
@@ -79,4 +84,28 @@ public class TestCompilation {
 		assertTrue( expected.equals(block.toString()));
 	}
 
+	/**
+	 * Test to insure that the regenerated TestCoded.java matches the repository.
+	 * 
+	 * If you have changed TestOperation or TestEquation.java this is expected to fail.
+	 * Copy TestCoded_output.java from the top-level ejml-simple directory to the proper
+	 * directory in the test source tree.  Otherwise, the compilation process is in error.
+	 */
+	@Test
+	public void testTestGeneration() {
+		GenerateEquationCoders.main( new String[] {} );
+		Path path = Paths.get("test/org/ejml/equation");
+		try {
+			Path in = path.resolve("TestCoded.java");
+			Path out = Paths.get("TestCoded_output.java");
+			List<String> file1 = Files.readAllLines(in);
+			List<String> file2 = Files.readAllLines(out);
+			assertTrue( file1.size() == file2.size());
+			for (int i = 0; i < file1.size(); i++) {
+				assertTrue( file1.get(i).equals(file2.get(i)));
+			}
+		} catch (Exception x) {
+			fail(x.getMessage());
+		}
+	}
 }

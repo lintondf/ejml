@@ -32,12 +32,13 @@ import org.ejml.dense.row.NormOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
 import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
 import org.ejml.dense.row.mult.VectorVectorMult_DDRM;
-import org.ejml.equation.Operation.Info;
 import org.ejml.interfaces.linsol.LinearSolverDense;
 import org.ejml.simple.SimpleMatrix;
 
-import org.ejml.equation.CodeOperation.CodeInfo;
-import org.ejml.equation.CodeOperation.DimensionSources;
+//import org.ejml.equation.Operation.Info;
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;
+import org.ejml.equation.Info.DimensionSources;
 
 
 /** Implement IOperationFactory for compilation of EJML equations to procedural java
@@ -45,6 +46,18 @@ import org.ejml.equation.CodeOperation.DimensionSources;
  * @author D. F. Linton, Blue Lightning Development, LLC 2019.
  */
 public class OperationCodeFactory implements IOperationFactory {
+	
+	protected class CodeOperation extends Operation {
+
+		protected CodeOperation(String name, Info info) {
+			info.super(name);
+		}
+
+		@Override
+		public void process() {
+		}
+		
+	}
 
 	/**
 	 * 
@@ -56,9 +69,9 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#multiply(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo multiply(final Variable A, final Variable B, ManagerTempVariables manager) {
+	public Info multiply(final Variable A, final Variable B, ManagerTempVariables manager) {
 
-        CodeInfo ret = new CodeInfo(A, B);
+        Info ret = new Info(A, B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
@@ -107,9 +120,9 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#divide(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo divide(final Variable A, final Variable B, ManagerTempVariables manager) {
+	public Info divide(final Variable A, final Variable B, ManagerTempVariables manager) {
 
-        CodeInfo ret = new CodeInfo(A, B);
+        Info ret = new Info(A, B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             return solve(B,A,manager);
@@ -144,8 +157,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#neg(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo neg(final Variable A, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info neg(final Variable A, ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableInteger  ) {
             final VariableInteger output = manager.createInteger();
@@ -169,8 +182,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#pow(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo pow(final Variable A, final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A, B);
+	public Info pow(final Variable A, final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A, B);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -188,8 +201,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#atan2(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo atan2(final Variable A, final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A, B);
+	public Info atan2(final Variable A, final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A, B);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -207,8 +220,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#sqrt(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo sqrt(final Variable A, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info sqrt(final Variable A, ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -226,8 +239,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#sin(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo sin(final Variable A, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info sin(final Variable A, ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -245,8 +258,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#cos(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo cos(final Variable A, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info cos(final Variable A, ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -264,8 +277,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#atan(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo atan(final Variable A, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info atan(final Variable A, ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -283,8 +296,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#exp(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo exp(final Variable A, ManagerTempVariables manager) {
-        final CodeInfo ret = new CodeInfo(A);
+	public Info exp(final Variable A, ManagerTempVariables manager) {
+        final Info ret = new Info(A);
 
 
         if( A instanceof VariableScalar  ) {
@@ -306,8 +319,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#log(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo log(final Variable A, ManagerTempVariables manager) {
-        final CodeInfo ret = new CodeInfo(A);
+	public Info log(final Variable A, ManagerTempVariables manager) {
+        final Info ret = new Info(A);
 
         if( A instanceof VariableScalar  ) {
             final VariableDouble output = manager.createDouble();
@@ -328,8 +341,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#add(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo add(final Variable A, final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info add(final Variable A, final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
@@ -363,8 +376,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#subtract(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo subtract(final Variable A, final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info subtract(final Variable A, final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
@@ -401,8 +414,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#elementMult(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo elementMult( final Variable A , final Variable B , ManagerTempVariables manager ) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info elementMult( final Variable A , final Variable B , ManagerTempVariables manager ) {
+        Info ret = new Info(A,B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
@@ -424,8 +437,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#elementDivision(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo elementDivision( final Variable A , final Variable B , ManagerTempVariables manager ) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info elementDivision( final Variable A , final Variable B , ManagerTempVariables manager ) {
+        Info ret = new Info(A,B);
 
         if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
             final VariableMatrix output = manager.createMatrix();
@@ -447,8 +460,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#elementPow(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo elementPow(final Variable A, final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
 
 
         if( A instanceof VariableScalar && B instanceof VariableScalar ) {
@@ -499,27 +512,32 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#copy(org.ejml.equation.Variable, org.ejml.equation.Variable)
 	 */
     @Override
-	public Operation copy( final Variable src , final Variable dst ) {
-    	CodeInfo ret = new CodeInfo(src);
+	public Info copy( final Variable src , final Variable dst ) {
+    	Info ret = new Info(src);
     	ret.output = dst;
 
         if( src instanceof VariableMatrix  ) {
             if( dst instanceof VariableMatrix ) {
-                return new CodeOperation("copy-mm", ret);
+            	ret.op = new CodeOperation("copy-mm", ret);
+                return ret;
             } else if( dst instanceof VariableDouble ) {
-                return new CodeOperation("copy-sm1", ret);
+            	ret.op = new CodeOperation("copy-sm1", ret);
+                return ret;
             }
         }
         if( src instanceof VariableInteger && dst instanceof VariableInteger ) {
-            return new CodeOperation("copy-ii", ret);
+        	ret.op = new CodeOperation("copy-ii", ret);
+            return ret;
         }
         if( src instanceof VariableScalar && dst instanceof VariableDouble ) {
-            return new CodeOperation("copy-ss", ret);
+        	ret.op = new CodeOperation("copy-ss", ret);
+            return ret;
         }
 
         if( src instanceof VariableIntegerSequence ) {
             if( dst instanceof VariableIntegerSequence ) {
-                return new CodeOperation("copy-is-is", ret);
+            	ret.op = new CodeOperation("copy-is-is", ret);
+                return ret;
             }
         }
 
@@ -530,15 +548,17 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#copy(org.ejml.equation.Variable, org.ejml.equation.Variable, java.util.List)
 	 */
     @Override
-	public Operation copy( final Variable src , final Variable dst , final List<Variable> range ) {
-    	CodeInfo ret = new CodeInfo(src);
+	public Info copy( final Variable src , final Variable dst , final List<Variable> range ) {
+    	Info ret = new Info(src);
     	ret.range = range;
     	ret.output = dst;
 
     	if( src instanceof VariableMatrix && dst instanceof VariableMatrix ) {
-            return new CodeOperation("copyR-mm", ret);
+    		ret.op = new CodeOperation("copyR-mm", ret);
+            return ret;
         } else if( src instanceof VariableScalar && dst instanceof VariableMatrix ) {
-            return new CodeOperation("copyR-sm", ret);
+        	ret.op = new CodeOperation("copyR-sm", ret);
+            return ret;
         } else {
             throw new RuntimeException("Both variables must be of type VariableMatrix");
         }
@@ -548,8 +568,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#transpose(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo transpose( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info transpose( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -565,8 +585,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#inv(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo inv( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info inv( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -585,8 +605,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#pinv(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo pinv( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info pinv( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -605,8 +625,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#rref(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo rref( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info rref( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -625,8 +645,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#det(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo det( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info det( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         final VariableDouble output = manager.createDouble();
         ret.output = output;
@@ -644,8 +664,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#trace(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo trace( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info trace( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -662,8 +682,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#normF(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo normF( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info normF( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -680,8 +700,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#normP(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo normP( final Variable A , final Variable P , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,P);
+	public Info normP( final Variable A , final Variable P , ManagerTempVariables manager) {
+        Info ret = new Info(A,P);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -700,8 +720,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#max(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo max( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info max( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final VariableDouble output = manager.createDouble();
@@ -724,8 +744,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#max_two(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo max_two( final Variable A , final Variable P , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,P);
+	public Info max_two( final Variable A , final Variable P , ManagerTempVariables manager) {
+        Info ret = new Info(A,P);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -750,8 +770,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#min(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo min( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info min( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final VariableDouble output = manager.createDouble();
@@ -774,8 +794,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#min_two(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo min_two( final Variable A , final Variable P , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info min_two( final Variable A , final Variable P , ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -800,8 +820,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#abs(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo abs( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info abs( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -824,8 +844,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#eye(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo eye( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info eye( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -844,8 +864,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#diag(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo diag( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info diag( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
 
         if( A instanceof VariableMatrix ) {
             final Variable output = manager.createMatrix();
@@ -861,8 +881,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#zeros(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo zeros( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info zeros( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -879,8 +899,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#ones(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo ones( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info ones( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -897,9 +917,9 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#rng(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo rng( final Variable A , ManagerTempVariables manager) {
+	public Info rng( final Variable A , ManagerTempVariables manager) {
 
-        CodeInfo ret = new CodeInfo(A);
+        Info ret = new Info(A);
 
         if( A instanceof VariableInteger ) {
             ret.op = new CodeOperation("rng", ret);
@@ -914,8 +934,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#rand(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo rand( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info rand( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -932,8 +952,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#randn(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo randn( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info randn( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -950,8 +970,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#kron(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo kron( final Variable A , final Variable B, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info kron( final Variable A , final Variable B, ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -968,8 +988,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#dot(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo dot( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info dot( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -986,8 +1006,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#solve(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo solve( final Variable A , final Variable B , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,B);
+	public Info solve( final Variable A , final Variable B , ManagerTempVariables manager) {
+        Info ret = new Info(A,B);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -1004,8 +1024,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#extract(java.util.List, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo extract( final List<Variable> inputs, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo( inputs );
+	public Info extract( final List<Variable> inputs, ManagerTempVariables manager) {
+        Info ret = new Info( inputs );
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -1028,8 +1048,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#sum_one(org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo sum_one( final Variable A , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A);
+	public Info sum_one( final Variable A , ManagerTempVariables manager) {
+        Info ret = new Info(A);
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -1047,8 +1067,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#sum_two(org.ejml.equation.Variable, org.ejml.equation.Variable, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo sum_two( final Variable A , final Variable P , ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo(A,P);
+	public Info sum_two( final Variable A , final Variable P , ManagerTempVariables manager) {
+        Info ret = new Info(A,P);
         final Variable output = manager.createMatrix();
         ret.output = output;
 
@@ -1073,8 +1093,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#extractScalar(java.util.List, org.ejml.equation.ManagerTempVariables)
 	 */
     @Override
-	public CodeInfo extractScalar( final List<Variable> inputs, ManagerTempVariables manager) {
-        CodeInfo ret = new CodeInfo( inputs );
+	public Info extractScalar( final List<Variable> inputs, ManagerTempVariables manager) {
+        Info ret = new Info( inputs );
         final VariableDouble output = manager.createDouble();
         ret.output = output;
 
@@ -1150,8 +1170,8 @@ public class OperationCodeFactory implements IOperationFactory {
 	 * @see org.ejml.equation.IOperationFactory#matrixConstructor(org.ejml.equation.MatrixConstructor)
 	 */
     @Override
-	public CodeInfo matrixConstructor( final MatrixConstructor m ) {
-        CodeInfo ret = new CodeInfo(m);
+	public Info matrixConstructor( final MatrixConstructor m ) {
+        Info ret = new Info(m);
         ret.output = m.getOutput();
 
         ret.op = new CodeOperation("matrixConstructor", ret);

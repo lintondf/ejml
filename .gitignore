@@ -78,4 +78,4 @@ main/ejml-experimental/.settings/org.eclipse.jdt.core.prefs
 main/ejml-fdense/.gitignore
 main/ejml-fdense/.settings/org.eclipse.jdt.core.prefs
 main/ejml-zdense/.gitignore
-
+main/ejml-simple/TestCoded_output.java

@@ -6,6 +6,7 @@ dependencies {
     compile project(':main:ejml-cdense')
     compile project(':main:ejml-zdense')
     compile project(':main:ejml-dsparse')
+    testCompile 'org.tools4j:tools4j-meanvar:1.1'
     testCompile project(':main:ejml-experimental')
     testCompile project(':main:ejml-core').sourceSets.test.output
 }

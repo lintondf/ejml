@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.ejml.equation.Info;
+import org.ejml.equation.Info.Operation;
+
 /**
  * Definition of a macro.  Each input will replace the word of its name
  *
@@ -59,19 +62,24 @@ public class Macro {
 
     public class Assign extends Operation {
 
+    	Macro  macro;
         HashMap<String,Macro> macros;
-        protected Assign( HashMap<String,Macro> macros ) {
-            super("Macro:"+Macro.this.name);
+        
+        protected Assign( Info info, HashMap<String,Macro> macros, final Macro macro ) {
+            info.super("Macro: " + macro.name);
             this.macros = macros;
+            this.macro = macro;
         }
 
         @Override
         public void process() {
-            macros.put(Macro.this.name,Macro.this);
+            macros.put(macro.name, macro);
         }
     }
 
-    public Operation createOperation(HashMap<String,Macro> macros ) {
-        return new Assign(macros);
+    
+
+    public void createOperation(Info info, HashMap<String,Macro> macros ) {
+    	info.op = new Assign(info, macros, this);
     }
 }

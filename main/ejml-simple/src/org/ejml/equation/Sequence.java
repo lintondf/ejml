@@ -20,6 +20,7 @@ package org.ejml.equation;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.ejml.equation.Info.Operation;
 
 /**
  * Contains a sequence of operations.  This is the final result of compiling the equation.  Once created it can
@@ -28,9 +29,14 @@ import java.util.List;
  * @author Peter Abeles
  */
 public class Sequence {
+	List<Info> infos = new ArrayList<>();
     // List of in sequence operations which the equation string described
     List<Operation> operations = new ArrayList<>();
 
+    public List<Info> getInfos() {
+    	return infos;
+    }
+    
     public List<Operation> getOperations() {
 		return operations;
 	}
@@ -42,8 +48,21 @@ public class Sequence {
 	// Variable containing the output of the sequence
     Variable output;
 
-    public void addOperation( Operation operation ) {
-        operations.add(operation);
+    public void addOperation( Info info ) {
+    	infos.add(info);
+        operations.add(info.op);
+    }
+    
+    public String optimize(ManagerTempVariables tempManager) {
+        CompileCodeOperations cCO = new CompileCodeOperations( this, tempManager );
+        cCO.optimize();
+        return cCO.toString();
+    }
+    
+    public void print() {
+        for (int i = 0; i < infos.size(); i++) {
+            System.out.println(infos.get(i).toString());
+        }
     }
 
     /**
