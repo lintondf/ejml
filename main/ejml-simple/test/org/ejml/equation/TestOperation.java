@@ -370,6 +370,16 @@ public class TestOperation {
     }
 
     @Test
+    public void pow_double_double() {
+        Equation eq = new Equation();
+
+        eq.alias(1.1,"a");
+        eq.process("a=pow(2.3,4.2)");
+
+        assertEquals(Math.pow(2.3, 4.2), eq.lookupDouble("a"), UtilEjml.TEST_F64);    	
+    }
+    
+    @Test
     public void sqrt_int() {
         Equation eq = new Equation();
 

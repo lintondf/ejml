@@ -4,10 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
+import org.ejml.data.DMatrix2x2;
+import org.ejml.data.DMatrixFixed;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.data.FMatrix2x2;
+import org.ejml.data.FMatrixFixed;
 import org.ejml.data.FMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
@@ -59,7 +66,30 @@ public class TestPlumbing {
         	fail("Should not be allowed");
         } catch (Exception x) {
         }
-        
+    	String text = "a = b*c";
+    	eq  = new Equation(1, "a", 2, "b", 3, "c");
+    	eq.compile(text);
+        assertEquals( eq.getText(), text);
+        assertTrue( eq.getManagerFunctions() != null);
+        eq.setSeed(1);
+        double d1 = eq.getTemporariesManager().rand.nextDouble();
+        eq.setSeed(2);
+        double d2 = eq.getTemporariesManager().rand.nextDouble();
+        eq.setSeed();
+        double dn = eq.getTemporariesManager().rand.nextDouble();
+        assertTrue( d1 != d2 && d2 != dn && d1 != dn);
+        eq.alias(1, "i");
+        eq.alias(2, "i");
+        eq.alias(1.0, "x");
+        eq.alias(2.0, "x");
+        FMatrixRMaj  fM = new FMatrixRMaj(1,1);
+        eq.alias(fM, "fM");
+        DMatrixSparseCSC sM = new DMatrixSparseCSC(1,1);
+        eq.alias(sM, "sM");
+        DMatrixFixed dF = new DMatrix2x2();
+        eq.alias(dF, "dF");
+        FMatrixFixed fF = new FMatrix2x2();
+        eq.alias(fF, "fF");
     }
     
     @Test
@@ -140,8 +170,70 @@ public class TestPlumbing {
         cMC = new CodeMatrixConstructor(alg);
         sb = new StringBuilder();
         cMC.construct(sb);
-        System.out.println(sb.toString());
-        
+        assertEquals(sb.toString(), "DMatrixRMaj tm1 = new DMatrixRMaj(new double[][] {{ti2, ti3,}});");
+    }
+    
+    @Test
+    public void testManagerTempVariablesPlumbing() {
+    	ManagerTempVariables mgr = new ManagerTempVariables();
+    	VariableInteger i = mgr.createInteger();
+    	VariableDouble  d = mgr.createDouble();
+    	VariableMatrix  m = mgr.createMatrix();
+    	mgr.release(i);
+    	mgr.release(d);
+    	mgr.release(m);
+    	VariableInteger i2 = mgr.createInteger();
+    	VariableDouble  d2 = mgr.createDouble();
+    	VariableMatrix  m2 = mgr.createMatrix();
+    	assertEquals(i.getName(), i2.getName());
+    	assertEquals(d.getName(), d2.getName());
+    	assertEquals(m.getName(), m2.getName());
+    	System.out.println(mgr.toString());
+    }
+    
+    private class Zeta1 implements ManagerFunctions.Input1 {
+		@Override
+		public Info create(Variable A, ManagerTempVariables manager) {
+			Info info = new Info();
+			info.setOperation( info.new Operation("zeta1") {
+				@Override
+				public void process() {
+				}
+			});
+			return info;
+		}
+    }
+    
+    private class ZetaN implements ManagerFunctions.InputN {
+		@Override
+		public Info create(List<Variable> inputs, ManagerTempVariables manager) {
+			Info info = new Info();
+			info.setOperation( info.new Operation("zetan") {
+				@Override
+				public void process() {
+				}
+			});
+			return info;
+		}
+    }
+    
+    @Test
+    public void testManagerFunctionsPlumbing() {
+    	ManagerFunctions mgr = new ManagerFunctions();
+    	VariableInteger i = VariableInteger.factory(1);
+    	List<Variable> l = new ArrayList<>();
+    	Info v = mgr.create("zeta", i);
+    	assertTrue( v == null);
+    	v = mgr.create("zeta", l);
+    	assertTrue( v == null);
+    	mgr.add1("zeta1", new Zeta1());
+    	mgr.addN("zetan", new ZetaN());
+    	v = mgr.create("zeta1", i);
+    	assertTrue(v != null);
+    	assertEquals(v.op.name, "zeta1");
+    	v = mgr.create("zetan", l);
+    	assertTrue(v != null);
+    	assertEquals(v.op.name, "zetan");
     }
     
     @Test
@@ -156,11 +248,5 @@ public class TestPlumbing {
     		ae.extractSimpleExtents( new VariableDouble(3.14), true, 0 );
     		fail("Should have thrown");
     	} catch (Exception x) {}
-    	TokenList.Token start = new TokenList.Token(new VariableInteger(6));
-    	TokenList.Token step = new TokenList.Token(new VariableInteger(6));
-    	TokenList.Token end = new TokenList.Token(new VariableInteger(6));
-    	IntegerSequence.For f = new IntegerSequence.For(start, step, end);
-		Extents extents = new Extents();
-		assert( ! extents.extractSimpleExtents( new VariableIntegerSequence(f), true, 0 ));
     }
 }

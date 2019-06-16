@@ -18,6 +18,7 @@
 
 package org.ejml.equation;
 
+import org.ejml.equation.TokenList.Token;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -395,6 +396,10 @@ public class TestExtents {
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(first).equals(codeExtents.codeSimpleStartCol()) );
 		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		String rows = codeExtents.codeNumRows(lastRowCol);
+		assertEquals(rows, "(0+1 - 0)");
+		String cols = codeExtents.codeNumCols(lastRowCol);
+		assertEquals(cols, "(9+1 - 5)");
 
 		seq = variablesToFor( new int[] {1, 3, 10} );
 		arrayExtent.extractArrayExtent(seq, 1+(10-1)/3);
@@ -412,6 +417,12 @@ public class TestExtents {
 		
 		int[] r = interpreter.interpret(codeExtents.codeComplexColIndices(lastRowCol));
 		Arrays.equals(r, Arrays.copyOf(arrayExtent.array, arrayExtent.length));
+		r = interpreter.interpret(codeExtents.codeComplexRowIndices(lastRowCol));
+		Arrays.equals(r, new int[] {0} );
+		rows = codeExtents.codeNumRows(lastRowCol);
+		assertEquals(rows, "1");
+		cols = codeExtents.codeNumCols(lastRowCol);
+		assertEquals(cols, "(10-1)/3");
 
 		//range 5:1: 
 		seq = variablesToRange( new VariableInteger(5), new VariableInteger(1) );
@@ -498,6 +509,47 @@ public class TestExtents {
 		r = interpreter.interpret(codeExtents.codeComplexColIndices(lastRowCol));
 		Arrays.equals(r, Arrays.copyOf(arrayExtent.array, arrayExtent.length));
 
+	}
+	
+	@Test
+	public void testOddPaths() {
+		VariableIntegerSequence seq = variablesToFor( new int[] {1, 2, 10} );
+		CodeExtents codeExtents = new CodeExtents( Arrays.asList( new Variable[] {seq} ) );
+		TokenList.Token start = new TokenList.Token( new VariableInteger(1) );
+		TokenList.Token step = null;
+		TokenList.Token end = new TokenList.Token( new VariableInteger(19) );
+		IntegerSequence iseq = new IntegerSequence.For(start, step, end);
+		String len = codeExtents.codeComplexLength(iseq, "20");
+		assertEquals(len, "(19.0-1.0)");
+		iseq = new IntegerSequence.Range(start, null);
+		len = codeExtents.codeComplexLength(iseq, "20");
+		assertEquals(len, "(20-1.0)");
+		iseq = new IntegerSequence.Range(start, end);
+		len = codeExtents.codeComplexLength(iseq, "20");
+		assertEquals(len, "(20-1.0)/19.0");
+		step = new TokenList.Token( new VariableInteger(1) );
+		iseq = new IntegerSequence.Range(start, step);
+		len = codeExtents.codeComplexLength(iseq, "20");
+		assertEquals(len, "(20-1.0)/1.0");
+		seq = variablesToExplicit( new int[] {1, 3, 5, 7});
+		len = codeExtents.codeComplexLength(seq.sequence, "20");
+		assertEquals(len, "4");
+		seq = variablesToCombined( new Variable[] {new VariableInteger(1), variablesToExplicit( new int[] {1, 3, 5, 7})} );
+		len = codeExtents.codeComplexLength(seq.sequence, "20");
+		assertEquals(len, "(1+4)");
+		assertEquals(codeExtents.toString(), "ELEMENTS{new int[] {0},IntStream.iterate(1, n -> n + 2).limit(1+(10 - 1) / 2).toArray()} [1,(10-1)/2]");
+		
+		Extents extents = new Extents();
+		VariableIntegerSequence rseq = variablesToFor( new int[] {1, 1, 10} );
+		codeExtents = new CodeExtents( Arrays.asList( new Variable[] {rseq} ) );
+		assertEquals(codeExtents.toString(), "BLOCK{0,0+1,1,10+1} [(0+1 - 0),(10+1 - 1)]");
+		
+    	start = new TokenList.Token(new VariableInteger(6));
+    	step = new TokenList.Token(new VariableInteger(6));
+    	end = new TokenList.Token(new VariableInteger(6));
+    	IntegerSequence.For f = new IntegerSequence.For(start, step, end);
+		extents = new Extents();
+		assert( ! extents.extractSimpleExtents( new VariableIntegerSequence(f), true, 0 ));
 	}
 	
 	/** Interpret Stream java code to generate represented int[]

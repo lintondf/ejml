@@ -1101,7 +1101,7 @@ public class Equation {
                     numFound++;
                     end = t;
                 }
-            } else if( numFound > 1 ) {
+            } else if( numFound > 1 ) {  //TODO not reached by any test
                 IntegerSequence sequence = new IntegerSequence.Combined(start,end);
                 VariableIntegerSequence varSequence = managerFunctions.getManagerTemp().createIntegerSequence(sequence);
                 replaceSequence(tokens, varSequence, start, end);

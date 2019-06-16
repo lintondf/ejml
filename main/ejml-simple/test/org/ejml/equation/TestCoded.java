@@ -553,6 +553,24 @@ public class TestCoded {
 
 
     @Test
+    public void compile_assign_IntSequence_Case7() {
+        Equation eq = new Equation();
+
+        // Use commas to clarify the meaning of negative
+        eq.process("a=3 2 1 7:3:25 30 40");
+        eq.process("b=[a]");
+        SimpleMatrix found = SimpleMatrix.wrap(eq.lookupDDRM("b"));
+        assertEquals(1,found.numRows());
+        assertEquals(12,found.numCols());
+
+        double[] expected = {3, 2, 1, 7, 10, 13, 16, 19, 22, 25, 30, 40};
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i],found.get(0,i),UtilEjml.TEST_F64);
+        }
+    }
+
+
+    @Test
     public void compile_transpose() {
         Equation eq = new Equation();
 
@@ -1360,6 +1378,29 @@ public class TestCoded {
         double    	a = 0;
 
         a = (Math.pow(2, 4));
+
+        return a;
+    }
+
+
+    @Test
+    public void pow_double_double() {
+        Equation eq = new Equation();
+
+        eq.alias(1.1,"a");
+        eq.process("a=pow(2.3,4.2)");
+
+        assertEquals(Math.pow(2.3, 4.2), eq.lookupDouble("a"), UtilEjml.TEST_F64);    	
+        // eq: a=pow(2.3,4.2) -> a
+        double a_coded = pow_double_double_Coded();
+        assertTrue(isIdentical(a_coded, eq.lookupDouble("a")));
+    }
+
+    protected double pow_double_double_Coded() {
+        // a=pow(2.3,4.2)
+        double    	a = 0;
+
+        a = (Math.pow(2.3, 4.2));
 
         return a;
     }

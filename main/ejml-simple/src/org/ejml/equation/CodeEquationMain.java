@@ -2,9 +2,12 @@ package org.ejml.equation;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
 import java.io.Console;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +27,7 @@ import com.google.googlejavaformat.java.Formatter;
 
 
 public class CodeEquationMain {
-	
+		
 	StringBuilder block;
 	String currentMethod = null;
 	List<String> integers;
@@ -258,8 +261,7 @@ public class CodeEquationMain {
 		block.append("}\n");
 	}
 	
-	public static void main(String[] args) {
-		Console console = System.console();
+	public static void interactive( BufferedReader in, PrintWriter out ) {
 		final String instructions =
 				"Generates a java class source file from compiled EJML equations\n" +
 				"First, input a class name.  The resulting source will be written to <name>.java.\n" +
@@ -271,48 +273,55 @@ public class CodeEquationMain {
 				"A return variable may be indicated by a preceeding '<'.\n" +
 				"Input parameters that are returned are preceeded by '<>'.\n" +
 				"\n"; 
-		System.out.print(instructions);
-		String className = console.readLine("Class name: ");
-		String path = String.format("%s.java", className);
-		StringBuilder block = new StringBuilder();
-		CodeEquationMain main = new CodeEquationMain( block, className );
-
+		out.print(instructions); out.flush();
+		
 		try {
+			out.print("Class name: "); out.flush();
+			String className = in.readLine();
+			String path = String.format("%s.java", className);
+			StringBuilder block = new StringBuilder();
+			CodeEquationMain main = new CodeEquationMain( block, className );
+
 			PrintStream code = new PrintStream(path);
 			while (true) {
-				String methodName = console.readLine(" Method name: " );
-				if (methodName.isEmpty())
+				out.print(" Method name: "); out.flush();
+				String methodName = in.readLine();
+				if (methodName == null || methodName.isEmpty())
 					break;
 				main.startMethod(methodName);
 				List<String> integers = new ArrayList<>();
 				List<String> doubles = new ArrayList<>();
 				List<String> matrices = new ArrayList<>();
-				String integerNames = console.readLine("  Integer variable names: ");
-				if (! integerNames.isEmpty()) {
+				out.print("  Integer variable names: "); out.flush();
+				String integerNames = in.readLine();
+				if (integerNames != null && ! integerNames.isEmpty()) {
 					String[] names = integerNames.split(",");
 					for (String name : names) {
 						integers.add( name.trim() );
 					}
 				}
-				String doubleNames = console.readLine("  Double variable names: ");
-				if (! doubleNames.isEmpty()) {
+				out.print("  Double variable names: "); out.flush();
+				String doubleNames = in.readLine();
+				if (doubleNames != null && ! doubleNames.isEmpty()) {
 					String[] names = doubleNames.split(",");
 					for (String name : names) {
 						doubles.add( name.trim() );
 					}
 				}
-				String matrixNames = console.readLine("  Matrix variable names: ");
-				if (! matrixNames.isEmpty()) {
+				out.print("  Matrix variable names: "); out.flush();
+				String matrixNames = in.readLine();
+				if (matrixNames != null && ! matrixNames.isEmpty()) {
 					String[] names = matrixNames.split(",");
 					for (String name : names) {
 						matrices.add( name.trim() );
 					}
 				}
-				System.out.print("  Enter the equations to compile for this method.  One per line.  Enter alone when done.\n");
+				out.print("  Enter the equations to compile for this method.  One per line.  Enter alone when done.\n"); out.flush();
 				List<String> equations = new ArrayList<>();
 				while (true) {
-					String equation = console.readLine("  Equation: ");
-					if (equation.isEmpty())
+					out.print("  Equation: "); out.flush();
+					String equation = in.readLine();
+					if (equation == null || equation.isEmpty())
 						break;
 					equations.add( equation.trim() );
 				}
@@ -329,6 +338,11 @@ public class CodeEquationMain {
 		} catch (Exception x) {
 			x.printStackTrace();
 		}
+	}
+	
+	public static void main(String[] args) {
+		Console console = System.console();
+		interactive( new BufferedReader(console.reader()), console.writer() );
 	}
 
 }

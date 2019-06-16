@@ -48,7 +48,7 @@ public class ManagerTempVariables {
 	}
 	
 	public String toString() {
-		return String.format("%s: %d issued; recycled: %d, %d, %d", this.hashCode(), sequence, integerRecycle.size(), doubleRecycle.size(), matrixRecycle.size() );
+		return String.format("%d issued; released/unused: %d, %d, %d", sequence, integerRecycle.size(), doubleRecycle.size(), matrixRecycle.size() );
 	}
 	
 	public void release( VariableMatrix variable) {

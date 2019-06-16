@@ -22,6 +22,13 @@ package org.ejml.equation;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +44,33 @@ import org.junit.Test;
 public class TestCompilation {
 	
 	@Test
-	public void testBasic() {
+	public void testSimulatedConsole() {
+		File out = new File("Test.java");
+		try { out.delete(); } catch (Exception x) {}
+		out.deleteOnExit();
+		ByteArrayOutputStream results = new ByteArrayOutputStream();
+		String input = "Test\n" +
+		               "check\n" +
+		               ">i\n" +
+		               ">x\n" +
+		               "><m\n" +
+		               "m = i + x * m\n" +
+		               "rng(i)\n" +
+		               "x = rand(i,i)\n" +
+		               "x = randn(i,i)\n" +
+				       "\n";
+		CodeEquationMain.interactive( new BufferedReader( new StringReader(input)), new PrintWriter( results ) );
+		System.out.println( results.toString() );
+		try {
+			List<String> code = Files.readAllLines(out.toPath());
+			code.forEach(System.out::println);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testLowerLevel() {
 		List<String> integers = new ArrayList<>();
 		List<String> doubles = new ArrayList<>();
 		List<String> matrices = new ArrayList<>();
@@ -59,7 +92,7 @@ public class TestCompilation {
 		main.finishMethod(equations);
 		main.finishClass();
 
-		System.out.println(block.toString());
+//		System.out.println(block.toString());
 		String expected = "public class code {\n" + 
 				"public DMatrixRMaj test(DMatrixRMaj P, DMatrixRMaj H, DMatrixRMaj R) {\n" + 
 				"// K = P*H'*inv( H*P*H' + R )\n" + 
@@ -87,9 +120,6 @@ public class TestCompilation {
 	/**
 	 * Test to insure that the regenerated TestCoded.java matches the repository.
 	 * 
-	 * If you have changed TestOperation or TestEquation.java this is expected to fail.
-	 * Copy TestCoded_output.java from the top-level ejml-simple directory to the proper
-	 * directory in the test source tree.  Otherwise, the compilation process is in error.
 	 */
 	@Test
 	public void testTestGeneration() {
@@ -100,6 +130,11 @@ public class TestCompilation {
 			Path out = Paths.get("TestCoded_output.java");
 			List<String> file1 = Files.readAllLines(in);
 			List<String> file2 = Files.readAllLines(out);
+			/*
+			 * If you have changed TestOperation or TestEquation.java this is expected to fail.
+			 * Copy TestCoded_output.java from the top-level ejml-simple directory to the proper
+			 * directory in the test source tree.  Otherwise, the compilation process is in error.
+			 */
 			assertTrue( file1.size() == file2.size());
 			for (int i = 0; i < file1.size(); i++) {
 				assertTrue( file1.get(i).equals(file2.get(i)));
