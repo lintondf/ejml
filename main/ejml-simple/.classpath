@@ -12,12 +12,6 @@
 			<attribute name="gradle_used_by_scope" value="test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" output="bin/generate" path="generate">
-		<attributes>
-			<attribute name="gradle_scope" value="generate"/>
-			<attribute name="gradle_used_by_scope" value="generate"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/"/>
 	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
 	<classpathentry kind="output" path="bin/default"/>

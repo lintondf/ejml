@@ -18,6 +18,7 @@ import org.ejml.data.FMatrixFixed;
 import org.ejml.data.FMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
+import org.ejml.equation.IntegerSequence.Explicit;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
 
@@ -90,7 +91,12 @@ public class TestPlumbing {
         eq.alias(dF, "dF");
         FMatrixFixed fF = new FMatrix2x2();
         eq.alias(fF, "fF");
-    }
+        TokenList.Token b = new TokenList.Token(new VariableInteger(6));
+
+        eq = new Equation();
+        eq.compile("a=3 2 1 7:3:25 30 40");
+        eq.compile("a=1 2 3");
+      }
     
     @Test
     public void testVariableIntegerPlumbing() {

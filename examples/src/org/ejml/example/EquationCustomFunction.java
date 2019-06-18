@@ -65,14 +65,14 @@ public class EquationCustomFunction {
             final Variable varA = inputs.get(0);
             final Variable varB = inputs.get(1);
 
-            Operation.Info ret = new Operation.Info();
+            Info ret = new Info();
 
             if( varA instanceof VariableMatrix && varB instanceof VariableMatrix ) {
 
                 // The output matrix or scalar variable must be created with the provided manager
                 final VariableMatrix output = manager.createMatrix();
                 ret.output = output;
-                ret.op = new Operation("multTransA-mm") {
+                ret.op = ret.new Operation("multTransA-mm") {
                     @Override
                     public void process() {
                         DMatrixRMaj mA = ((VariableMatrix)varA).matrix;
