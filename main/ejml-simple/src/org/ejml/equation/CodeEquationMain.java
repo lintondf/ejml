@@ -111,9 +111,9 @@ public class CodeEquationMain {
 		public String colVar;
 		public String colWhich;
 		
-		public String toString() {
-			return String.format("%s %s.%s, %s.%s", target, rowVar, rowWhich, colVar, colWhich);
-		}
+//		public String toString() {
+//			return String.format("%s %s.%s, %s.%s", target, rowVar, rowWhich, colVar, colWhich);
+//		}
 	}
 	
 	private HashMap<String, ReshapeSources> reshapeSourceMap = new HashMap<>();

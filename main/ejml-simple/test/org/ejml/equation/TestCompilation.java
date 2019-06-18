@@ -51,13 +51,22 @@ public class TestCompilation {
 		ByteArrayOutputStream results = new ByteArrayOutputStream();
 		String input = "Test\n" +
 		               "check\n" +
-		               ">i\n" +
-		               ">x\n" +
+		               ">i, j\n" +
+		               ">x , y\n" +
 		               "><m\n" +
-		               "m = i + x * m\n" +
+		               "m = 2*i + 4.5*x * m\n" +
+		               "j = 5*i\n" +
+		               "y = 1.2 * x\n" +
 		               "rng(i)\n" +
 		               "x = rand(i,i)\n" +
 		               "x = randn(i,i)\n" +
+		               "\n" + 
+		               "checkvoid\n" +
+		               ">i\n" +
+		               "\n" + 
+		               "\n" +
+		               "i = i + 1\n" +
+		               "\n" +
 				       "\n";
 		CodeEquationMain.interactive( new BufferedReader( new StringReader(input)), new PrintWriter( results ) );
 		System.out.println( results.toString() );

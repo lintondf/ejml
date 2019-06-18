@@ -613,7 +613,7 @@ public class EmitJavaCodeOperation {
 //			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString());
 			return String.format("%s = %s;\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
 		case "sm1":
-			return String.format("%s =  = %s.unsafe_get(0,0);\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand() );
+			return String.format("%s = %s.unsafe_get(0,0);\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand() );
 		case "":
 			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
 			break;
