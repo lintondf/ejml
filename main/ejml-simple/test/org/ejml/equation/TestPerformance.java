@@ -81,6 +81,7 @@ public class TestPerformance {
 	Random rand = new Random(234);
 	Equation eq;
 	Sequence updateK, updateP;
+	IEmitOperation coder;
 	ManagerTempVariables tempManager;
 	
 	DMatrixRMaj K,P, H, R;
@@ -93,18 +94,21 @@ public class TestPerformance {
 		H = RandomMatrices_DDRM.rectangle(M, N, rand);
 		K = new DMatrixRMaj(N, N);
 		eq = new Equation();
+		coder = new EmitJavaOperation();
 		tempManager = eq.getTemporariesManager();
 		eq.alias(K, "K", P, "P", H, "H", R, "R");
 		updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
 		updateP = eq.compile("P = P-K*(H*P)");
 		
 	}
-	
+	 
 	public void optimize() {
-		String s = updateK.optimize(tempManager);
-//		System.out.println(s);
-		s = updateP.optimize(tempManager);
-//		System.out.println(s);
+		CompileCodeOperations compiler = new CompileCodeOperations(coder, updateK, tempManager );
+		compiler.optimize();
+		String s = compiler.toString();
+		compiler = new CompileCodeOperations(coder, updateP, tempManager );
+		compiler.optimize();
+		s = compiler.toString();
 	}
 	
 	public void perform() {

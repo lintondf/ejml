@@ -14,7 +14,7 @@ import org.ejml.interfaces.linsol.LinearSolverDense;
 import org.ejml.equation.Info;
 import org.ejml.equation.Info.Operation;;
 
-public class EmitJavaCodeOperation {
+public class EmitJavaOperation implements IEmitOperation {
 
 	final static String formatReshape = "%s.reshape( %s.numRows, %s.numCols );\n";
 	final static String formatGeneral3 = "%s.%s( %s, %s, %s );\n";
@@ -268,7 +268,7 @@ public class EmitJavaCodeOperation {
 //				System.out.print("Extract/input: ");
 //				System.out.println(i);
 //			}
-	    	CodeExtents codeExtents = new CodeExtents( codeOp.input, 1 );
+	    	CodeExtents codeExtents = new CodeExtents( this, codeOp.input, 1 );
 //	    	System.out.println( codeExtents.toString()); 
 	    	
 	    	String target = codeOp.output.getName();
@@ -630,7 +630,7 @@ public class EmitJavaCodeOperation {
 	private String copyROp(String[] operands, Info codeOp) {
     	StringBuilder sb = new StringBuilder();
     	
-    	CodeExtents codeExtents = new CodeExtents( codeOp.range, 0 );
+    	CodeExtents codeExtents = new CodeExtents( this, codeOp.range, 0 );
     	//System.out.println( codeExtents.toString());
     	
     	String target = codeOp.output.getName();
@@ -664,6 +664,41 @@ public class EmitJavaCodeOperation {
 		return sb.toString();
 	}
 	
+	@Override
+	public void declare( StringBuilder header, String indent, Variable variable ) {
+		if (variable.isConstant())
+			return;
+		switch (variable.getType()) {
+		case SCALAR:
+			VariableScalar scalar = (VariableScalar) variable;
+			if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
+				header.append( String.format("%s%-10s %s;\n", indent, "int", variable.getOperand() ));
+			} else {
+				header.append( String.format("%s%-10s %s;\n", indent, "double", variable.getOperand() ));    					
+			}
+			break;
+		case MATRIX:
+			header.append( String.format("%s%-10s %s = new DMatrixRMaj(1,1);\n", indent, "DMatrixRMaj", variable.getName() ));
+			break;
+		default:
+			System.err.println("Unhandled variable type encountered: " + variable);
+			break;
+		}
+	}
+
+	
+	
+	@Override
+	public VariableInteger getOne() {
+		return one;
+	}
+	
+	@Override
+	public VariableInteger getZero() {
+		return zero;
+	}
+	
+	@Override
 	public void emitOperation(StringBuilder body, Info codeOp) {
 		String[] fields = codeOp.op.name().split("-");
 		String inputs = "";

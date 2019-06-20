@@ -67,21 +67,21 @@ public class CodeExtents {
 	/** Parses row and column extents
 	 * @param extents - one or two elements (cols only if one element, rows, then cols if two elements)
 	 */
-	public CodeExtents(List<Variable> extents ) {
-		this(extents, 0);
+	public CodeExtents(IEmitOperation coder, List<Variable> extents ) {
+		this(coder, extents, 0);
 	}
 	
 	/** Parses row and column extents
 	 * @param extents - N elements
 	 * @param iFirst - skip iFirst elements of extents, then cols if one element; rows, then cols if two elements
 	 */
-	public CodeExtents(List<Variable> extents, int iFirst) {
+	public CodeExtents(IEmitOperation coder, List<Variable> extents, int iFirst) {
 		this.extents = extents;
 		isBlock = false;
 		is1D = false;
 		if (extents.size() == 1 + iFirst) {
 			startRow = null;
-			endRow = EmitJavaCodeOperation.zero;
+			endRow = coder.getZero();
 			rowSequence = null;
 			is1D = true;
 			Variable var = extents.get(iFirst + 0);

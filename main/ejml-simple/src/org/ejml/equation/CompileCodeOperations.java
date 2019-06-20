@@ -46,7 +46,7 @@ public class CompileCodeOperations {
 	List<Usage> matrixUsages = new ArrayList<>();
 	
 	boolean lastOperationCopyR = false;
-	EmitJavaCodeOperation coder;
+	IEmitOperation coder;
 	ManagerTempVariables tempManager;
 	
 	static class Statistics {
@@ -90,15 +90,16 @@ public class CompileCodeOperations {
 	 * @param tempManager 
 	 * @param operations - List of CodeOperation objects 
 	 */
-	public CompileCodeOperations(Sequence sequence, ManagerTempVariables tempManager) {    	
-		coder = new EmitJavaCodeOperation();
+	public CompileCodeOperations(IEmitOperation coder, Sequence sequence, ManagerTempVariables tempManager) {
+		this.coder = coder;
 		this.infos = sequence.getInfos();
     	this.operations = sequence.getOperations();
     	this.tempManager = tempManager;
     	stats.input.operations = this.infos.size();
     	
-    	lastOperationCopyR = operations.get(operations.size()-1).name().startsWith("copyR-");
+    	lastOperationCopyR = operations.size() > 1 && operations.get(operations.size()-1).name().startsWith("copyR-");
 	}
+
 
 	/**
 	 * Add temporaries to the by-type list and other variables to the general list of inputs
@@ -148,7 +149,8 @@ public class CompileCodeOperations {
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			sb.append(this.variable.toString());
+			if (this.variable != null)
+				sb.append(this.variable.toString());
 			sb.append(": ");
 			for (Integer use : uses) {
 				sb.append(use.toString());
@@ -428,7 +430,9 @@ public class CompileCodeOperations {
 	}
 	
 	void printUsage( StringBuilder out, Usage usage ) {
-		out.append( String.format("  %-30s : ", usage.variable.toString()) );
+		if (usage == null) return;
+		if (usage.variable != null)
+			out.append( String.format("  %-30s : ", usage.variable.toString()) );
 		out.append( usage.toString() );
 		out.append( '\n' );
 	}

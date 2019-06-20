@@ -184,12 +184,12 @@ public class CodeEquationMain {
 		}
 
 		TreeSet<String> declaredTemps = new TreeSet<>();
-		EmitJavaCodeOperation coder = new EmitJavaCodeOperation();
+		IEmitOperation coder = new EmitJavaOperation();
 		
 		for (String equationText : equations) {
 			body.append(String.format("// %s\n",  equationText));
 			Sequence sequence = eq.compile(equationText);//, true, true);//); //
-			CompileCodeOperations generator = new CompileCodeOperations(sequence, eq.getTemporariesManager());
+			CompileCodeOperations generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
 			generator.optimize();
 			for (Info info : sequence.getInfos()) {
 	    		coder.emitOperation( body, info );
@@ -198,14 +198,14 @@ public class CodeEquationMain {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					GenerateEquationCoders.declareTemporary( header, "", variable );
+					coder.declare( header, "", variable );
 				}
 			}
 			for (Usage usage : generator.doubleUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					GenerateEquationCoders.declareTemporary( header, "", variable );
+					coder.declare( header, "", variable );
 				}
 			}
 

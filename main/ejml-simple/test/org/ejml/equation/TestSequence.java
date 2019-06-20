@@ -42,7 +42,7 @@ public class TestSequence {
         Sequence s = new Sequence();
         /*
          * The inversion of the Info/Operation hierarchy made this more complex.
-         * An type derived from Info.Operation must have an Info parameter for its
+         * Any type derived from Info.Operation must have an Info parameter for its
          * super() invocation and static factory methods are not possible for such
          * subtypes.  The order2 test below shows an alternate implementation.
          */
@@ -123,6 +123,7 @@ public class TestSequence {
     	Equation eq;
     	Sequence updateK, updateP;
     	ManagerTempVariables tempManager;
+    	IEmitOperation coder;
     	
     	DMatrixRMaj K,P, H, R;
 		final int N = 6;
@@ -133,9 +134,13 @@ public class TestSequence {
 		K = new DMatrixRMaj(N, N);
 		eq = new Equation();
 		tempManager = eq.getTemporariesManager();
+		coder = new EmitJavaOperation();
 		eq.alias(K, "K", P, "P", H, "H", R, "R");
 		updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
-		String actual = updateK.optimize(tempManager);
+		CompileCodeOperations compiler = new CompileCodeOperations(coder, updateK, tempManager );
+		compiler.optimize();
+		String actual = compiler.toString();
+
 		String expected = "INPUT:      9 operations,  0 integer temps,  0 double temps,  8 matrix temps\n" + 
 				"OPTIMIZATIONS:\n" + 
 				"  removed     2 matrix temporaries\n" + 
@@ -164,6 +169,23 @@ public class TestSequence {
 				"multiply-mm[P:MATRIX,tm1:MATRIX]->tm7:MATRIX\n" + 
 				"multiply-mm[tm7:MATRIX,tm5:MATRIX]->K:MATRIX\n";
 		assertEquals(actual, expected);
-		updateK.print();
+		
+		expected = "transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
+				"multiply-mm[H:MATRIX,P:MATRIX]->tm2:MATRIX\n" + 
+				"multiply-mm[tm2:MATRIX,tm1:MATRIX]->tm3:MATRIX\n" + 
+				"add-mm[tm3:MATRIX,R:MATRIX]->tm1:MATRIX\n" + 
+				"inv-m[tm1:MATRIX]->tm5:MATRIX\n" + 
+				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
+				"multiply-mm[P:MATRIX,tm1:MATRIX]->tm7:MATRIX\n" + 
+				"multiply-mm[tm7:MATRIX,tm5:MATRIX]->K:MATRIX\n";
+    	actual = new CaptureSystemOut() {
+			@Override
+			public boolean run() {
+				updateK.print();
+				return true;
+			}
+    		
+    	}.capture();
+    	assertEquals( expected, actual );
     }
 }

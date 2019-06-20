@@ -53,12 +53,6 @@ public class Sequence {
         operations.add(info.op);
     }
     
-    public String optimize(ManagerTempVariables tempManager) {
-        CompileCodeOperations cCO = new CompileCodeOperations( this, tempManager );
-        cCO.optimize();
-        return cCO.toString();
-    }
-    
     public void print() {
         for (int i = 0; i < infos.size(); i++) {
             System.out.println(infos.get(i).toString());

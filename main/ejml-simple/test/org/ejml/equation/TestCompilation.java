@@ -19,6 +19,7 @@
 
 package org.ejml.equation;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -68,11 +69,48 @@ public class TestCompilation {
 		               "i = i + 1\n" +
 		               "\n" +
 				       "\n";
+		
+		String expected = "public class Test {\n" + 
+				"  public DMatrixRMaj check(int i, double x, DMatrixRMaj m) {\n" + 
+				"    int j;\n" + 
+				"    double y;\n" + 
+				"    int ti1;\n" + 
+				"    double td2;\n" + 
+				"    // m = 2*i + 4.5*x * m\n" + 
+				"    ti1 = 2 * i;\n" + 
+				"    td2 = 4.5 * x;\n" + 
+				"    DMatrixRMaj tm3 = new DMatrixRMaj(m.numRows, m.numCols);\n" + 
+				"    CommonOps_DDRM.scale(td2, m, tm3);\n" + 
+				"    m.reshape(tm3.numRows, tm3.numCols);\n" + 
+				"    CommonOps_DDRM.add(tm3, ti1, m); // j = 5*i\n" + 
+				"    j = 5 * i; // y = 1.2 * x\n" + 
+				"    y = 1.2 * x; // rng(i)\n" + 
+				"    Random rand = new Random();\n" + 
+				"    rand.setSeed(i); // x = rand(i,i)\n" + 
+				"    DMatrixRMaj tm1 = new DMatrixRMaj(i, i);\n" + 
+				"    Random rand = new Random();\n" + 
+				"    RandomMatrices_DDRM.fillUniform(tm1, 0, 1, rand);\n" + 
+				"    x = tm1.unsafe_get(0, 0); // x = randn(i,i)\n" + 
+				"    tm1.reshape(i, i);\n" + 
+				"    Random rand = new Random();\n" + 
+				"    RandomMatrices_DDRM.fillGaussian(tm1, 0, 1, rand);\n" + 
+				"    x = tm1.unsafe_get(0, 0);\n" + 
+				"    return m;\n" + 
+				"  }\n" + 
+				"\n" + 
+				"  public void checkvoid(int i) {\n" + 
+				"    // i = i + 1\n" + 
+				"    i = i + 1;\n" + 
+				"  }\n" + 
+				"}\n";
 		CodeEquationMain.interactive( new BufferedReader( new StringReader(input)), new PrintWriter( results ) );
-		System.out.println( results.toString() );
 		try {
 			List<String> code = Files.readAllLines(out.toPath());
-			code.forEach(System.out::println);
+			String[] expectedLines = expected.split("\n");
+			assertTrue( code.size()-1 == expectedLines.length); // extra \n expected
+			for (int i = 0; i < expectedLines.length; i++) {
+				assertEquals( expectedLines[i], code.get(i) );
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -132,7 +170,14 @@ public class TestCompilation {
 	 */
 	@Test
 	public void testTestGeneration() {
-		GenerateEquationCoders.main( new String[] {} );
+    	String actual = new CaptureSystemOut() {
+			@Override
+			public boolean run() {
+				GenerateTestCoded.main( new String[] {} );
+				return true;
+			}
+    	}.capture();
+		
 		Path path = Paths.get("test/org/ejml/equation");
 		try {
 			Path in = path.resolve("TestCoded.java");

@@ -24,8 +24,6 @@ import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Random;
 
 import static org.ejml.equation.TokenList.Type;
@@ -1197,21 +1195,18 @@ public class TestEquation {
     			" 5           6         \n" + 
     			"Scalar = 5.0\n";
     	
-    	PrintStream saveOut = System.out;
-    	try {
-    		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    		System.setOut(new PrintStream(baos));
-	        Equation eq = new Equation();
-	        eq.print("[1 2;3 4]");
-	        eq.process("A=[1 2;3 4;5 6]");
-	        eq.print("A");
-	        eq.print("B=5");
-	        assertTrue( expected.equals(baos.toString()) );
-    	} catch (Exception x) {
-    		fail("Exception thrown by print(): " + x.getMessage());
-    	} finally {
-    		System.setOut(saveOut);
-    	}
-
+    	String actual = new CaptureSystemOut() {
+			@Override
+			public boolean run() {
+		        Equation eq = new Equation();
+		        eq.print("[1 2;3 4]");
+		        eq.process("A=[1 2;3 4;5 6]");
+		        eq.print("A");
+		        eq.print("B=5");
+				return true;
+			}
+    		
+    	}.capture();
+    	assertEquals( expected, actual );
     }
 }
