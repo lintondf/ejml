@@ -1,18 +1,8 @@
 package org.ejml.equation;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.ejml.data.DMatrix;
-import org.ejml.data.DMatrixRMaj;
-import org.ejml.dense.row.CommonOps_DDRM;
-import org.ejml.dense.row.MatrixFeatures_DDRM;
-import org.ejml.dense.row.factory.LinearSolverFactory_DDRM;
-import org.ejml.equation.MatrixConstructor.Item;
-import org.ejml.interfaces.linsol.LinearSolverDense;
-import org.ejml.equation.Info;
-import org.ejml.equation.Info.Operation;;
+import org.ejml.equation.Info;;
 
 public class EmitJavaOperation implements IEmitOperation {
 
@@ -30,9 +20,9 @@ public class EmitJavaOperation implements IEmitOperation {
 	final static VariableInteger zero = new VariableInteger(0, "Integer{0}");
 	final static VariableInteger one = new VariableInteger(1, "Integer{1}");
 	
-	private boolean isNumeric(String str) {
-	    return str.matches("[+-]?\\d*(\\.\\d+)?");
-	}
+//	private boolean isNumeric(String str) {
+//	    return str.matches("[+-]?\\d*(\\.\\d+)?");
+//	}
 	
 	private void emitReshape(StringBuilder sb, Variable output, Variable A) {
 		String o = output.getOperand();
@@ -69,7 +59,6 @@ public class EmitJavaOperation implements IEmitOperation {
 			b += ".numCols";
 		sb.append( String.format(formatGeneral2, o, "reshape", b, a) );
 	}
-
 
 	private String mmOp(String op, Info codeOp) {
 		Variable output = codeOp.output;
@@ -126,7 +115,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -175,7 +164,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(fillGaussian, output.getOperand()));
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -214,7 +203,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = Math.pow(%s, %s);\n", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -315,7 +304,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps2, "sumRows", A.getName(), output.getName()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -389,7 +378,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = Math.exp(%s);\n", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -425,7 +414,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -459,7 +448,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = %s;\n", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -484,18 +473,18 @@ public class EmitJavaOperation implements IEmitOperation {
 			//CommonOps_DDRM.divide(s.getDouble(), m.matrix, output.matrix);
 			sb.append( String.format(formatCommonOps3, "divide", B.getOperand(), A.getOperand(), output.getName()) );
 			return sb.toString();
-		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
-			emitReshape(sb, output, A, A);
-			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
-			sb.append( String.format(formatCommonOps3, "scale", B.getOperand(), A.getOperand(), output.getName()) );
-			return sb.toString();
+//		case "multiply": // Info multiply(final Variable A, final Variable B, ManagerTempVariables manager)
+//			emitReshape(sb, output, A, A);
+//			//CommonOps_DDRM.scale(s.getDouble(),m.matrix,output.matrix);
+//			sb.append( String.format(formatCommonOps3, "scale", B.getOperand(), A.getOperand(), output.getName()) );
+//			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, B, B);
 			//CommonOps_DDRM.elementPower(a, b, output.matrix);
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 
 
@@ -584,7 +573,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps2, "elementExp", A.getName(), output.getName()) );
 			return sb.toString();
 		}
-		return sb.toString();
+		throw new RuntimeException(op + " not implemented");
 	}
 	
 	private String construct(Info codeOp) {
@@ -600,31 +589,19 @@ public class EmitJavaOperation implements IEmitOperation {
 		switch (operands[1]) {
 		case "mm":
 			StringBuilder sb = new StringBuilder();
-//			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
 			emitReshape( sb, codeOp.output, codeOp.input.get(0), codeOp.input.get(0) );
 			sb.append( String.format("%s.set( %s );\n", codeOp.output.getName(), codeOp.input.get(0).getName() ));
 			return sb.toString();
 		case "ii":
-			if (operands.length > 2)
-				System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString());
-			else
-				return String.format("%s = %s;\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
+			return String.format("%s = %s;\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
 		case "ss":
-//			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString());
 			return String.format("%s = %s;\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand());
 		case "sm1":
 			return String.format("%s = %s.unsafe_get(0,0);\n", codeOp.output.getOperand(), codeOp.input.get(0).getOperand() );
-		case "":
-			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
-			break;
-		case "sm":
-			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
-			break;
 		default:
-			System.out.printf("copyOp: %s, %s\n", operands, codeOp.toString()); 
 			break;
 		}
-		return "//copyOp: " + codeOp.toString();
+		throw new RuntimeException(Arrays.toString(operands) + " " + codeOp.toString() + " not implemented");
 	}
 	
 	private String copyROp(String[] operands, Info codeOp) {
@@ -661,7 +638,7 @@ public class EmitJavaOperation implements IEmitOperation {
     				codeExtents.codeComplexRowIndices(lastRowsCols), codeExtents.codeNumRows(lastRowsCols), 
     				codeExtents.codeComplexColIndices(lastRowsCols), codeExtents.codeNumCols(lastRowsCols)) );
     	}
-		return sb.toString();
+    	return sb.toString();
 	}
 	
 	@Override
@@ -681,8 +658,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			header.append( String.format("%s%-10s %s = new DMatrixRMaj(1,1);\n", indent, "DMatrixRMaj", variable.getName() ));
 			break;
 		default:
-			System.err.println("Unhandled variable type encountered: " + variable);
-			break;
+			throw new RuntimeException("Unhandled variable type encountered: " + variable);
 		}
 	}
 

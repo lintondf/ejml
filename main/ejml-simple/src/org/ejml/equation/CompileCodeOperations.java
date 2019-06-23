@@ -97,7 +97,7 @@ public class CompileCodeOperations {
     	this.tempManager = tempManager;
     	stats.input.operations = this.infos.size();
     	
-    	lastOperationCopyR = operations.size() > 1 && operations.get(operations.size()-1).name().startsWith("copyR-");
+    	lastOperationCopyR = operations.size() > 0 && operations.get(operations.size()-1).name().startsWith("copyR-");
 	}
 
 

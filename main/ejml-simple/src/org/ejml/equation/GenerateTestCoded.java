@@ -657,7 +657,7 @@ public class GenerateTestCoded {
 		skips.add("createOp");
 		skips.add("compile_function_one");
 		skips.add("compile_function_N");
-		// integer sequence variables not compiled
+		// integer sequence variables not supported
 		skips.add("compile_assign_IntSequence_Case0");
 		skips.add("compile_assign_IntSequence_Case1");
 		skips.add("compile_assign_IntSequence_Case2");
@@ -665,24 +665,8 @@ public class GenerateTestCoded {
 		skips.add("compile_assign_IntSequence_Case4");
 		skips.add("compile_assign_IntSequence_Case5");
 		skips.add("compile_assign_IntSequence_Case6");
+		skips.add("compile_assign_IntSequence_Case7");
 		
-		// TODO pass out matrix as parameter
-		skips.add("compile_assign_submatrix");  
-		skips.add("compile_assign_submatrix_special");
-		skips.add("copy_submatrix_matrix_case0");
-		skips.add("copy_submatrix_matrix_case1");
-		skips.add("copy_submatrix_matrix_case2");
-		skips.add("copy_submatrix_matrix_case3");
-		skips.add("copy_submatrix_matrix_case4");
-		skips.add("copy_submatrix_matrix_case5");
-		skips.add("copy_submatrix_matrix_case6");
-		skips.add("copy_submatrix_scalar_case0");
-		skips.add("copy_submatrix_scalar_case1");
-		skips.add("copy_submatrix_scalar_case2");
-		skips.add("copy_submatrix_scalar_case3");
-		skips.add("copy_submatrix_scalar_case4");
-		skips.add("copy_submatrix_scalar_case5");
-
 		final Pattern method = Pattern.compile("\\s*public void (\\w+)\\(\\)");
 		Path path = Paths.get("test/org/ejml/equation");
 		String[] tests = { "TestEquation.java", "TestOperation.java" };
@@ -714,7 +698,7 @@ public class GenerateTestCoded {
 							nSkipped++;
 							continue;
 						}
-//						if (!matcher.group(1).equals("sqrt_int"))
+//						if (!matcher.group(1).equals("compile_assign_submatrix"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;

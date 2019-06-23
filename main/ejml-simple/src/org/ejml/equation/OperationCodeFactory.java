@@ -47,7 +47,7 @@ import org.ejml.equation.Info.DimensionSources;
  */
 public class OperationCodeFactory implements IOperationFactory {
 	
-	protected class CodeOperation extends Operation {
+	protected static class CodeOperation extends Operation {
 
 		protected CodeOperation(String name, Info info) {
 			info.super(name);

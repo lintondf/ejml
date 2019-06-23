@@ -274,6 +274,234 @@ public class TestPlumbing {
 		}
     }
     
+	protected VariableIntegerSequence variablesToExplicit( int[] vars ) {
+		TokenList list = new TokenList();
+		for (int var : vars) {
+			list.add(VariableInteger.factory(var));
+		}
+		return new VariableIntegerSequence(new IntegerSequence.Explicit(list.getFirst(), list.getLast()));
+	}
+    
+    
+    @Test
+    public void testOperationCodeFactoryPlumbing() {
+    	Info info = new Info();
+    	OperationCodeFactory.CodeOperation op = new OperationCodeFactory.CodeOperation("test", info);
+    	op.process();  // coverage
+    	
+    	OperationCodeFactory factory = new OperationCodeFactory();
+    	ManagerTempVariables mgr = new ManagerTempVariables();
+    	VariableInteger i = VariableInteger.factory(3);
+    	VariableMatrix  m = VariableMatrix.createTemp();
+    	VariableIntegerSequence s = variablesToExplicit( new int[] {1,2});
+    	
+    	try {
+    		info = factory.neg(s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.pow(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.atan2(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.sqrt(m, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.sin(m, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.cos(m, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.atan(m, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.exp(s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.log(s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.elementMult(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.elementDivision(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.elementPow(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.copy(m, i );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.copy(m, i, new ArrayList<Variable>() );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.transpose(i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.normP(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.max_two(i, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.max_two(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.min_two(i, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.min_two(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.eye(s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.diag(i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.zeros(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.ones(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.rng(m, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.rand(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.randn(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.kron(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.dot(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.solve(m, s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+		List<Variable> l = new ArrayList<>();
+		l.add(i);
+    	try {
+    		info = factory.extract(l, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	l.clear();
+    	l.add(m);
+    	l.add(m);
+    	try {
+    		info = factory.extract(l, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.sum_one(s, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.sum_two(s, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	try {
+    		info = factory.sum_two(m, i, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	l.clear();
+		l.add(i);
+    	try {
+    		info = factory.extractScalar(l, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    	l.clear();
+    	l.add(m);
+    	l.add(m);
+    	try {
+    		info = factory.extractScalar(l, mgr );
+    		fail("should have thrown");
+    	} catch (Exception x) {}
+    }
+    
+    @Test
+    public void testEmitJavaOperationPlumbing() {
+    	EmitJavaOperation coder = new EmitJavaOperation();
+    	ManagerFunctions mgr = new ManagerFunctions();
+    	
+    	StringBuilder body = new StringBuilder();
+    	Info info = new Info();
+    	info.output = VariableInteger.factory(1);
+    	info.input = new ArrayList<>();
+    	info.input.add( VariableInteger.factory("-1"));
+    	info.input.add( VariableInteger.factory("1"));
+    	String[] ops = {"zeta-i", "zeta-ii", "zeta-mm", "zeta-m", "zeta-ms", "zeta", "zeta-sm", "zeta-s", "zeta-ss"};
+    	for (String op : ops) {
+    		OperationCodeFactory.CodeOperation operation = new OperationCodeFactory.CodeOperation(op, info);
+    		info.op = operation;
+        	try {
+        		coder.emitOperation(body, info );
+        		fail("should have thrown");
+        	} catch (Exception x) {
+        	}
+    	}
+		OperationCodeFactory.CodeOperation operation = new OperationCodeFactory.CodeOperation("neg-s", info);
+		info.op = operation;
+		coder.emitOperation(body, info);
+		assertEquals( body.toString(), "1 = -(-1);\n");
+		body = new StringBuilder();
+		
+		operation = new OperationCodeFactory.CodeOperation("copy-i", info);
+		info.op = operation;
+    	try {
+    		coder.emitOperation(body, info );
+    		fail("should have thrown");
+    	} catch (Exception x) {
+    	}
+    	
+    	coder.declare(body, "", VariableMatrix.createTemp());
+    	assertEquals(body.toString(), "DMatrixRMaj tm = new DMatrixRMaj(1,1);\n");
+    	try {
+    		VariableIntegerSequence s = variablesToExplicit( new int[] {1,2});
+    		coder.declare(body, "", s);
+    	} catch (Exception x) {
+    	}
+    	assertEquals(coder.getZero().getOperand(), "0");
+    	assertEquals(coder.getOne().getOperand(), "1");
+    }
+    
+    
     @Test
     public void testManagerFunctionsPlumbing() {
     	ManagerFunctions mgr = new ManagerFunctions();
