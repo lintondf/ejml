@@ -295,6 +295,9 @@ public class TestPlumbing {
     	VariableMatrix  m = VariableMatrix.createTemp();
     	VariableIntegerSequence s = variablesToExplicit( new int[] {1,2});
     	
+    	info = factory.copy(s, s);
+    	assertEquals(info.toString(), "copy-is-is[:INTEGER_SEQUENCE]->:INTEGER_SEQUENCE");
+    	
     	try {
     		info = factory.neg(s, mgr );
     		fail("should have thrown");
