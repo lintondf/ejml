@@ -75,6 +75,34 @@ public class TestPlumbing {
 				"subtract-ii[Integer{(2 + (3 * 4))}:SCALAR,ti8:SCALAR]->Integer{(2 + (3 * 4))}:SCALAR\n" + 
 				"add-ss[Integer{(2 + (3 * 4))}:SCALAR,Double{(2.0 + (3.0 * 4.0))}:SCALAR]->b:SCALAR\n";
 		assertEquals(expected, compiler.toString());
+		
+		try {
+			VariableIntegerSequence s = variablesToExplicit( new int[] {1,2});
+			s.setTemp(true);
+			compiler.recordVariable( s );
+			fail("should have thrown");
+		} catch (Exception x) {}
+		try {
+			VariableScalar s = new VariableScalar( VariableScalar.Type.COMPLEX, "name") {
+				@Override
+				public double getDouble() {
+					return 0;
+				}
+			};
+			s.setTemp(true);
+			compiler.recordVariable( s );
+			fail("should have thrown");
+		} catch (Exception x) {}
+		
+		List<CompileCodeOperations.Usage> u = new ArrayList<>();
+		VariableMatrix m = VariableMatrix.createTemp();
+		assertTrue( null == compiler.locateUsage( u, m ) );
+		
+		info = new Info();
+		assertTrue( null == compiler.getConstantOperation(info));
+		info.op = new OperationCodeFactory.CodeOperation("neg-s", info);
+		info.range = Arrays.asList( new Variable[] { VariableInteger.factory(0)} );
+		assertTrue( null == compiler.getConstantOperation(info));
     }
 
     /** 
