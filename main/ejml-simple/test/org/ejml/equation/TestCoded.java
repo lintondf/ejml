@@ -402,19 +402,19 @@ public class TestCoded {
         int        A = 1;
         int        B = 2;
         //A=-B
-        A = (-B);
+        A = -B;
         assertTrue(isIdentical(-2, A));
         //A=B--B
-        A = (B - (-B));
+        A = B - -B;
         assertTrue(isIdentical(4, A));
         //A=B+-B
-        A = (B + (-B));
+        A = B + -B;
         assertTrue(isIdentical(0, A));
         //A=B---5
-        A = (B - (-(-5)));
+        A = B - 5;
         assertTrue(isIdentical(2 - 5, A));
         //A=B--5
-        A = (B - -5);
+        A = B - -5;
         assertTrue(isIdentical(2+5, A));
     }
 
@@ -740,7 +740,7 @@ public class TestCoded {
         // E=2.5*D
         double    	E = 0;
 
-        E = (2.5 * D);
+        E = 2.5 * D;
 
         return E;
     }
@@ -775,7 +775,7 @@ public class TestCoded {
         // E=2.001e-6*1e3
         double    	E = 0;
 
-        E = (2.001e-6 * 1e3);
+        E = 2.001e-6 * 1e3;
 
         return E;
     }
@@ -866,7 +866,7 @@ public class TestCoded {
         // x=b/A
         int       	x = 0;
 
-        x = (b / A);
+        x = b / A;
 
         return x;
     }
@@ -894,7 +894,7 @@ public class TestCoded {
         // x=b/A
         double    	x = 0;
 
-        x = (b / A);
+        x = b / A;
 
         return x;
     }
@@ -1046,7 +1046,7 @@ public class TestCoded {
         // x=b*A
         int       	x = 0;
 
-        x = (b * A);
+        x = b * A;
 
         return x;
     }
@@ -1074,7 +1074,7 @@ public class TestCoded {
         // x=b*A
         double    	x = 0;
 
-        x = (b * A);
+        x = b * A;
 
         return x;
     }
@@ -1281,7 +1281,7 @@ public class TestCoded {
         // c=a.^b
         double    	c = 0;
 
-        c = (Math.pow(a, b));
+        c = Math.pow(a, b);
 
         return c;
     }
@@ -1333,7 +1333,7 @@ public class TestCoded {
         // a=2.3^4.2
         double    	a = 0;
 
-        a = (Math.pow(2.3, 4.2));
+        a = Math.pow(2.3, 4.2);
 
         return a;
     }
@@ -1356,7 +1356,7 @@ public class TestCoded {
         // a=2^4
         double    	a = 0;
 
-        a = (Math.pow(2, 4));
+        a = Math.pow(2, 4);
 
         return a;
     }
@@ -1379,7 +1379,7 @@ public class TestCoded {
         // a=pow(2.3,4.2)
         double    	a = 0;
 
-        a = (Math.pow(2.3, 4.2));
+        a = Math.pow(2.3, 4.2);
 
         return a;
     }
@@ -1401,7 +1401,7 @@ public class TestCoded {
         // a=sqrt(5)
         double    	a = 0;
 
-        a = (Math.sqrt(5));
+        a = Math.sqrt(5);
 
         return a;
     }
@@ -1423,7 +1423,7 @@ public class TestCoded {
         // a=sqrt(5.7)
         double    	a = 0;
 
-        a = (Math.sqrt(5.7));
+        a = Math.sqrt(5.7);
 
         return a;
     }
@@ -1446,7 +1446,7 @@ public class TestCoded {
         // a=atan2(1.1,0.5)
         double    	a = 0;
 
-        a = (Math.atan2(1.1, 0.5));
+        a = Math.atan2(1.1, 0.5);
 
         return a;
     }
@@ -1470,7 +1470,7 @@ public class TestCoded {
         // a=-b
         int       	a = 0;
 
-        a = (-b);
+        a = -b;
 
         return a;
     }
@@ -1494,7 +1494,7 @@ public class TestCoded {
         // a=-b
         double    	a = 0;
 
-        a = (-b);
+        a = -b;
 
         return a;
     }
@@ -1548,7 +1548,7 @@ public class TestCoded {
         // a=sin(2.1)
         double    	a = 0;
 
-        a = (Math.sin(2.1));
+        a = Math.sin(2.1);
 
         return a;
     }
@@ -1571,7 +1571,7 @@ public class TestCoded {
         // a=cos(2.1)
         double    	a = 0;
 
-        a = (Math.cos(2.1));
+        a = Math.cos(2.1);
 
         return a;
     }
@@ -1594,7 +1594,7 @@ public class TestCoded {
         // a=atan(2.1)
         double    	a = 0;
 
-        a = (Math.atan(2.1));
+        a = Math.atan(2.1);
 
         return a;
     }
@@ -1617,7 +1617,7 @@ public class TestCoded {
         // a=exp(2.1)
         double    	a = 0;
 
-        a = (Math.exp(2.1));
+        a = Math.exp(2.1);
 
         return a;
     }
@@ -1669,7 +1669,7 @@ public class TestCoded {
         // a=log(2.1)
         double    	a = 0;
 
-        a = (Math.log(2.1));
+        a = Math.log(2.1);
 
         return a;
     }
@@ -1721,7 +1721,7 @@ public class TestCoded {
         // a=2 + 3
         int       	a = 0;
 
-        a = (2 + 3);
+        a = 5;
 
         return a;
     }
@@ -1744,7 +1744,7 @@ public class TestCoded {
         // a= 2.3 + 3
         double    	a = 0;
 
-        a = (2.3 + 3);
+        a = 2.3 + 3;
 
         return a;
     }
@@ -1849,7 +1849,7 @@ public class TestCoded {
         // a=2 - 3
         int       	a = 0;
 
-        a = (2 - 3);
+        a = -1;
 
         return a;
     }
@@ -1872,7 +1872,7 @@ public class TestCoded {
         // a= 2.3 - 3
         double    	a = 0;
 
-        a = (2.3 - 3);
+        a = 2.3 - 3;
 
         return a;
     }
@@ -2201,7 +2201,7 @@ public class TestCoded {
         // b(2:8)=a
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( a, b, IntStream.iterate(2, n -> n + 1).limit(1+(8 - 2) / 1).toArray(), (8+1 - 2) );
+        CommonOps_DDRM.insert( a, b, IntStream.iterate(2, n -> n + 1).limit(1+(8 - 2) / 1).toArray(), 7 );
 
         return b;
     }
@@ -2300,7 +2300,7 @@ public class TestCoded {
         // b(0:1,1:3)=4.5
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( new DMatrixRMaj((1+1 - 0), (3+1 - 1), 4.5), b, 0, 1 );
+        CommonOps_DDRM.insert( new DMatrixRMaj(2, 3, 4.5), b, 0, 1 );
 
         return b;
     }
@@ -2384,7 +2384,7 @@ public class TestCoded {
         // b(1:3)=4.5
         DMatrixRMaj	b = new DMatrixRMaj(b_in);
 
-        CommonOps_DDRM.insert( new DMatrixRMaj(1, (3+1 - 1), 4.5), b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), (3+1 - 1) );
+        CommonOps_DDRM.insert( new DMatrixRMaj(1, 3, 4.5), b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), 3 );
 
         return b;
     }
@@ -2470,8 +2470,8 @@ public class TestCoded {
         // c=b(1:3)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        c.reshape( 1, (3+1 - 1) );
-        CommonOps_DDRM.extract( b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), (3+1 - 1), c );
+        c.reshape( 1, 3 );
+        CommonOps_DDRM.extract( b, IntStream.iterate(1, n -> n + 1).limit(1+(3 - 1) / 1).toArray(), 3, c );
 
         return c;
     }
@@ -2590,8 +2590,8 @@ public class TestCoded {
         // c=b(1:2,2:3)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        c.reshape( (2+1 - 1), (3+1 - 2) );
-        CommonOps_DDRM.extract( b, 1, 2+1, 2, 3+1, c );
+        c.reshape( 2, 2 );
+        CommonOps_DDRM.extract( b, 1, 3, 2, 4, c );
 
         return c;
     }
@@ -2843,7 +2843,7 @@ public class TestCoded {
         // b=inv(a)
         double    	b = 0;
 
-        b = (1.0 / a);
+        b = 1.0 / a;
 
         return b;
     }
@@ -2893,7 +2893,7 @@ public class TestCoded {
         // b=pinv(a)
         double    	b = 0;
 
-        b = (1.0 / a);
+        b = 1.0 / a;
 
         return b;
     }
@@ -2985,7 +2985,7 @@ public class TestCoded {
         // b=det(5.6)
         double    	b = 0;
 
-        b = (5.6);
+        b = 5.6;
 
         return b;
     }
@@ -3010,7 +3010,7 @@ public class TestCoded {
         // b=trace(a)
         double    	b = 0;
 
-        b = (a);
+        b = a;
 
         return b;
     }
@@ -3082,7 +3082,7 @@ public class TestCoded {
         // b=normF(5.6)
         double    	b = 0;
 
-        b = (Math.abs(5.6));
+        b = Math.abs(5.6);
 
         return b;
     }
@@ -3424,7 +3424,7 @@ public class TestCoded {
         // B=abs(A)
         int       	B = 0;
 
-        B = (Math.abs(A));
+        B = Math.abs(A);
 
         return B;
     }
@@ -3452,7 +3452,7 @@ public class TestCoded {
         // B=abs(A)
         double    	B = 0;
 
-        B = (Math.abs(A));
+        B = Math.abs(A);
 
         return B;
     }
@@ -3508,7 +3508,7 @@ public class TestCoded {
         // B=max(A)
         int       	B = 0;
 
-        B = (A);
+        B = A;
 
         return B;
     }
@@ -3534,7 +3534,7 @@ public class TestCoded {
         // B=max(A)
         double    	B = 0;
 
-        B = (A);
+        B = A;
 
         return B;
     }
@@ -3589,7 +3589,7 @@ public class TestCoded {
         // B=min(A)
         int       	B = 0;
 
-        B = (A);
+        B = A;
 
         return B;
     }
@@ -3615,7 +3615,7 @@ public class TestCoded {
         // B=min(A)
         double    	B = 0;
 
-        B = (A);
+        B = A;
 
         return B;
     }

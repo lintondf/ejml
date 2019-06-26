@@ -197,14 +197,16 @@ public class CodeEquationMain {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					coder.declare( header, "", variable );
+					if (! variable.getName().endsWith("}"))
+						coder.declare( header, "", variable );
 				}
 			}
 			for (Usage usage : generator.doubleUsages) {
 				Variable variable = usage.variable;
 				if (! declaredTemps.contains(variable.getOperand())) {
 					declaredTemps.add(variable.getOperand() );
-					coder.declare( header, "", variable );
+					if (! variable.getName().endsWith("}"))
+						coder.declare( header, "", variable );
 				}
 			}
 

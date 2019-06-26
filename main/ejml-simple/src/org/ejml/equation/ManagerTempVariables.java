@@ -90,7 +90,7 @@ public class ManagerTempVariables {
     }
 
     public VariableDouble createDoubleConstant( double value, String representation ) {
-        return new VariableDouble(value, String.format("DOUBLE{%s}", representation));
+        return new VariableDouble(value, String.format("Double{%s}", representation));
     }
 
     public VariableInteger createInteger() {
@@ -102,7 +102,7 @@ public class ManagerTempVariables {
     }
 
     public VariableInteger createIntegerConstant( int value, String representation ) {
-        return new VariableInteger(value, String.format("INTEGER{%s}", representation));
+        return new VariableInteger(value, String.format("Integer{%s}", representation));
     }
 
     public VariableIntegerSequence createIntegerSequence( IntegerSequence sequence ) {

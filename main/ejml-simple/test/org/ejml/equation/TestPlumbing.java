@@ -49,31 +49,30 @@ public class TestPlumbing {
         seq = eq.compile("b = (2+3*4)*i - (1-7*4)*j + (2.0+3.0*4.0)*a");
         compiler = new CompileCodeOperations(coder, seq, tempManager );
 		compiler.optimize();
-		String expected = "INPUT:     12 operations,  5 integer temps,  3 double temps,  0 matrix temps\n" + 
+		String expected = "INPUT:     12 operations,  7 integer temps,  4 double temps,  0 matrix temps\n" + 
 				"OPTIMIZATIONS:\n" + 
-				"  removed     6 constant expressions\n" + 
-				"  removed     2 integer temporaries\n" + 
-				"  removed     1 double temporarie\n" + 
-				"  removed final copy from temp\n" + 
-				"OUTPUT:    12 operations,  5 integer temps,  3 double temps,  0 matrix temps\n" + 
+				"  removed    11 constant expressions\n" + 
+				"OUTPUT:     0 operations,  0 integer temps,  1 double temps,  0 matrix temps\n" + 
 				"INPUTS:\n" + 
+				"  Integer{3} : ScalarI           : Integer{3} : ScalarI: \n" + 
+				"  Integer{4} : ScalarI           : Integer{4} : ScalarI: \n" + 
+				"  Integer{2} : ScalarI           : Integer{2} : ScalarI: \n" + 
+				"  Integer{7} : ScalarI           : Integer{7} : ScalarI: \n" + 
+				"  Integer{4} : ScalarI           : Integer{4} : ScalarI: \n" + 
+				"  Integer{1} : ScalarI           : Integer{1} : ScalarI: \n" + 
+				"  Double{3.0} : ScalarD          : Double{3.0} : ScalarD: \n" + 
+				"  Double{4.0} : ScalarD          : Double{4.0} : ScalarD: \n" + 
+				"  Double{2.0} : ScalarD          : Double{2.0} : ScalarD: \n" + 
 				"  i : ScalarI                    : i : ScalarI: \n" + 
 				"  j : ScalarI                    : j : ScalarI: \n" + 
 				"  a : ScalarD                    : a : ScalarD: \n" + 
 				"INTEGER TEMPS:\n" + 
-				"  Integer{(2 + (3 * 4))} : ScalarI : Integer{(2 + (3 * 4))} : ScalarI: 0,0,3,3,4,\n" + 
-				"  Integer{(1 - (7 * 4))} : ScalarI : Integer{(1 - (7 * 4))} : ScalarI: 1,\n" + 
-				"  ti8 : ScalarI                  : ti8 : ScalarI: 1,3,\n" + 
 				"DOUBLE TEMPS:\n" + 
-				"  Double{(2.0 + (3.0 * 4.0))} : ScalarD : Double{(2.0 + (3.0 * 4.0))} : ScalarD: 2,2,4,\n" + 
+				"  Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a} : ScalarD : Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a} : ScalarD: 0,\n" + 
 				"MATRIX TEMPS:\n" + 
 				"TARGET:\n" + 
 				"  b : ScalarD                    : b : ScalarD: \n" + 
-				"multiply-ii[Integer{(2 + (3 * 4))}:SCALAR,i:SCALAR]->Integer{(2 + (3 * 4))}:SCALAR\n" + 
-				"multiply-ii[Integer{(1 - (7 * 4))}:SCALAR,j:SCALAR]->ti8:SCALAR\n" + 
-				"multiply-ss[Double{(2.0 + (3.0 * 4.0))}:SCALAR,a:SCALAR]->Double{(2.0 + (3.0 * 4.0))}:SCALAR\n" + 
-				"subtract-ii[Integer{(2 + (3 * 4))}:SCALAR,ti8:SCALAR]->Integer{(2 + (3 * 4))}:SCALAR\n" + 
-				"add-ss[Integer{(2 + (3 * 4))}:SCALAR,Double{(2.0 + (3.0 * 4.0))}:SCALAR]->b:SCALAR\n";
+				"copy-ss[Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a}:SCALAR]->b:SCALAR\n";
 		assertEquals(expected, compiler.toString());
 		
 		try {

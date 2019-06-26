@@ -145,7 +145,7 @@ public class TestSequence {
 				"OPTIMIZATIONS:\n" + 
 				"  removed     2 matrix temporaries\n" + 
 				"  removed final copy from temp\n" + 
-				"OUTPUT:     9 operations,  0 integer temps,  0 double temps,  8 matrix temps\n" + 
+				"OUTPUT:     0 operations,  0 integer temps,  0 double temps,  8 matrix temps\n" + 
 				"INPUTS:\n" + 
 				"  H : VAR_MATRIX                 : H : VAR_MATRIX: \n" + 
 				"  P : VAR_MATRIX                 : P : VAR_MATRIX: \n" + 

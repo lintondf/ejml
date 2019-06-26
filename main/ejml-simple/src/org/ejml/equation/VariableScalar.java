@@ -18,6 +18,9 @@
 
 package org.ejml.equation;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Variable for storing primitive scalar data types, e.g. int and double.
  *
@@ -25,6 +28,9 @@ package org.ejml.equation;
  */
 public abstract class VariableScalar extends Variable {
 
+	static final Pattern expression = Pattern.compile("[Integer|Double]\\{(.*)\\}");
+	static final Pattern letter = Pattern.compile("[a-zA-Z]");
+	
     Type type;
 
     public VariableScalar(Type type, String name) {
@@ -58,9 +64,20 @@ public abstract class VariableScalar extends Variable {
         COMPLEX
     }
     
+    /**
+     * Check if variable is a constant or constant expression.
+     * 
+     * Constant names are either Integer{*} or Double{*}
+     * If there are any letters between the curly braces, then it is not a constant expression.
+     */
     @Override
     public boolean isConstant() {
-    	return this.getName().endsWith("}");
+    	Matcher matcher = expression.matcher( this.getName() );
+    	if (matcher.find()) {
+    		matcher = letter.matcher(matcher.group(1));
+    		return ! matcher.find();
+    	}
+    	return false;
     }
 
     @Override
@@ -75,4 +92,27 @@ public abstract class VariableScalar extends Variable {
 			return this.getName();  // name of scalar variable
 		}
 	}
+    
+    public static void main(String[] args) {
+    	
+    	String[] tests = {
+    			"zot",
+    			"Integer{1}",
+    			"Integer{i + 2*4}",
+    			"Integer{i + 2*4 + j}",
+    			"Double{1}",
+    			"Double{i + 2*4}",
+    			"Double{i + 2*4 + j}",
+    	};
+    	
+    	for (String test : tests) {
+    		Matcher matcher = expression.matcher(test);
+    		if (matcher.find()) {
+    			Matcher m2 = letter.matcher(matcher.group(1));
+    			System.out.printf("%s FOUND %s %b\n", test, matcher.group(1), m2.find());
+    		} else {
+    			System.out.printf("%s NOT FOUND\n", test);
+    		}
+    	}
+    }
 }

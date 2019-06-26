@@ -286,15 +286,15 @@ public class TestExtents {
 		assertTrue( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		
 		codeExtents = new CodeExtents( coder, Arrays.asList( new Variable[] {r, c} ) );
 		assertFalse( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.row0).equals(codeExtents.codeSimpleStartRow()) );
-		assertTrue( lastRowCol[0].equals(codeExtents.codeSimpleEndRow(lastRowCol)) );
+		assertEquals( Integer.toString(extents.row1+1), (codeExtents.codeSimpleEndRow(lastRowCol)) );
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 	}	
 	
 	@Test
@@ -322,15 +322,15 @@ public class TestExtents {
 		assertTrue( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		
 		codeExtents = new CodeExtents( coder, Arrays.asList( new Variable[] {rseq, cseq} ) );
 		assertFalse( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.row0).equals(codeExtents.codeSimpleStartRow()) );
-		assertTrue( lastRowCol[0].equals(codeExtents.codeSimpleEndRow(lastRowCol)) );
+		assertEquals( Integer.toString(extents.row1+1), (codeExtents.codeSimpleEndRow(lastRowCol)) );
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		
 		
 		extents = new Extents();
@@ -357,15 +357,15 @@ public class TestExtents {
 		assertTrue( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		
 		codeExtents = new CodeExtents( coder, Arrays.asList( new Variable[] {rseq, cseq} ) );
 		assertFalse( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(extents.row0).equals(codeExtents.codeSimpleStartRow()) );
-		assertTrue( lastRowCol[0].equals(codeExtents.codeSimpleEndRow(lastRowCol)) );
+		assertEquals( Integer.toString(extents.row1+1), (codeExtents.codeSimpleEndRow(lastRowCol)) );
 		assertTrue( Integer.toString(extents.col0).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(extents.col1+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 	}
 	
 	@Test
@@ -383,7 +383,7 @@ public class TestExtents {
 		assertTrue( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(first).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(last+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		
 		seq = variablesToFor( new int[] {5, 9} );
 		arrayExtent.extractArrayExtent(seq, 1+(9-5)/1);
@@ -397,11 +397,11 @@ public class TestExtents {
 		assertTrue( codeExtents.is1D());
 		assertTrue( codeExtents.isBlock());
 		assertTrue( Integer.toString(first).equals(codeExtents.codeSimpleStartCol()) );
-		assertTrue( lastRowCol[1].equals(codeExtents.codeSimpleEndCol(lastRowCol)) );
+		assertEquals( Integer.toString(last+1), (codeExtents.codeSimpleEndCol(lastRowCol)) );
 		String rows = codeExtents.codeNumRows(lastRowCol);
-		assertEquals(rows, "(0+1 - 0)");
+		assertEquals(rows, "1");
 		String cols = codeExtents.codeNumCols(lastRowCol);
-		assertEquals(cols, "(9+1 - 5)");
+		assertEquals(cols, "5");
 
 		seq = variablesToFor( new int[] {1, 3, 10} );
 		arrayExtent.extractArrayExtent(seq, 1+(10-1)/3);
@@ -424,7 +424,7 @@ public class TestExtents {
 		rows = codeExtents.codeNumRows(lastRowCol);
 		assertEquals(rows, "1");
 		cols = codeExtents.codeNumCols(lastRowCol);
-		assertEquals(cols, "(10-1)/3");
+		assertEquals(cols, "3");
 
 		//range 5:1: 
 		seq = variablesToRange( new VariableInteger(5), new VariableInteger(1) );
@@ -544,7 +544,8 @@ public class TestExtents {
 		Extents extents = new Extents();
 		VariableIntegerSequence rseq = variablesToFor( new int[] {1, 1, 10} );
 		codeExtents = new CodeExtents( coder, Arrays.asList( new Variable[] {rseq} ) );
-		assertEquals(codeExtents.toString(), "BLOCK{0,0+1,1,10+1} [(0+1 - 0),(10+1 - 1)]");
+		System.out.println(codeExtents.toString());
+		assertEquals(codeExtents.toString(), "BLOCK{0,1,1,11} [(1 - 0),(11 - 1)]");
 		
     	start = new TokenList.Token(new VariableInteger(6));
     	step = new TokenList.Token(new VariableInteger(6));

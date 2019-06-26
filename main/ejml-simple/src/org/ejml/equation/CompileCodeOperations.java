@@ -87,7 +87,7 @@ public class CompileCodeOperations {
 				sb.append(String.format("  removed %5d matrix temporaries\n", this.matrixTemps));
 			if (finalCopy > 0) 
 				sb.append("  removed final copy from temp\n");
-			sb.append(String.format("OUTPUT: %5d operations, %2d integer temps, %2d double temps, %2d matrix temps\n", input.operations, input.integerTemps, input.doubleTemps, input.matrixTemps));
+			sb.append(String.format("OUTPUT: %5d operations, %2d integer temps, %2d double temps, %2d matrix temps\n", output.operations, output.integerTemps, output.doubleTemps, output.matrixTemps));
 			return sb.toString();
 		}
 	}
@@ -193,6 +193,12 @@ public class CompileCodeOperations {
 	 * allocation algorithm of Poletto and Sarkar (ACM Transactions V21N5, Sept 1999)
 	 */
     void mapVariableUsage() {
+    	integerTemps.clear();
+    	integerUsages.clear();
+    	doubleTemps.clear();
+    	doubleUsages.clear();
+    	matrixTemps.clear();
+    	matrixUsages.clear();
     	for (Info info : infos) {
     		//System.out.println( codeOp );
     		for (Variable var : info.input) {
@@ -220,9 +226,6 @@ public class CompileCodeOperations {
     		Usage usage = findUsage(variable);
     		matrixUsages.add(usage);
     	}
-    	stats.input.integerTemps = integerTemps.size();
-    	stats.input.doubleTemps = doubleTemps.size();
-    	stats.input.matrixTemps = matrixTemps.size();
     }
     
 	
@@ -504,7 +507,7 @@ public class CompileCodeOperations {
 			if (v != null) {
 				return v;
 			}
-			System.out.println(key + " missing");
+//			System.out.println(key + " missing");
 			return 0;
 		}
  	}
@@ -546,6 +549,10 @@ public class CompileCodeOperations {
 	}
     
 	public void optimize() {
+		mapVariableUsage();
+    	stats.input.integerTemps = integerTemps.size();
+    	stats.input.doubleTemps = doubleTemps.size();
+    	stats.input.matrixTemps = matrixTemps.size();		
 		eliminateConstantExpressions();
 		mapVariableUsage();
 		eliminateFinalCopy();

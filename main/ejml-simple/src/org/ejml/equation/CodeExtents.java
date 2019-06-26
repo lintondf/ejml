@@ -174,7 +174,7 @@ public class CodeExtents {
 		if (startRow == null) {
 			return "0";
 		} else {
-			return startRow.getOperand();
+			return simplify(startRow.getOperand());
 		}
 	}
 
@@ -187,7 +187,7 @@ public class CodeExtents {
 		if (endRow == null) {
 			return lastRowsCols[0];
 		} else {
-			return endRow.getOperand() + "+1";
+			return simplify(endRow.getOperand() + "+1");
 		}
 	}
 
@@ -199,7 +199,7 @@ public class CodeExtents {
 		if (startCol == null) {
 			return "0";
 		} else {
-			return startCol.getOperand();
+			return simplify(startCol.getOperand());
 		}
 	}
 
@@ -212,7 +212,7 @@ public class CodeExtents {
 		if (endCol == null) {
 			return lastRowsCols[1];
 		} else {
-			return endCol.getOperand() + "+1";
+			return simplify(endCol.getOperand() + "+1");
 		}
 	}
 
@@ -241,7 +241,7 @@ public class CodeExtents {
 	 * @param end - String operand of final value in range (not +1)
 	 * @return java code string
 	 */
-	private String codeIndiciesArray(String start, String step, String end) {
+	String codeIndiciesArray(String start, String step, String end) {
 		return String.format("IntStream.iterate(%s, n -> n + %s).limit(1+(%s - %s) / %s).toArray()", start, step, end,
 				start, step);
 	}
@@ -252,7 +252,7 @@ public class CodeExtents {
 	 * @param lastRowsCols - Strings for the last rows/cols (generally M.numRows, M.numCols)
 	 * @return java code string
 	 */
-	protected String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
+	String codeComplexExtent(IntegerSequence sequence, String lastRowsCols) {
 		StringBuilder sb = new StringBuilder();
 		if (sequence == null) {
 			sb.append("new int[] {0}");
@@ -313,7 +313,7 @@ public class CodeExtents {
 	 * @param lastRowsCols - Strings for the last rows/cols (generally M.numRows, M.numCols)
 	 * @return java code string
 	 */
-	protected String codeComplexLength(IntegerSequence sequence, String lastRowsCols) {
+	String codeComplexLength(IntegerSequence sequence, String lastRowsCols) {
 		StringBuilder sb = new StringBuilder();
 		if (sequence == null) {
 			sb.append("1");
@@ -362,7 +362,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	public String codeComplexRowIndices(String[] lastRowsCols) {
-		return codeComplexExtent(rowSequence, lastRowsCols[0]);
+		return simplify(codeComplexExtent(rowSequence, lastRowsCols[0]));
 	}
 
 	/** Code for the column indices of a complex (non-contiguous) block
@@ -371,7 +371,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	public String codeComplexColIndices(String[] lastRowsCols) {
-		return codeComplexExtent(colSequence, lastRowsCols[1]);
+		return simplify(codeComplexExtent(colSequence, lastRowsCols[1]));
 	}
 
 	/** Code for the number of rows of a complex (non-contiguous) block

@@ -78,11 +78,11 @@ public class TestCompilation {
 				"    double y;\n" + 
 				"    // m = 2*i + 4.5*x * m\n" + 
 				"    DMatrixRMaj tm3 = new DMatrixRMaj(m.numRows, m.numCols);\n" + 
-				"    CommonOps_DDRM.scale((4.5 * x), m, tm3);\n" + 
+				"    CommonOps_DDRM.scale(4.5 * x, m, tm3);\n" + 
 				"    m.reshape(tm3.numRows, tm3.numCols);\n" + 
-				"    CommonOps_DDRM.add(tm3, (2 * i), m); // j = 5*i\n" + 
-				"    j = (5 * i); // y = 1.2 * x\n" + 
-				"    y = (1.2 * x); // rng(i)\n" + 
+				"    CommonOps_DDRM.add(tm3, 2 * i, m); // j = 5*i\n" + 
+				"    j = 5 * i; // y = 1.2 * x\n" + 
+				"    y = 1.2 * x; // rng(i)\n" + 
 				"    Random rand = new Random();\n" + 
 				"    rand.setSeed(i); // x = rand(i,i)\n" + 
 				"    DMatrixRMaj tm1 = new DMatrixRMaj(i, i);\n" + 
@@ -98,13 +98,13 @@ public class TestCompilation {
 				"\n" + 
 				"  public void checkvoid(int i) {\n" + 
 				"    // i = i + 1\n" + 
-				"    i = (i + 1);\n" + 
+				"    i = i + 1;\n" + 
 				"  }\n" + 
 				"}\n";
 		CodeEquationMain.interactive( new BufferedReader( new StringReader(input)), new PrintWriter( results ) );
 		try {
 			List<String> code = Files.readAllLines(out.toPath());
-//			code.forEach(System.out::println);
+			code.forEach(System.out::println);
 			String[] expectedLines = expected.split("\n");
 			assertTrue( code.size()-1 == expectedLines.length); // extra \n expected
 			for (int i = 0; i < expectedLines.length; i++) {
@@ -139,8 +139,8 @@ public class TestCompilation {
 		System.out.println(block.toString());
 		String expected = "public class code {\n" + 
 				"public DMatrixRMaj test(int n, double tau, DMatrixRMaj M) {\n" + 
-				"// M(2,4) = 588*(25*n**8-100*n^7+250*n^6-700*n^5+1585*n^4-280*n^3-540*n^2-600*n+288)/(n*tau^2*(n^10+11*n^9-330*n^7-627*n^6+3003*n^5+7370*n^4-9020*n^3-24024*n^2+6336*n+17280))\n" + 
-				"CommonOps_DDRM.insert( new DMatrixRMaj((2+1 - 2), (4+1 - 4), ((588 * (((((((((25 * (Math.pow(n, 8))) - (100 * (Math.pow(n, 7)))) + (250 * (Math.pow(n, 6)))) - (700 * (Math.pow(n, 5)))) + (1585 * (Math.pow(n, 4)))) - (280 * (Math.pow(n, 3)))) - (540 * (Math.pow(n, 2)))) - (600 * n)) + 288)) / ((n * (Math.pow(tau, 2))) * ((((((((((Math.pow(n, 10)) + (11 * (Math.pow(n, 9)))) - (330 * (Math.pow(n, 7)))) - (627 * (Math.pow(n, 6)))) + (3003 * (Math.pow(n, 5)))) + (7370 * (Math.pow(n, 4)))) - (9020 * (Math.pow(n, 3)))) - (24024 * (Math.pow(n, 2)))) + (6336 * n)) + 17280)))), M, 2, 4 );return M;}\n" + 
+				"// M(2,4) = 588*(25*n**8-100*n**7+250*n**6-700*n**5+1585*n**4-280*n**3-540*n**2-600*n+288)/(n*tau**2*(n**10+11*n**9-330*n**7-627*n**6+3003*n**5+7370*n**4-9020*n**3-24024*n**2+6336*n+17280))\n" + 
+				"CommonOps_DDRM.insert( new DMatrixRMaj(1, 1, 588 * 25 * Math.pow(n, 8) - 100 * Math.pow(n, 7) + 250 * Math.pow(n, 6) - 700 * Math.pow(n, 5) + 1585 * Math.pow(n, 4) - 280 * Math.pow(n, 3) - 540 * Math.pow(n, 2) - 600 * n + 288 / n * Math.pow(tau, 2) * Math.pow(n, 10) + 11 * Math.pow(n, 9) - 330 * Math.pow(n, 7) - 627 * Math.pow(n, 6) + 3003 * Math.pow(n, 5) + 7370 * Math.pow(n, 4) - 9020 * Math.pow(n, 3) - 24024 * Math.pow(n, 2) + 6336 * n + 17280), M, 2, 4 );return M;}\n" + 
 				"}\n";
 		assertEquals( block.toString(), expected);
 //		try {

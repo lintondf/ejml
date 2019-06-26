@@ -198,11 +198,13 @@ public class GenerateTestCoded {
 		    			notFirst = true;
 	    			}
 	    		} else {
-	    			if (notFirst)
-	    				header.append(", ");
-	    			String type = getJavaType(variable);
-	   				header.append(String.format(declFormat, "", "", type, variable.getName()) );
-	    			notFirst = true;
+	    			if (! variable.getName().endsWith("}")) {
+		    			if (notFirst)
+		    				header.append(", ");
+		    			String type = getJavaType(variable);
+		   				header.append(String.format(declFormat, "", "", type, variable.getName()) );
+		    			notFirst = true;
+	    			}
 	    		}
 	    	}
 	    	
@@ -231,19 +233,19 @@ public class GenerateTestCoded {
 				}
 	    	}    	
 	    	for (Usage usage : integerUsages) {
-	    		if (!usage.variable.isConstant()) {
+	    		if (!usage.variable.getName().endsWith("}")) {
 		    		body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
 					body.append(";\n");
 	    		}
 	    	}
 	    	for (Usage usage : doubleUsages) {
-	    		if (!usage.variable.isConstant()) {
+	    		if (!usage.variable.getName().endsWith("}")) {
 	    			body.append(String.format(declFormatScalar, prefix, prefix, getJavaType(usage.variable), usage.variable.getOperand()) );
 	    			body.append(";\n");
 	    		}
 	    	}
 	    	for (Usage usage : matrixUsages) {
-	    		if (!usage.variable.isConstant()) {
+	    		if (!usage.variable.getName().endsWith("}")) {
 					String type = getJavaType(usage.variable);
 		    		body.append(String.format(declFormatInitialize, prefix, prefix, type, usage.variable.getName(), type, "1,1") );
 					body.append(";\n");
@@ -564,21 +566,24 @@ public class GenerateTestCoded {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							coder.declare( header, indent, variable );
+							if (! variable.getName().endsWith("}"))
+								coder.declare( header, indent, variable );
 						}
 					}
 					for (Usage usage : generator.doubleUsages) {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							coder.declare( header, indent, variable );
+							if (! variable.getName().endsWith("}"))
+								coder.declare( header, indent, variable );
 						}
 					}
 					for (Usage usage : generator.matrixUsages) {
 						Variable variable = usage.variable;
 						if (! declaredTemps.contains(variable.getOperand())) {
 							declaredTemps.add(variable.getOperand() );
-							coder.declare( header, indent, variable );
+							if (! variable.getName().endsWith("}"))
+								coder.declare( header, indent, variable );
 						}
 					}
 					for (Info info : sequence.getInfos()) {
@@ -698,7 +703,7 @@ public class GenerateTestCoded {
 							nSkipped++;
 							continue;
 						}
-//						if (!matcher.group(1).equals("compile_assign_submatrix"))
+//						if (!matcher.group(1).equals("compile_neg"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
@@ -718,3 +723,4 @@ public class GenerateTestCoded {
 	}
 	
 }
+//
