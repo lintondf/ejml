@@ -1,6 +1,7 @@
 package org.ejml.equation;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.ejml.equation.Info;;
 

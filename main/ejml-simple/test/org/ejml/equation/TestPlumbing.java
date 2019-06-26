@@ -99,10 +99,10 @@ public class TestPlumbing {
 		assertTrue( null == compiler.locateUsage( u, m ) );
 		
 		info = new Info();
-		assertTrue( null == compiler.getConstantOperation(info));
+		assertTrue( null == compiler.reduceTemporaryOperations(info));
 		info.op = new OperationCodeFactory.CodeOperation("neg-s", info);
 		info.range = Arrays.asList( new Variable[] { VariableInteger.factory(0)} );
-		assertTrue( null == compiler.getConstantOperation(info));
+		assertTrue( null == compiler.reduceTemporaryOperations(info));
     }
 
     /** 

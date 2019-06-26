@@ -221,7 +221,7 @@ public class CodeExtents {
 	 * @param lastRowsCols - Strings for the last rows/cols (generally M.numRows, M.numCols)
 	 * @return java code string
 	 */
-	public String codeSimpleRows(String[] lastRowsCols) {
+	String codeSimpleRows(String[] lastRowsCols) {
 		return String.format("(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow());
 	}
 
@@ -230,7 +230,7 @@ public class CodeExtents {
 	 * @param lastRowsCols - Strings for the last rows/cols (generally M.numRows, M.numCols)
 	 * @return java code string
 	 */
-	public String codeSimpleCols(String[] lastRowsCols) {
+	String codeSimpleCols(String[] lastRowsCols) {
 		return String.format("(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol());
 	}
 
@@ -399,9 +399,9 @@ public class CodeExtents {
 	 */
 	public String codeNumRows(String[] lastRowsCols) {
 		if (isBlock()) {
-			return codeSimpleRows(lastRowsCols);
+			return simplify(codeSimpleRows(lastRowsCols));
 		} else {
-			return codeComplexRows(lastRowsCols);
+			return simplify(codeComplexRows(lastRowsCols));
 		}
 	}
 
@@ -412,9 +412,9 @@ public class CodeExtents {
 	 */
 	public String codeNumCols(String[] lastRowsCols) {
 		if (isBlock()) {
-			return codeSimpleCols(lastRowsCols);
+			return simplify(codeSimpleCols(lastRowsCols));
 		} else {
-			return codeComplexCols(lastRowsCols);
+			return simplify(codeComplexCols(lastRowsCols));
 		}
 	}
 
@@ -450,4 +450,29 @@ public class CodeExtents {
 		return sb.toString();
 	}
 
+	public static String simplify( String expr ) {
+		Equation eq = new Equation();
+		try {
+			eq.compile("out = " + expr ).perform();
+			Variable v = eq.lookupVariable("out");
+			if (v instanceof VariableScalar) {
+				VariableScalar vs = (VariableScalar) v;
+				if (vs.getScalarType() == VariableScalar.Type.INTEGER) {
+					VariableInteger vi = (VariableInteger) vs;
+					return Integer.toString( vi.getValue() );
+				} else {
+					return Double.toString( vs.getDouble() );
+				}
+			}
+			return expr;
+		} catch (Exception x) {
+			return expr;
+		}
+	}
+	
+	
+	public static void main(String[] args) {
+		System.out.println( simplify("1+3*4"));
+		System.out.println( simplify("1+3*4*a"));
+	}
 }

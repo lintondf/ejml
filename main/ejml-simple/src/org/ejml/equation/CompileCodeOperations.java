@@ -21,8 +21,10 @@ package org.ejml.equation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.ejml.equation.Info;
 import org.ejml.equation.Info.Operation;;
@@ -32,6 +34,13 @@ import org.ejml.equation.Info.Operation;;
  * @author D. F. Linton, Blue Lightning Development, LLC 2019.
  */
 public class CompileCodeOperations {
+	
+	public final static int REDUCE_CONSTANTS = 1;
+	public final static int REDUCE_SCALARS   = 3;
+	
+	public final static int DEFAULT_OPTIONS = REDUCE_SCALARS;
+	
+	int options = DEFAULT_OPTIONS;
 
 	List<Info> infos = new ArrayList<>();
 	List<Operation> operations = new ArrayList<>();
@@ -87,17 +96,23 @@ public class CompileCodeOperations {
 	
 	/**
 	 * Constructs the compiler
+	 * @param coder - source code emitter
+	 * @param sequence - sequence of Info/Operation
 	 * @param tempManager 
-	 * @param operations - List of CodeOperation objects 
 	 */
-	public CompileCodeOperations(IEmitOperation coder, Sequence sequence, ManagerTempVariables tempManager) {
+	public CompileCodeOperations(IEmitOperation coder, Sequence sequence, ManagerTempVariables tempManager, int options) {
 		this.coder = coder;
 		this.infos = sequence.getInfos();
     	this.operations = sequence.getOperations();
     	this.tempManager = tempManager;
+    	this.options = options;
     	stats.input.operations = this.infos.size();
     	
     	lastOperationCopyR = operations.size() > 0 && operations.get(operations.size()-1).name().startsWith("copyR-");
+	}
+	
+	public CompileCodeOperations(IEmitOperation coder, Sequence sequence, ManagerTempVariables tempManager) {
+		this(coder, sequence, tempManager, DEFAULT_OPTIONS);
 	}
 
 
@@ -357,6 +372,10 @@ public class CompileCodeOperations {
     	}
     }
     
+    boolean isIntegerConstant( Variable v ) {
+    	return v.isConstant() && v instanceof VariableInteger;
+    }
+    
     /**
      * Get the java code for a constant operation.
      * 
@@ -366,25 +385,96 @@ public class CompileCodeOperations {
      * @param info
      * @return null if not a constant operation; java code otherwise
      */
-	String getConstantOperation( Info info) {
+    
+    static class Reduction {
+    	boolean isSimpleConstant;
+    	String operand;
+    	String value;
+    }
+    
+    Reduction reduceTemporaryOperations( Info info) {
+    	Reduction ret = new Reduction();
 		if (info.op == null)
 			return null;
-//		if (!codeOp.op instanceof CodeOperation) 
-//			return null
 		if (info.range != null)
 			return null;
 		for (Variable in : info.input) {
-			if (!in.isConstant()) {
+			if ((options & REDUCE_SCALARS) > 0) {
+				if (! (in.getType() == VariableType.SCALAR)) {
+					return null;
+				}
+			} else if ((options & REDUCE_CONSTANTS) > 0) {
+				if (!in.isConstant()) {
+					return null;
+				}
+			} else {
 				return null;
 			}
 		}
-		StringBuilder value = new StringBuilder();
 		
+		Variable p0; 
+		Variable p1;
+		ret.operand = info.op.name();
+		ret.isSimpleConstant = false;
+		switch (info.op.name()) {
+		case "neg-i":
+		case "neg-s":
+			p0 = info.input.get(0);
+			if (isIntegerConstant(p0))  {
+				ret.isSimpleConstant = true;
+				ret.value = Integer.toString( -Integer.parseInt(p0.getOperand()));
+				return ret;
+			}
+			break;
+		case "add-ii":
+		case "add-ss":
+			p0 = info.input.get(0);
+			p1 = info.input.get(1);
+			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
+				ret.isSimpleConstant = true;
+				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) + Integer.parseInt(p1.getOperand()) );
+				return ret;
+			}
+			break;
+		case "subtract-ii":
+		case "subtract-ss":
+			p0 = info.input.get(0);
+			p1 = info.input.get(1);
+			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
+				ret.isSimpleConstant = true;
+				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) - Integer.parseInt(p1.getOperand()) );
+				return ret;
+			}
+			break;
+		case "multiply-ii":
+		case "multiply-ss":
+			p0 = info.input.get(0);
+			p1 = info.input.get(1);
+			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
+				ret.isSimpleConstant = true;
+				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) * Integer.parseInt(p1.getOperand()) );
+				return ret;
+			}
+			break;
+		case "divide-ii":
+		case "divide-ss":
+			p0 = info.input.get(0);
+			p1 = info.input.get(1);
+			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
+				ret.isSimpleConstant = true;
+				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) / Integer.parseInt(p1.getOperand()) );
+				return ret;
+			}
+			break;
+		default:
+		}
+		StringBuilder value = new StringBuilder();
 		coder.emitOperation(value, info );
 		int i = value.indexOf(" = ");
 		if (i < 0)
 			return null;
-		return value.substring(i+3).replace(";\n", "");
+		ret.value = value.substring(i+3).replace(";\n", "");
+		return ret;
 	}
 	
 	/**
@@ -392,28 +482,66 @@ public class CompileCodeOperations {
 	 * 
 	 * Convert the output temp to a scalar constant holding the constant expression.
 	 */
+    
+	static class Precedence extends HashMap<String, Integer> {
+		public Precedence() {
+			this.put("add-ii", 10);
+			this.put("add-ss", 10);
+			this.put("subtract-ii", 10);
+			this.put("subtract-ss", 10);
+			this.put("multiply-ii", 10);
+			this.put("multiply-ss", 10);
+			this.put("divide-ii", 10);
+			this.put("divide-ss", 10);
+			this.put("pow-ii", 10);
+			this.put("pow-ss", 10);
+			this.put("neg-i", 10);
+			this.put("neg-s", 10);
+		}
+		
+		public Integer get(String key) {
+			Integer v = super.get(key);
+			if (v != null) {
+				return v;
+			}
+			System.out.println(key + " missing");
+			return 0;
+		}
+ 	}
+	
+	final Precedence precedence = new Precedence();
+	
+    
 	void eliminateConstantExpressions() {
 		Iterator<Info> it = infos.iterator();
+		Integer lastPrecedence = 0;
     	while( it.hasNext()) {
     		Info info = it.next();
+    		Integer thisPrecedence = precedence.get(info.op.name());
     		if (! it.hasNext())
     			return;  // do not eliminate constants in final step
 			if (info.output.isTemp()) {
-				String value = getConstantOperation(info);
-				if (value != null) {
+				Reduction reduction = reduceTemporaryOperations(info);
+				if (reduction != null) {
+					if (! reduction.isSimpleConstant && lastPrecedence > thisPrecedence) {
+						reduction.value = "("+reduction.value+")";
+					}
+					
 					if (info.output.getType() == VariableType.SCALAR) {
 						stats.constantExpressions++;
 						VariableScalar scalar = (VariableScalar) info.output;
 						if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
-							scalar.setName( String.format("Integer{(%s)}", value));
+							scalar.setName( String.format("Integer{%s}", reduction.value));
 							it.remove();
 						} else {
-							scalar.setName( String.format("Double{(%s)}", value));
+							scalar.setName( String.format("Double{%s}", reduction.value));
 							it.remove();
 						}
+						
 					} // output is scalar
 				} // if constant
 			} // if temp
+			lastPrecedence = thisPrecedence;
     	} // while
 	}
     

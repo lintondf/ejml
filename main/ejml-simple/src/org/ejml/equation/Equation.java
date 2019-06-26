@@ -1539,6 +1539,12 @@ public class Equation {
                                 tokens.remove(t.previous);
                                 tokens.remove(t);
                                 tokens.add(Symbol.lookupElementWise(c));
+                            } else if (t.previous.getSymbol() == Symbol.TIMES) { // allow FORTRAN/PYTHON ** for ^
+                            	if (c == '*') {
+                                    tokens.remove(t.previous);
+                                    tokens.remove(t);
+                                    tokens.add(Symbol.POWER);                            		
+                            	}
                             }
                         }
                     }

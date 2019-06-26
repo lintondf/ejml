@@ -3,79 +3,17 @@ package org.ejml.equation;
 import java.util.Random;
 
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
+import org.ejml.simple.SimpleMatrix;
 import org.tools4j.meanvar.MeanVarianceSampler;
+
+import com.google.googlejavaformat.java.Formatter;
+import com.google.googlejavaformat.java.FormatterException;
 
 public class TestPerformance {
 	
-//	public class KalmanFilterEquation {
-//
-//	    // system state estimate
-//	    private DMatrixRMaj x,P;
-//
-//	    private Equation eq;
-//
-//	    // Storage for precompiled code for predict and update
-//	    Sequence predictX,predictP;
-//	    Sequence updateY,updateK,updateX,updateP;
-//
-//	    public void configure(DMatrixRMaj F, DMatrixRMaj Q, DMatrixRMaj H) {
-//	        int dimenX = F.numCols;
-//
-//	        x = new DMatrixRMaj(dimenX,1);
-//	        P = new DMatrixRMaj(dimenX,dimenX);
-//
-//	        eq = new Equation();
-//
-//	        // Provide aliases between the symbolic variables and matrices we normally interact with
-//	        // The names do not have to be the same.
-//	        eq.alias(x,"x",P,"P",Q,"Q",F,"F",H,"H");
-//
-//	        // Dummy matrix place holder to avoid compiler errors.  Will be replaced later on
-//	        eq.alias(new DMatrixRMaj(1,1),"z");
-//	        eq.alias(new DMatrixRMaj(1,1),"R");
-//
-//	        // Pre-compile so that it doesn't have to compile it each time it's invoked.  More cumbersome
-//	        // but for small matrices the overhead is significant
-//	        predictX = eq.compile("x = F*x");
-//	        predictP = eq.compile("P = F*P*F' + Q");
-//
-//	        updateY = eq.compile("y = z - H*x");
-//	        updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
-//	        updateX = eq.compile("x = x + K*y");
-//	        updateP = eq.compile("P = P-K*(H*P)");
-//	    }
-//
-//	    public void setState(DMatrixRMaj x, DMatrixRMaj P) {
-//	        this.x.set(x);
-//	        this.P.set(P);
-//	    }
-//
-//	    public void predict() {
-//	        predictX.perform();
-//	        predictP.perform();
-//	    }
-//
-//	    public void update(DMatrixRMaj z, DMatrixRMaj R) {
-//
-//	        // Alias will overwrite the reference to the previous matrices with the same name
-//	        eq.alias(z,"z"); eq.alias(R,"R");
-//
-//	        updateY.perform();
-//	        updateK.perform();
-//	        updateX.perform();
-//	        updateP.perform();
-//	    }
-//
-//	    public DMatrixRMaj getState() {
-//	        return x;
-//	    }
-//
-//	    public DMatrixRMaj getCovariance() {
-//	        return P;
-//	    }
-//	}	
 	
 	
 	Random rand = new Random(234);
@@ -116,7 +54,7 @@ public class TestPerformance {
 		updateP.perform();
 	}
 
-	public static void main(String[] args) {
+	public static void oldmain(String[] args) {
 		TestPerformance test = new TestPerformance();
 		test.perform();
 		DMatrixRMaj Pcheck = new DMatrixRMaj( new double[][] {
@@ -153,5 +91,110 @@ public class TestPerformance {
 		}
 		System.out.println( overall.getMean() + " " + overall.getStdDevUnbiased());
 	}
+	
+	public static void main(String[] args) {
+		Equation eq = new Equation();
+		Double a=1.,b=2.,c=3.,d=4.,g=5.,f=6.;
+		eq.alias(a,"a", b,"b", c,"c", d,"d", g,"g", f,"f");
+		Sequence s = eq.compile("out=-1+2*(3+4)+3/5-6");
+//		Sequence s = eq.compile("out=-a+b*(c+d)+c/g-sin(f)");
+		s.print();
+		ManagerTempVariables tempManager = new ManagerTempVariables();
+		EmitJavaOperation coder = new EmitJavaOperation();
+		CompileCodeOperations compiler = new CompileCodeOperations(coder, s, tempManager );
+		compiler.optimize();
+		System.out.println(compiler.toString());
+		
+		
+		Integer n = 10;
+		Double tau = 0.1;
+		DMatrixRMaj M = new DMatrixRMaj(5,5);
+		M.zero();
+		eq.alias(n, "n", tau, "tau", M, "M");
+		s = eq.compile("M(2,4) = 588*(25*n**8-100*n**7+250*n**6-700*n**5+1585*n**4-280*n**3-540*n**2-600*n+288)/(n*tau**2*(n**10+11*n**9-330*n**7-627*n**6+3003*n**5+7370*n**4-9020*n**3-24024*n**2+6336*n+17280))");
+		s.print();
+		compiler = new CompileCodeOperations(coder, s, tempManager );
+		compiler.optimize();
+		System.out.println(compiler.toString());
+		
+		StringBuilder body = new StringBuilder();
+		for (Info info : s.getInfos()) {
+    		coder.emitOperation( body, info );
+    	}
+		System.out.println(body.toString());
+		CommonOps_DDRM.insert( new DMatrixRMaj((2+1 - 2), (4+1 - 4), ((588 * (((((((((25 * (Math.pow(n, 8))) - (100 * (Math.pow(n, 7)))) + (250 * (Math.pow(n, 6)))) - (700 * (Math.pow(n, 5)))) + (1585 * (Math.pow(n, 4)))) - (280 * (Math.pow(n, 3)))) - (540 * (Math.pow(n, 2)))) - (600 * n)) + 288)) / ((n * (Math.pow(tau, 2))) * ((((((((((Math.pow(n, 10)) + (11 * (Math.pow(n, 9)))) - (330 * (Math.pow(n, 7)))) - (627 * (Math.pow(n, 6)))) + (3003 * (Math.pow(n, 5)))) + (7370 * (Math.pow(n, 4)))) - (9020 * (Math.pow(n, 3)))) - (24024 * (Math.pow(n, 2)))) + (6336 * n)) + 17280)))), M, 2, 4 );
+		M.print();
+	}
+	
+	public static void mainx(String[] args) {
+
+        System.out.println(removeParenthesis(new StringBuilder("((aaa*b)+c*(e+f))")));
+        System.out.println(removeParenthesis(new StringBuilder("(a+(b*c))*(d*(f*j))")));
+        System.out.println(removeParenthesis(new StringBuilder("(a+(b))")));
+        System.out.println(removeParenthesis(new StringBuilder("((a+b)+((c+d)))")));
+    }
+
+    public static String removeParenthesis(StringBuilder sb) {
+        if (removeParenthesis(null, sb, 0)) {
+            sb.deleteCharAt(0);
+        }
+        return sb.toString();
+    }
+
+    public static boolean removeParenthesis(Integer leftPrecedence, StringBuilder sb, int start) {
+        Integer lastPrecedence = null;
+        Integer minPrecedence = null;
+        while (start < sb.length()) {
+            if (sb.charAt(start) == '(') {
+                if (removeParenthesis(lastPrecedence, sb, start + 1)) {
+                    sb.deleteCharAt(start);
+                } else {
+                    int count = 0;
+                    do {
+                        if (sb.charAt(start) == '(') {
+                            count++;
+                        } else if (sb.charAt(start) == ')') {
+                            count--;
+                        }
+                        start++;
+                    } while (start < sb.length() && count != 0);
+                    continue;
+                }
+            } else if (sb.charAt(start) == ')') {
+                if(minPrecedence == null) {
+                    sb.deleteCharAt(start);
+                    return true;
+                }
+                Integer rightPrecedence = start == sb.length() - 1 || sb.charAt(start + 1) == ')' ? null
+                        : getPrecedence(sb.charAt(start + 1));
+                if ((leftPrecedence != null && minPrecedence < leftPrecedence)
+                        || (rightPrecedence != null && minPrecedence < rightPrecedence)) {
+                    return false;
+                } else {
+                    sb.deleteCharAt(start);
+                    return true;
+                }
+            } else if (sb.charAt(start) < 'a' || sb.charAt(start) > 'z') {
+                lastPrecedence = getPrecedence(sb.charAt(start));
+                if (minPrecedence == null || minPrecedence > lastPrecedence) {
+                    minPrecedence = lastPrecedence;
+                }
+            }
+            start++;
+        }
+        return false;
+    }
+
+    public static int getPrecedence(char operator) {
+        switch (operator) {
+        case '+':
+        case '-':
+            return 1;
+        case '*':
+        case '/':
+            return 2;
+        }
+        throw new IllegalArgumentException(">>" + operator + "<<");
+    }	
 
 }
