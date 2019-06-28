@@ -49,9 +49,12 @@ public class TestPlumbing {
         seq = eq.compile("b = (2+3*4)*i - (1-7*4)*j + (2.0+3.0*4.0)*a");
         compiler = new CompileCodeOperations(coder, seq, tempManager );
 		compiler.optimize();
+//		System.out.println(compiler.toString());
 		String expected = "INPUT:     12 operations,  7 integer temps,  4 double temps,  0 matrix temps\n" + 
 				"OPTIMIZATIONS:\n" + 
 				"  removed    11 constant expressions\n" + 
+				"  removed     7 integer temporaries\n" + 
+				"  removed     4 double temporarie\n" + 
 				"OUTPUT:     0 operations,  0 integer temps,  1 double temps,  0 matrix temps\n" + 
 				"INPUTS:\n" + 
 				"  Integer{3} : ScalarI           : Integer{3} : ScalarI: \n" + 

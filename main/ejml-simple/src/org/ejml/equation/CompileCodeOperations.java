@@ -229,7 +229,7 @@ public class CompileCodeOperations {
     }
     
 	
-	//matrix temps must not appear on both the lhs and rhs; TODO maybe operation semantics dependent?
+	//matrix temps must not appear on both the lhs and rhs; TODO operation semantics dependent?
 	void eliminateRedundantMatrixTemps(List<Usage> usages) {
 		if (! usages.isEmpty()) {
 			for (int i = 0; i < usages.size(); i++) {
@@ -532,15 +532,18 @@ public class CompileCodeOperations {
 					
 					if (info.output.getType() == VariableType.SCALAR) {
 						stats.constantExpressions++;
+//						System.out.print("ELIMINATE: " + info.toString());
 						VariableScalar scalar = (VariableScalar) info.output;
 						if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
+							stats.integerTemps++;
 							scalar.setName( String.format("Integer{%s}", reduction.value));
 							it.remove();
 						} else {
+							stats.doubleTemps++;
 							scalar.setName( String.format("Double{%s}", reduction.value));
 							it.remove();
 						}
-						
+//						System.out.println(" -> " + scalar );
 					} // output is scalar
 				} // if constant
 			} // if temp

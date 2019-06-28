@@ -544,7 +544,7 @@ public class TestExtents {
 		Extents extents = new Extents();
 		VariableIntegerSequence rseq = variablesToFor( new int[] {1, 1, 10} );
 		codeExtents = new CodeExtents( coder, Arrays.asList( new Variable[] {rseq} ) );
-		System.out.println(codeExtents.toString());
+		//System.out.println(codeExtents.toString());
 		assertEquals(codeExtents.toString(), "BLOCK{0,1,1,11} [(1 - 0),(11 - 1)]");
 		
     	start = new TokenList.Token(new VariableInteger(6));

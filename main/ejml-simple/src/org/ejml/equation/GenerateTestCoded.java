@@ -703,10 +703,12 @@ public class GenerateTestCoded {
 							nSkipped++;
 							continue;
 						}
-//						if (!matcher.group(1).equals("compile_neg"))
+//						if (!matcher.group(1).equals("compile_assign_submatrix_scalar1"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;
+						} else {
+							System.out.println("NOT CODED: " + matcher.group(1));
 						}
 					}
 				}

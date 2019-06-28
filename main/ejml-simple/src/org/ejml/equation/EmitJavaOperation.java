@@ -632,8 +632,13 @@ public class EmitJavaOperation implements IEmitOperation {
     				codeExtents.codeComplexColIndices(lastRowsCols),
     				codeExtents.codeNumCols(lastRowsCols)) );
     	} else if (codeExtents.isBlock) {
-    		sb.append(String.format(formatCommonOps4, "insert", source, codeOp.output.getName(), 
-    				codeExtents.codeSimpleStartRow(), codeExtents.codeSimpleStartCol()) );
+    		String row = codeExtents.codeSimpleStartRow();
+    		String col = codeExtents.codeSimpleStartCol();
+    		if (! source.startsWith("new DMatrixRMaj(1, 1, ")) {
+    			sb.append(String.format(formatCommonOps4, "insert", source, codeOp.output.getName(), row, col) );
+    		} else {
+    			sb.append(String.format("%s.unsafe_set(%s, %s, %s);\n", codeOp.output.getName(), row, col, codeOp.input.get(0).getOperand()) );
+    		}
     	} else {
     		sb.append(String.format(formatCommonOps6, "insert", source, codeOp.output.getName(), 
     				codeExtents.codeComplexRowIndices(lastRowsCols), codeExtents.codeNumRows(lastRowsCols), 

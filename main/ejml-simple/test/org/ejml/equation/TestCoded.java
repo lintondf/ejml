@@ -249,7 +249,7 @@ public class TestCoded {
 
 
     @Test
-    public void compile_assign_submatrix_scalar() {
+    public void compile_assign_submatrix_scalar1() {
         Equation eq = new Equation();
 
         SimpleMatrix A = SimpleMatrix.random_DDRM(6, 5, -1, 1, rand);
@@ -260,15 +260,49 @@ public class TestCoded {
         eq.process("A(1,2)=0.5");
 
         assertEquals(A.get(1, 2), 0.5, UtilEjml.TEST_F64);
+        // eq: A(1,2)=0.5 -> A
+        DMatrixRMaj A_coded = compile_assign_submatrix_scalar1_Coded(A.getDDRM());
+        assertTrue(isIdentical(A_coded, A));
+    }
 
+    protected DMatrixRMaj compile_assign_submatrix_scalar1_Coded(final DMatrixRMaj A_in) {
+        // A(1,2)=0.5
+        DMatrixRMaj	A = new DMatrixRMaj(A_in);
+
+        A.unsafe_set(1, 2, 0.5);
+
+        return A;
+    }
+
+
+    @Test
+    public void compile_assign_submatrix_scalar2() {
+        Equation eq = new Equation();
+
+        SimpleMatrix A = SimpleMatrix.random_DDRM(6, 5, -1, 1, rand);
+
+        eq.alias(A, "A");
         // multiple elements
         eq.process("A(1:2,2:4)=0.5");
+        
+        assertEquals( A.get(1,2), 0.5, UtilEjml.TEST_F64);
+        assertEquals( A.get(1,3), 0.5, UtilEjml.TEST_F64);
+        assertEquals( A.get(1,4), 0.5, UtilEjml.TEST_F64);
+        assertEquals( A.get(2,2), 0.5, UtilEjml.TEST_F64);
+        assertEquals( A.get(2,3), 0.5, UtilEjml.TEST_F64);
+        assertEquals( A.get(2,4), 0.5, UtilEjml.TEST_F64);
+        // eq: A(1:2,2:4)=0.5 -> A
+        DMatrixRMaj A_coded = compile_assign_submatrix_scalar2_Coded(A.getDDRM());
+        assertTrue(isIdentical(A_coded, A));
+    }
 
-        for (int i = 1; i <= 2; i++) {
-            for (int j = 2; j <= 4; j++) {
-                assertEquals(A.get(i, j), 0.5, UtilEjml.TEST_F64);
-            }
-        }
+    protected DMatrixRMaj compile_assign_submatrix_scalar2_Coded(final DMatrixRMaj A_in) {
+        // A(1:2,2:4)=0.5
+        DMatrixRMaj	A = new DMatrixRMaj(A_in);
+
+        CommonOps_DDRM.insert( new DMatrixRMaj(2, 3, 0.5), A, 1, 2 );
+
+        return A;
     }
 
 
