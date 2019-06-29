@@ -26,6 +26,8 @@ package org.ejml.equation;
 public class Variable {
     public VariableType type;
     public String       name;
+    int                 precedence = Precedence.MAX_PRECEDENCE;
+    
 	/**
 	 * If true then the matrix is dynamically resized to match the output of a function
 	 */
@@ -43,6 +45,19 @@ public class Variable {
 		return name;
 	}
 
+	public void setOperand(String operand) {
+		this.name = operand;
+	}
+	
+	
+	public int getPrecedence() {
+		return precedence;
+	}
+	
+	public void setPrecedence( int p ) {
+		this.precedence = p;
+	}
+	
 	protected Variable(VariableType type, String name) {
         this.type = type;
         this.name = name;
@@ -67,5 +82,6 @@ public class Variable {
 	public boolean isConstant() {
 		return false;
 	}
+
 	
 }

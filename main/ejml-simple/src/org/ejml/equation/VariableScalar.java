@@ -93,26 +93,14 @@ public abstract class VariableScalar extends Variable {
 		}
 	}
     
-    public static void main(String[] args) {
-    	
-    	String[] tests = {
-    			"zot",
-    			"Integer{1}",
-    			"Integer{i + 2*4}",
-    			"Integer{i + 2*4 + j}",
-    			"Double{1}",
-    			"Double{i + 2*4}",
-    			"Double{i + 2*4 + j}",
-    	};
-    	
-    	for (String test : tests) {
-    		Matcher matcher = expression.matcher(test);
-    		if (matcher.find()) {
-    			Matcher m2 = letter.matcher(matcher.group(1));
-    			System.out.printf("%s FOUND %s %b\n", test, matcher.group(1), m2.find());
-    		} else {
-    			System.out.printf("%s NOT FOUND\n", test);
-    		}
-    	}
-    }
+    @Override
+	public void setOperand(String operand) {
+		if (this.getName().endsWith("}")) {
+			int i = this.getName().indexOf('{');
+			this.name = this.name.substring(0, i+1) + operand + "}";
+		} else {
+			this.name = operand;
+		}
+	}
+	
 }

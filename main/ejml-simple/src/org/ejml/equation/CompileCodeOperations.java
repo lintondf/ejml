@@ -21,7 +21,6 @@ package org.ejml.equation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -395,6 +394,25 @@ public class CompileCodeOperations {
     	String value;
     }
     
+    static int parseInt( String s ) {
+    	if (s.startsWith("(")) {
+    		s = s.substring(1, s.length()-1);
+    	}
+    	if (s.startsWith("-")) {
+    		return -Integer.parseInt(s.substring(1));    		
+    	} else {
+    		return Integer.parseInt(s);
+    	}
+    }
+    
+    String getOperandWithParenthesis(Variable v, int operatorPrecedence) {
+    	String operand = v.getOperand();
+    	if (v.getPrecedence() < operatorPrecedence) {
+    		operand = "(" + operand + ")";
+    	}
+    	return operand;
+    }
+    
     Reduction reduceTemporaryOperations( Info info) {
     	Reduction ret = new Reduction();
 		if (info.op == null)
@@ -415,139 +433,114 @@ public class CompileCodeOperations {
 			}
 		}
 		
-		Variable p0; 
-		Variable p1;
+		Integer thisPrecedence = precedence.get(info.op.name());
+		Variable p0 = info.input.get(0);
+		String p0Operand = getOperandWithParenthesis(p0, thisPrecedence);
+		Variable p1 = (info.input.size() > 1) ? info.input.get(1) : null;
+		String p1Operand = (p1 != null) ? getOperandWithParenthesis(p1, thisPrecedence) : null;
 		ret.operand = info.op.name();
 		ret.isSimpleConstant = false;
 		switch (info.op.name()) {
 		case "neg-i":
 		case "neg-s":
-			p0 = info.input.get(0);
 			if (isIntegerConstant(p0))  {
 				ret.isSimpleConstant = true;
-				ret.value = Integer.toString( -Integer.parseInt(p0.getOperand()));
+				ret.value = Integer.toString( -parseInt(p0Operand));
+				info.output.setPrecedence(Precedence.MAX_PRECEDENCE);
 				return ret;
 			}
 			break;
 		case "add-ii":
 		case "add-ss":
-			p0 = info.input.get(0);
-			p1 = info.input.get(1);
 			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
 				ret.isSimpleConstant = true;
-				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) + Integer.parseInt(p1.getOperand()) );
+				ret.value = Integer.toString( parseInt(p0Operand) + parseInt(p1Operand) );
+				info.output.setPrecedence(Precedence.MAX_PRECEDENCE);
 				return ret;
 			}
 			break;
 		case "subtract-ii":
 		case "subtract-ss":
-			p0 = info.input.get(0);
-			p1 = info.input.get(1);
 			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
 				ret.isSimpleConstant = true;
-				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) - Integer.parseInt(p1.getOperand()) );
+				ret.value = Integer.toString( parseInt(p0Operand) - parseInt(p1Operand) );
+				info.output.setPrecedence(Precedence.MAX_PRECEDENCE);
 				return ret;
 			}
 			break;
 		case "multiply-ii":
 		case "multiply-ss":
-			p0 = info.input.get(0);
-			p1 = info.input.get(1);
 			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
 				ret.isSimpleConstant = true;
-				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) * Integer.parseInt(p1.getOperand()) );
+				ret.value = Integer.toString( parseInt(p0Operand) * parseInt(p1Operand) );
+				info.output.setPrecedence(Precedence.MAX_PRECEDENCE);
 				return ret;
 			}
 			break;
 		case "divide-ii":
 		case "divide-ss":
-			p0 = info.input.get(0);
-			p1 = info.input.get(1);
 			if (isIntegerConstant(p0) && isIntegerConstant(p1)) {
 				ret.isSimpleConstant = true;
-				ret.value = Integer.toString( Integer.parseInt(p0.getOperand()) / Integer.parseInt(p1.getOperand()) );
+				ret.value = Integer.toString( parseInt(p0Operand) / parseInt(p1Operand) );
+				info.output.setPrecedence(Precedence.MAX_PRECEDENCE);
 				return ret;
 			}
 			break;
 		default:
 		}
 		StringBuilder value = new StringBuilder();
+		ArrayList<String> originals = new ArrayList<>();
+		originals.add(p0.getOperand());
+		p0.setOperand(p0Operand);
+		if (p1 != null) {
+			originals.add(p1.getOperand());
+			p1.setOperand(p1Operand);
+		}
 		coder.emitOperation(value, info );
+		p0.setOperand(originals.get(0));
+		if (p1 != null) {
+			p1.setOperand(originals.get(1));			
+		}
+		
 		int i = value.indexOf(" = ");
 		if (i < 0)
 			return null;
 		ret.value = value.substring(i+3).replace(";\n", "");
+		info.output.setPrecedence( thisPrecedence );
 		return ret;
 	}
-	
-	/**
-	 * If a temporary exists solely to hold a constant expression eliminate it.
-	 * 
-	 * Convert the output temp to a scalar constant holding the constant expression.
-	 */
-    
-	static class Precedence extends HashMap<String, Integer> {
-		public Precedence() {
-			this.put("add-ii", 10);
-			this.put("add-ss", 10);
-			this.put("subtract-ii", 10);
-			this.put("subtract-ss", 10);
-			this.put("multiply-ii", 10);
-			this.put("multiply-ss", 10);
-			this.put("divide-ii", 10);
-			this.put("divide-ss", 10);
-			this.put("pow-ii", 10);
-			this.put("pow-ss", 10);
-			this.put("neg-i", 10);
-			this.put("neg-s", 10);
-		}
-		
-		public Integer get(String key) {
-			Integer v = super.get(key);
-			if (v != null) {
-				return v;
-			}
-//			System.out.println(key + " missing");
-			return 0;
-		}
- 	}
 	
 	final Precedence precedence = new Precedence();
 	
     
 	void eliminateConstantExpressions() {
+//		infos.forEach(System.out::println); //TODO
 		Iterator<Info> it = infos.iterator();
-		Integer lastPrecedence = 0;
     	while( it.hasNext()) {
     		Info info = it.next();
-    		Integer thisPrecedence = precedence.get(info.op.name());
     		if (! it.hasNext())
     			return;  // do not eliminate constants in final step
 			if (info.output.isTemp()) {
 				Reduction reduction = reduceTemporaryOperations(info);
 				if (reduction != null) {
-					if (! reduction.isSimpleConstant && lastPrecedence > thisPrecedence) {
-						reduction.value = "("+reduction.value+")";
-					}
-					
 					if (info.output.getType() == VariableType.SCALAR) {
 						stats.constantExpressions++;
-//						System.out.print("ELIMINATE: " + info.toString());
 						VariableScalar scalar = (VariableScalar) info.output;
 						if (scalar.getScalarType() == VariableScalar.Type.INTEGER) {
 							stats.integerTemps++;
 							scalar.setName( String.format("Integer{%s}", reduction.value));
+							scalar.setPrecedence(info.output.getPrecedence());
 							it.remove();
 						} else {
 							stats.doubleTemps++;
 							scalar.setName( String.format("Double{%s}", reduction.value));
+							scalar.setPrecedence(info.output.getPrecedence());
 							it.remove();
 						}
-//						System.out.println(" -> " + scalar );
+//						System.out.println("ELIMINATE: " + info.toString() + " -> " + scalar );
 					} // output is scalar
 				} // if constant
 			} // if temp
-			lastPrecedence = thisPrecedence;
     	} // while
 	}
     

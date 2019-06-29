@@ -160,24 +160,24 @@ public class TestSequence {
 				"  tm7 : VAR_MATRIX TEMP          : tm7 : VAR_MATRIX TEMP: 6,7,\n" + 
 				"TARGET:\n" + 
 				"  K : VAR_MATRIX                 : K : VAR_MATRIX: \n" + 
-				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
-				"multiply-mm[H:MATRIX,P:MATRIX]->tm2:MATRIX\n" + 
-				"multiply-mm[tm2:MATRIX,tm1:MATRIX]->tm3:MATRIX\n" + 
-				"add-mm[tm3:MATRIX,R:MATRIX]->tm1:MATRIX\n" + 
-				"inv-m[tm1:MATRIX]->tm5:MATRIX\n" + 
-				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
-				"multiply-mm[P:MATRIX,tm1:MATRIX]->tm7:MATRIX\n" + 
-				"multiply-mm[tm7:MATRIX,tm5:MATRIX]->K:MATRIX\n";
+				"transpose-m[H:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"multiply-mm[H:MATRIX<100>,P:MATRIX<100>]=>tm2:MATRIX<100>\n" + 
+				"multiply-mm[tm2:MATRIX<100>,tm1:MATRIX<100>]=>tm3:MATRIX<100>\n" + 
+				"add-mm[tm3:MATRIX<100>,R:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"inv-m[tm1:MATRIX<100>]=>tm5:MATRIX<100>\n" + 
+				"transpose-m[H:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"multiply-mm[P:MATRIX<100>,tm1:MATRIX<100>]=>tm7:MATRIX<100>\n" + 
+				"multiply-mm[tm7:MATRIX<100>,tm5:MATRIX<100>]=>K:MATRIX<100>\n";
 		assertEquals(actual, expected);
 		
-		expected = "transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
-				"multiply-mm[H:MATRIX,P:MATRIX]->tm2:MATRIX\n" + 
-				"multiply-mm[tm2:MATRIX,tm1:MATRIX]->tm3:MATRIX\n" + 
-				"add-mm[tm3:MATRIX,R:MATRIX]->tm1:MATRIX\n" + 
-				"inv-m[tm1:MATRIX]->tm5:MATRIX\n" + 
-				"transpose-m[H:MATRIX]->tm1:MATRIX\n" + 
-				"multiply-mm[P:MATRIX,tm1:MATRIX]->tm7:MATRIX\n" + 
-				"multiply-mm[tm7:MATRIX,tm5:MATRIX]->K:MATRIX\n";
+		expected = "transpose-m[H:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"multiply-mm[H:MATRIX<100>,P:MATRIX<100>]=>tm2:MATRIX<100>\n" + 
+				"multiply-mm[tm2:MATRIX<100>,tm1:MATRIX<100>]=>tm3:MATRIX<100>\n" + 
+				"add-mm[tm3:MATRIX<100>,R:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"inv-m[tm1:MATRIX<100>]=>tm5:MATRIX<100>\n" + 
+				"transpose-m[H:MATRIX<100>]=>tm1:MATRIX<100>\n" + 
+				"multiply-mm[P:MATRIX<100>,tm1:MATRIX<100>]=>tm7:MATRIX<100>\n" + 
+				"multiply-mm[tm7:MATRIX<100>,tm5:MATRIX<100>]=>K:MATRIX<100>\n";
     	actual = new CaptureSystemOut() {
 			@Override
 			public boolean run() {

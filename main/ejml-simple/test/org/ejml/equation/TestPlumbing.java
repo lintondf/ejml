@@ -71,11 +71,11 @@ public class TestPlumbing {
 				"  a : ScalarD                    : a : ScalarD: \n" + 
 				"INTEGER TEMPS:\n" + 
 				"DOUBLE TEMPS:\n" + 
-				"  Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a} : ScalarD : Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a} : ScalarD: 0,\n" + 
+				"  Double{14 * i - -27 * j + (2.0 + 3.0 * 4.0) * a} : ScalarD : Double{14 * i - -27 * j + (2.0 + 3.0 * 4.0) * a} : ScalarD: 0,\n" + 
 				"MATRIX TEMPS:\n" + 
 				"TARGET:\n" + 
 				"  b : ScalarD                    : b : ScalarD: \n" + 
-				"copy-ss[Double{14 * i - -27 * j + 2.0 + 3.0 * 4.0 * a}:SCALAR]->b:SCALAR\n";
+				"copy-ss[Double{14 * i - -27 * j + (2.0 + 3.0 * 4.0) * a}:SCALAR<10>]=>b:SCALAR<100>\n";
 		assertEquals(expected, compiler.toString());
 		
 		try {
@@ -105,6 +105,53 @@ public class TestPlumbing {
 		info.op = new OperationCodeFactory.CodeOperation("neg-s", info);
 		info.range = Arrays.asList( new Variable[] { VariableInteger.factory(0)} );
 		assertTrue( null == compiler.reduceTemporaryOperations(info));
+		//TODO test paren generation
+    }
+    
+	@Test
+    public void testCompileCodeOperations_precedence() {
+    	Sequence seq = new Sequence();
+    	Info info = new Info();
+    	info.output = VariableInteger.factory(1);
+    	info.range = Arrays.asList(new Variable[] {info.output} );
+    	ManagerTempVariables tempManager;
+    	IEmitOperation coder;
+		tempManager = new ManagerTempVariables();
+		coder = new EmitJavaOperation();
+		
+        int  i = 1, j = 2;
+        double a = 3.0, b = 4.0;
+		
+        Equation eq = new Equation();
+        
+        eq.alias(i,"i", j, "j", a, "a", b, "b");
+        
+        seq = eq.compile("b = (i + j)/i*i - (i +j)*j + (2.0+3.0*4.0)*(a+b)"); //("b = (i+j)*a"); //
+        CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, tempManager );
+		compiler.optimize();
+//		System.out.println(compiler.toString());
+		String expected = "INPUT:     12 operations,  6 integer temps,  5 double temps,  0 matrix temps\n" + 
+				"OPTIMIZATIONS:\n" + 
+				"  removed    11 constant expressions\n" + 
+				"  removed     6 integer temporaries\n" + 
+				"  removed     5 double temporarie\n" + 
+				"OUTPUT:     0 operations,  0 integer temps,  1 double temps,  0 matrix temps\n" + 
+				"INPUTS:\n" + 
+				"  i : ScalarI                    : i : ScalarI: \n" + 
+				"  j : ScalarI                    : j : ScalarI: \n" + 
+				"  Double{3.0} : ScalarD          : Double{3.0} : ScalarD: \n" + 
+				"  Double{4.0} : ScalarD          : Double{4.0} : ScalarD: \n" + 
+				"  Double{2.0} : ScalarD          : Double{2.0} : ScalarD: \n" + 
+				"  a : ScalarD                    : a : ScalarD: \n" + 
+				"  b : ScalarD                    : b : ScalarD: \n" + 
+				"INTEGER TEMPS:\n" + 
+				"DOUBLE TEMPS:\n" + 
+				"  Double{(i + j) / i * i - (i + j) * j + (2.0 + 3.0 * 4.0) * (a + b)} : ScalarD : Double{(i + j) / i * i - (i + j) * j + (2.0 + 3.0 * 4.0) * (a + b)} : ScalarD: 0,\n" + 
+				"MATRIX TEMPS:\n" + 
+				"TARGET:\n" + 
+				"  b : ScalarD                    : b : ScalarD: \n" + 
+				"copy-ss[Double{(i + j) / i * i - (i + j) * j + (2.0 + 3.0 * 4.0) * (a + b)}:SCALAR<10>]=>b:SCALAR<100>\n";
+		assertEquals(expected, compiler.toString());
     }
 
     /** 
@@ -205,7 +252,7 @@ public class TestPlumbing {
     	Info info = new Info();
     	assertEquals(info.toString(), "<No-Operation>]");
     	info = new Info( new VariableInteger(1));
-    	assertEquals(info.toString(), "<No-Operation>[:SCALAR]");
+    	assertEquals("<No-Operation>[:SCALAR<100>]", info.toString());
     	info.output = new VariableInteger(1);
     	info.output.setName("outvar");
     	info.range = Arrays.asList( new Variable[] {new VariableInteger(1), new VariableInteger(2)} );
@@ -214,9 +261,9 @@ public class TestPlumbing {
     			Info.DimensionSources.LHS_COLS,
     			Info.DimensionSources.RHS_ROWS,
     			Info.DimensionSources.RHS_COLS} );
-    	assertEquals(info.toString(), "<No-Operation>[:SCALAR]<:SCALAR,:SCALAR>->outvar:SCALAR[LHS_ROWS,LHS_COLS,RHS_ROWS,RHS_COLS]");
+    	assertEquals(info.toString(), "<No-Operation>[:SCALAR<100>]<:SCALAR<100>,:SCALAR<100>>=>outvar:SCALAR<100>[LHS_ROWS,LHS_COLS,RHS_ROWS,RHS_COLS]");
     	info = new Info( new VariableInteger(1), new VariableDouble(3.0)) ;
-    	assertEquals(info.toString(), "<No-Operation>[:SCALAR,:SCALAR]");
+    	assertEquals(info.toString(), "<No-Operation>[:SCALAR<100>,:SCALAR<100>]");
     	info = new Info( new MatrixConstructor(new ManagerTempVariables() ) );
     	assertEquals(info.toString(), "<No-Operation>(CONSTRUCT(tm1 : VAR_MATRIX TEMP)) ]");
     	info.setOperation();  // for coverage of no-op override target
@@ -326,7 +373,7 @@ public class TestPlumbing {
     	VariableIntegerSequence s = variablesToExplicit( new int[] {1,2});
     	
     	info = factory.copy(s, s);
-    	assertEquals(info.toString(), "copy-is-is[:INTEGER_SEQUENCE]->:INTEGER_SEQUENCE");
+    	assertEquals(info.toString(), "copy-is-is[:INTEGER_SEQUENCE<100>]=>:INTEGER_SEQUENCE<100>");
     	
     	try {
     		info = factory.neg(s, mgr );

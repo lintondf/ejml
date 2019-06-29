@@ -138,6 +138,9 @@ public class Info {
     		sb.append(var.getName());
     		sb.append(":");
     		sb.append(var.getType().toString());
+    		sb.append("<");
+    		sb.append(Integer.toString(var.getPrecedence()));
+    		sb.append(">");
     		sb.append(",");
     	}
     	sb.deleteCharAt(sb.length()-1);
@@ -148,16 +151,22 @@ public class Info {
         		sb.append(var.getName());
         		sb.append(":");
         		sb.append(var.getType().toString());
+        		sb.append("<");
+        		sb.append(Integer.toString(var.getPrecedence()));
+        		sb.append(">");
         		sb.append(",");
         	}
         	sb.deleteCharAt(sb.length()-1);
         	sb.append(">");    		
     	}
     	if (output != null) {
-    		sb.append("->");
+    		sb.append("=>");
     		sb.append(output.getName());
     		sb.append(":");
     		sb.append(output.getType().toString());
+    		sb.append("<");
+    		sb.append(Integer.toString(output.getPrecedence()));
+    		sb.append(">");
     		if (! dimensions.isEmpty()) {
     	    	sb.append("[");
     	    	for (DimensionSources source : this.dimensions) {
