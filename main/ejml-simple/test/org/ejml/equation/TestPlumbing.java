@@ -35,7 +35,7 @@ public class TestPlumbing {
     	ManagerTempVariables tempManager;
     	IEmitOperation coder;
 		tempManager = new ManagerTempVariables();
-		coder = new EmitJavaOperation();
+		coder = new EmitJavaOperation( new ManagerFunctions());
 		CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, tempManager );
 		compiler.optimize();
 		//System.out.println(compiler.toString());
@@ -117,7 +117,7 @@ public class TestPlumbing {
     	ManagerTempVariables tempManager;
     	IEmitOperation coder;
 		tempManager = new ManagerTempVariables();
-		coder = new EmitJavaOperation();
+		coder = new EmitJavaOperation(new ManagerFunctions());
 		
         int  i = 1, j = 2;
         double a = 3.0, b = 4.0;
@@ -537,8 +537,8 @@ public class TestPlumbing {
     
     @Test
     public void testEmitJavaOperationPlumbing() {
-    	EmitJavaOperation coder = new EmitJavaOperation();
     	ManagerFunctions mgr = new ManagerFunctions();
+    	EmitJavaOperation coder = new EmitJavaOperation(mgr);
     	
     	StringBuilder body = new StringBuilder();
     	Info info = new Info();
@@ -552,7 +552,7 @@ public class TestPlumbing {
     		info.op = operation;
         	try {
         		coder.emitOperation(body, info );
-        		fail("should have thrown");
+        		fail("should have thrown");  //TODO finish user-defined, codeable functions
         	} catch (Exception x) {
         	}
     	}
@@ -599,8 +599,87 @@ public class TestPlumbing {
     	v = mgr.create("zetan", l);
     	assertTrue(v != null);
     	assertEquals(v.op.name, "zetan");
+    	
+    	Sequence seq = new Sequence();
+    	Info info = new Info();
+    	info.output = VariableInteger.factory(1);
+    	info.range = Arrays.asList(new Variable[] {info.output} );
+    	ManagerTempVariables tempManager;
+    	IEmitOperation coder;
+		tempManager = new ManagerTempVariables();
+		coder = new EmitJavaOperation(new ManagerFunctions());
+		
+        int  order = 2;
+		
+        Equation eq = new Equation();
+        
+        eq.alias(order, "order");
+        
+        seq = eq.compile("M = zeros(order+1)");
+    	
     }
     
+    private static class IdentityFunction implements ManagerFunctions.Input1, ManagerFunctions.Coder {
+
+		@Override
+		public String opName() {
+			return "$identity-i";
+		} 
+
+		@Override
+		public Info create(Variable A, ManagerTempVariables manager) {
+	    	final Info info = new Info(A);
+	    	if( A instanceof VariableInteger ) {
+	    		info.output = manager.createMatrix();
+//	    		info.input = Arrays.asList(new Variable[] {A});
+	    		info.op = info.new Operation(opName()) {
+					@Override
+					public void process() {
+	                    int N = ((VariableInteger) info.input.get(0)).value;
+	                    info.outputMatrix().matrix.reshape(N,N);
+	                    CommonOps_DDRM.setIdentity(info.outputMatrix().matrix);
+					}
+	    		};
+	    	} else {
+	    		throw new RuntimeException("identity only takes one integer parameter");
+	    	}
+    		return info;
+		}
+
+		@Override
+		public String code(Info info) {
+			Variable A = info.input.get(0);
+			StringBuilder sb = new StringBuilder();
+			sb.append( String.format("%s.reshape(%s, %s);\n", info.output.getOperand(), A.getOperand(), A.getOperand()) );
+			//CommonOps_DDRM.setIdentity(output.matrix);
+			sb.append( String.format(EmitJavaOperation.formatCommonOps1, "setIdentity", info.output.getOperand()) );
+			return sb.toString();
+		}
+    }
+    
+    @Test
+    public void testManagerFunctionsCodedFunctions() {
+    	ManagerFunctions mgr = new ManagerFunctions();
+    	IdentityFunction createAndCode = new IdentityFunction();
+    	mgr.add1("identity", createAndCode, createAndCode);
+        Equation eq = new Equation();
+        eq.setManagerFunctions(mgr);
+        DMatrixRMaj I = new DMatrixRMaj();
+        eq.alias(I, "I");
+        Sequence seq = eq.compile("I = identity(3)", true, true); //
+        EmitJavaOperation coder = new EmitJavaOperation( mgr );
+		CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, eq.getTemporariesManager() );
+		compiler.optimize();
+		System.out.println(compiler.toString());
+		StringBuilder body = new StringBuilder();
+		for (Info info : seq.infos) {
+			coder.emitOperation(body, info);
+		}
+        System.out.println(body.toString());
+        seq.perform();
+        I.print();
+    }
+
     @Test
     public void testThrows() {
     	try {

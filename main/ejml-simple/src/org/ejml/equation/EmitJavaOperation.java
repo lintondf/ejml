@@ -7,24 +7,30 @@ import org.ejml.equation.Info;;
 
 public class EmitJavaOperation implements IEmitOperation {
 
-	final static String formatReshape = "%s.reshape( %s.numRows, %s.numCols );\n";
-	final static String formatGeneral3 = "%s.%s( %s, %s, %s );\n";
-	final static String formatGeneral2 = "%s.%s( %s, %s );\n";
-	final static String formatGeneral1 = "%s.%s( %s );\n";
-	final static String formatCommonOps6 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s, %s );\n";
-	final static String formatCommonOps5 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s );\n";
-	final static String formatCommonOps4 = "CommonOps_DDRM.%s( %s, %s, %s, %s );\n";
-	final static String formatCommonOps3 = "CommonOps_DDRM.%s( %s, %s, %s );\n";
-	final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );\n";
-	final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );\n";
+	public final static String formatReshape = "%s.reshape( %s.numRows, %s.numCols );\n";
+	public final static String formatGeneral3 = "%s.%s( %s, %s, %s );\n";
+	public final static String formatGeneral2 = "%s.%s( %s, %s );\n";
+	public final static String formatGeneral1 = "%s.%s( %s );\n";
+	public final static String formatCommonOps6 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s, %s );\n";
+	public final static String formatCommonOps5 = "CommonOps_DDRM.%s( %s, %s, %s, %s, %s );\n";
+	public final static String formatCommonOps4 = "CommonOps_DDRM.%s( %s, %s, %s, %s );\n";
+	public final static String formatCommonOps3 = "CommonOps_DDRM.%s( %s, %s, %s );\n";
+	public final static String formatCommonOps2 = "CommonOps_DDRM.%s( %s, %s );\n";
+	public final static String formatCommonOps1 = "CommonOps_DDRM.%s( %s );\n";
 	
 	final static VariableInteger zero = new VariableInteger(0, "Integer{0}");
 	final static VariableInteger one = new VariableInteger(1, "Integer{1}");
+	
+	ManagerFunctions manager;
 	
 //	private boolean isNumeric(String str) {
 //	    return str.matches("[+-]?\\d*(\\.\\d+)?");
 //	}
 	
+	public EmitJavaOperation(ManagerFunctions functions) {
+		this.manager = functions;
+	}
+
 	private void emitReshape(StringBuilder sb, Variable output, Variable A) {
 		String o = output.getOperand();
 		String a = A.getOperand();
@@ -116,7 +122,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -165,7 +171,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(fillGaussian, output.getOperand()));
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -204,11 +210,13 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = Math.pow(%s, %s);\n", output.getOperand(), A.getOperand(), B.getOperand()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
 	private String Op(String op, Info codeOp) {
+		if (codeOp.input.isEmpty())
+			return null;  
 		Variable output = codeOp.output;
 		Variable A = codeOp.input.get(0);
 		
@@ -231,7 +239,6 @@ public class EmitJavaOperation implements IEmitOperation {
                 sb.append(String.format("%s = %s.get(%s, %s);\n", output.getOperand(), A.getOperand(), 
                 		codeOp.input.get(1).getOperand(), codeOp.input.get(2).getOperand() ));
             }
-			
 			return sb.toString();
 		case "rng": // Info rng( final Variable A , ManagerTempVariables manager)
 			sb.append("Random rand = new Random();\n");
@@ -305,7 +312,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps2, "sumRows", A.getName(), output.getName()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -379,7 +386,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = Math.exp(%s);\n", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -415,7 +422,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -449,7 +456,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format("%s = %s;\n", output.getOperand(), A.getOperand()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -485,7 +492,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 
 
@@ -574,7 +581,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			sb.append( String.format(formatCommonOps2, "elementExp", A.getName(), output.getName()) );
 			return sb.toString();
 		}
-		throw new RuntimeException(op + " not implemented");
+		return null;
 	}
 	
 	private String construct(Info codeOp) {
@@ -602,7 +609,7 @@ public class EmitJavaOperation implements IEmitOperation {
 		default:
 			break;
 		}
-		throw new RuntimeException(Arrays.toString(operands) + " " + codeOp.toString() + " not implemented");
+		return null;
 	}
 	
 	private String copyROp(String[] operands, Info codeOp) {
@@ -680,6 +687,15 @@ public class EmitJavaOperation implements IEmitOperation {
 		return zero;
 	}
 	
+	private void emitAppend( String code, StringBuilder body, Info codeOp) {
+		if (code == null) {
+			code = manager.code(codeOp);
+		}
+		if (code != null) {		
+			body.append(code);
+		}
+	}
+	
 	@Override
 	public void emitOperation(StringBuilder body, Info codeOp) {
 		String[] fields = codeOp.op.name().split("-");
@@ -687,40 +703,44 @@ public class EmitJavaOperation implements IEmitOperation {
 		if (fields.length > 1) {
 			inputs = fields[1];
 		}
+		String code = null;
 		if (codeOp.op.name().equals("matrixConstructor")) {
-			body.append( construct( codeOp ) );
+			emitAppend( construct( codeOp ), body, codeOp );
 		} else if (fields[0].equals("copy")) {
-			body.append( copyOp( fields, codeOp) );
+			emitAppend( copyOp( fields, codeOp), body, codeOp );
 		} else if (fields[0].equals("copyR")) {
-			body.append( copyROp( fields, codeOp) );
+			emitAppend( copyROp( fields, codeOp), body, codeOp );
 		} else {
 			switch (inputs) {
 			case "mm":
-				body.append( mmOp( fields[0], codeOp ) );
+				emitAppend( mmOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "ii":
-				body.append( iiOp( fields[0], codeOp ) );
+				emitAppend( iiOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "ss":
-				body.append( ssOp( fields[0], codeOp ) );
+				emitAppend( ssOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "":
-				body.append( Op( fields[0], codeOp ) );
+				emitAppend( Op( fields[0], codeOp ), body, codeOp );
 				break;
 			case "s":
-				body.append( sOp( fields[0], codeOp ) );
+				emitAppend( sOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "ms":
-				body.append( msOp( fields[0], codeOp ) );
+				emitAppend( msOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "i":
-				body.append( iOp( fields[0], codeOp ) );
+				emitAppend( iOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "sm":
-				body.append( smOp( fields[0], codeOp ) );
+				emitAppend( smOp( fields[0], codeOp ), body, codeOp );
 				break;
 			case "m":
-				body.append( mOp( fields[0], codeOp ) );
+				emitAppend( mOp( fields[0], codeOp ), body, codeOp );
+				break;
+			default:
+				emitAppend( null, body, codeOp );
 				break;
 			}
 		}

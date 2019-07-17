@@ -35,6 +35,9 @@ public class ManagerFunctions {
     // List of functions which take in N inputs
     Map<String,Input1> input1 = new HashMap<>();
     Map<String,InputN> inputN = new HashMap<>();
+    
+    // Coders for functions, optional
+    Map<String, Coder> coders = new HashMap<>();
 
     // Reference to temporary variable manager
     protected ManagerTempVariables managerTemp;
@@ -147,6 +150,13 @@ public class ManagerFunctions {
                 throw new RuntimeException("Unknown operation " + op);
         }
     }
+    
+    public String code( Info info ) {
+    	Coder coder = coders.get( info.op.name() );
+    	if (coder == null)
+    		return null;
+    	return coder.code(info);
+    }
 
     /**
      *
@@ -166,6 +176,11 @@ public class ManagerFunctions {
        input1.put(name, function);
     }
 
+    public void add1(String name , Input1 function, Coder coder ) {
+        input1.put(name, function);
+        coders.put(coder.opName(), coder);
+     }
+
     /**
      * Adds a function, with a two inputs, to the list
      * @param name Name of function
@@ -173,6 +188,11 @@ public class ManagerFunctions {
      */
     public void addN(String name , InputN function ) {
         inputN.put(name,function);
+    }
+
+    public void addN(String name , InputN function, Coder coder ) {
+        inputN.put(name,function);
+        coders.put(coder.opName(), coder);
     }
 
     /**
@@ -220,13 +240,21 @@ public class ManagerFunctions {
         });
 
         inputN.put("zeros", (inputs, manager) -> {
-            if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return factory.zeros(inputs.get(0), inputs.get(1), manager);
+            if( inputs.size() > 2 ) throw new RuntimeException("One or two inputs expected");
+            if ( inputs.size() == 1) {
+            	return factory.zeros(inputs.get(0), inputs.get(0), manager);            	
+            } else {
+            	return factory.zeros(inputs.get(0), inputs.get(1), manager);
+            }
         });
 
         inputN.put("ones", (inputs, manager) -> {
-            if( inputs.size() != 2 ) throw new RuntimeException("Two inputs expected");
-            return factory.ones(inputs.get(0), inputs.get(1), manager);
+            if( inputs.size() > 2 ) throw new RuntimeException("One or two inputs expected");
+            if ( inputs.size() == 1) {
+            	return factory.ones(inputs.get(0), inputs.get(0), manager);            	
+            } else {
+            	return factory.ones(inputs.get(0), inputs.get(1), manager);
+            }
         });
 
         inputN.put("rand", (inputs, manager) -> {
@@ -288,4 +316,10 @@ public class ManagerFunctions {
     public static interface InputN {
         Info create(List<Variable> inputs, ManagerTempVariables manager);
     }
+    
+    public static interface Coder {
+    	String code(Info info);
+    	String opName();
+    }
+    
 }

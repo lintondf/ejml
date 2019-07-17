@@ -134,7 +134,7 @@ public class TestSequence {
 		K = new DMatrixRMaj(N, N);
 		eq = new Equation();
 		tempManager = eq.getTemporariesManager();
-		coder = new EmitJavaOperation();
+		coder = new EmitJavaOperation(eq.getManagerFunctions());
 		eq.alias(K, "K", P, "P", H, "H", R, "R");
 		updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
 		CompileCodeOperations compiler = new CompileCodeOperations(coder, updateK, tempManager );

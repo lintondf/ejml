@@ -32,7 +32,7 @@ public class TestPerformance {
 		H = RandomMatrices_DDRM.rectangle(M, N, rand);
 		K = new DMatrixRMaj(N, N);
 		eq = new Equation();
-		coder = new EmitJavaOperation();
+		coder = new EmitJavaOperation(eq.getManagerFunctions());
 		tempManager = eq.getTemporariesManager();
 		eq.alias(K, "K", P, "P", H, "H", R, "R");
 		updateK = eq.compile("K = P*H'*inv( H*P*H' + R )");
@@ -100,30 +100,42 @@ public class TestPerformance {
 //		Sequence s = eq.compile("out=-a+b*(c+d)+c/g-sin(f)");
 		s.print();
 		ManagerTempVariables tempManager = new ManagerTempVariables();
-		EmitJavaOperation coder = new EmitJavaOperation();
+		EmitJavaOperation coder = new EmitJavaOperation(eq.getManagerFunctions());
 		CompileCodeOperations compiler = new CompileCodeOperations(coder, s, tempManager );
 		compiler.optimize();
 		System.out.println(compiler.toString());
 		
-		
-		Integer n = 10;
-		Double tau = 0.1;
+		eq = new Equation();
 		DMatrixRMaj M = new DMatrixRMaj(5,5);
-		M.zero();
-		eq.alias(n, "n", tau, "tau", M, "M");
-		s = eq.compile("M(2,4) = 588*(25*n**8-100*n**7+250*n**6-700*n**5+1585*n**4-280*n**3-540*n**2-600*n+288)/(n*tau**2*(n**10+11*n**9-330*n**7-627*n**6+3003*n**5+7370*n**4-9020*n**3-24024*n**2+6336*n+17280))");
-		s.print();
+		eq.alias(M, "this$variable");
+		s = eq.compile("this$variable = this$variable *this$variable");
 		compiler = new CompileCodeOperations(coder, s, tempManager );
 		compiler.optimize();
 		System.out.println(compiler.toString());
-		
 		StringBuilder body = new StringBuilder();
 		for (Info info : s.getInfos()) {
     		coder.emitOperation( body, info );
     	}
-		System.out.println(body.toString());
-		CommonOps_DDRM.insert( new DMatrixRMaj((2+1 - 2), (4+1 - 4), ((588 * (((((((((25 * (Math.pow(n, 8))) - (100 * (Math.pow(n, 7)))) + (250 * (Math.pow(n, 6)))) - (700 * (Math.pow(n, 5)))) + (1585 * (Math.pow(n, 4)))) - (280 * (Math.pow(n, 3)))) - (540 * (Math.pow(n, 2)))) - (600 * n)) + 288)) / ((n * (Math.pow(tau, 2))) * ((((((((((Math.pow(n, 10)) + (11 * (Math.pow(n, 9)))) - (330 * (Math.pow(n, 7)))) - (627 * (Math.pow(n, 6)))) + (3003 * (Math.pow(n, 5)))) + (7370 * (Math.pow(n, 4)))) - (9020 * (Math.pow(n, 3)))) - (24024 * (Math.pow(n, 2)))) + (6336 * n)) + 17280)))), M, 2, 4 );
-		M.print();
+		System.out.println(body.toString().replace("$", "."));
+		
+//		Integer n = 10;
+//		Double tau = 0.1;
+//		DMatrixRMaj M = new DMatrixRMaj(5,5);
+//		M.zero();
+//		eq.alias(n, "n", tau, "tau", M, "M");
+//		s = eq.compile("M(2,4) = 588*(25*n**8-100*n**7+250*n**6-700*n**5+1585*n**4-280*n**3-540*n**2-600*n+288)/(n*tau**2*(n**10+11*n**9-330*n**7-627*n**6+3003*n**5+7370*n**4-9020*n**3-24024*n**2+6336*n+17280))");
+//		s.print();
+//		compiler = new CompileCodeOperations(coder, s, tempManager );
+//		compiler.optimize();
+//		System.out.println(compiler.toString());
+//		
+//		StringBuilder body = new StringBuilder();
+//		for (Info info : s.getInfos()) {
+//    		coder.emitOperation( body, info );
+//    	}
+//		System.out.println(body.toString());
+//		CommonOps_DDRM.insert( new DMatrixRMaj((2+1 - 2), (4+1 - 4), ((588 * (((((((((25 * (Math.pow(n, 8))) - (100 * (Math.pow(n, 7)))) + (250 * (Math.pow(n, 6)))) - (700 * (Math.pow(n, 5)))) + (1585 * (Math.pow(n, 4)))) - (280 * (Math.pow(n, 3)))) - (540 * (Math.pow(n, 2)))) - (600 * n)) + 288)) / ((n * (Math.pow(tau, 2))) * ((((((((((Math.pow(n, 10)) + (11 * (Math.pow(n, 9)))) - (330 * (Math.pow(n, 7)))) - (627 * (Math.pow(n, 6)))) + (3003 * (Math.pow(n, 5)))) + (7370 * (Math.pow(n, 4)))) - (9020 * (Math.pow(n, 3)))) - (24024 * (Math.pow(n, 2)))) + (6336 * n)) + 17280)))), M, 2, 4 );
+//		M.print();
 	}
 	
 	public static void mainx(String[] args) {

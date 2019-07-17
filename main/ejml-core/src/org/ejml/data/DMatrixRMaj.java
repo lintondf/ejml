@@ -191,7 +191,7 @@ public class DMatrixRMaj extends DMatrix1Row {
 
     @Override
     public void reshape(int numRows, int numCols, boolean saveValues) {
-        if( data.length < numRows * numCols ) {
+        if( data == null || data.length < numRows * numCols ) {
             double []d = new double[ numRows*numCols ];
 
             if( saveValues ) {

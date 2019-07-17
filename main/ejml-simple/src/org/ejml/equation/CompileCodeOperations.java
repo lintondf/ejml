@@ -434,8 +434,8 @@ public class CompileCodeOperations {
 		}
 		
 		Integer thisPrecedence = precedence.get(info.op.name());
-		Variable p0 = info.input.get(0);
-		String p0Operand = getOperandWithParenthesis(p0, thisPrecedence);
+		Variable p0 = (info.input.size() > 0) ? info.input.get(0) : null;
+		String p0Operand = (p0 != null) ? getOperandWithParenthesis(p0, thisPrecedence) : null;
 		Variable p1 = (info.input.size() > 1) ? info.input.get(1) : null;
 		String p1Operand = (p1 != null) ? getOperandWithParenthesis(p1, thisPrecedence) : null;
 		ret.operand = info.op.name();
@@ -490,19 +490,22 @@ public class CompileCodeOperations {
 		}
 		StringBuilder value = new StringBuilder();
 		ArrayList<String> originals = new ArrayList<>();
-		originals.add(p0.getOperand());
-		p0.setOperand(p0Operand);
-		if (p1 != null) {
-			originals.add(p1.getOperand());
-			p1.setOperand(p1Operand);
+		if (p0 != null) {
+			originals.add(p0.getOperand());
+			p0.setOperand(p0Operand);
+			if (p1 != null) {
+				originals.add(p1.getOperand());
+				p1.setOperand(p1Operand);
+			}
 		}
 		coder.emitOperation(value, info );
-		p0.setOperand(originals.get(0));
-		if (p1 != null) {
-			p1.setOperand(originals.get(1));			
-		}
-		
-		int i = value.indexOf(" = ");
+		if (p0 != null) {
+			p0.setOperand(originals.get(0));
+			if (p1 != null) {
+				p1.setOperand(originals.get(1));			
+			}
+		}		
+		int i = value.indexOf(" = "); 
 		if (i < 0)
 			return null;
 		ret.value = value.substring(i+3).replace(";\n", "");

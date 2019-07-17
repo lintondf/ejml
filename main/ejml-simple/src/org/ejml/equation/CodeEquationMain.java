@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,60 +98,123 @@ public class CodeEquationMain {
 		}
 	}
 	
-	final Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\((.+),(.+)\\)");
-	final Pattern reshapeReferencePattern = Pattern.compile("(\\w+)\\.num(\\w+)");
-	
-	private static class ReshapeSources {
-		public ReshapeSources( String target) {
-			this.target = target;
-		}
-		public String target;
-		public String rowVar;
-		public String rowWhich;
-		public String colVar;
-		public String colWhich;
-		
-//		public String toString() {
-//			return String.format("%s %s.%s, %s.%s", target, rowVar, rowWhich, colVar, colWhich);
+//	final static Pattern reshapePattern = Pattern.compile("(\\w+)\\.reshape\\((.+),(.+)\\)");
+//	final static Pattern reshapeReferencePattern = Pattern.compile("(\\w+)\\.num(\\w+)");
+//	
+//	private static class ReshapeSources {
+//		public ReshapeSources( String target) {
+//			this.target = target;
 //		}
-	}
-	
-	private HashMap<String, ReshapeSources> reshapeSourceMap = new HashMap<>();
-	
-	private String generateReshape( Matcher reshapeMatcher ) {
-		String var = reshapeMatcher.group(1);
-		String rows = reshapeMatcher.group(2);
-		String cols = reshapeMatcher.group(3);
-		
-		ReshapeSources reshapeSources = new ReshapeSources(var);
-		Matcher sourceMatcher = reshapeReferencePattern.matcher(rows);
-		if (sourceMatcher.find()) {
-			reshapeSources.rowVar = sourceMatcher.group(1);
-			reshapeSources.rowWhich = "num" + sourceMatcher.group(2);
-		}
-		sourceMatcher = reshapeReferencePattern.matcher(cols);
-		if (sourceMatcher.find()) {
-			reshapeSources.colVar = sourceMatcher.group(1);
-			reshapeSources.colWhich = "num" + sourceMatcher.group(2);
-		}
-		if (reshapeSources.rowVar != null && reshapeSources.colVar != null) {
-			ReshapeSources prior = reshapeSourceMap.get(reshapeSources.rowVar);
-			if (prior != null) {
-				reshapeSources.rowVar = prior.rowVar;
-				reshapeSources.rowWhich = prior.rowWhich;
-				rows = String.format("%s.%s", reshapeSources.rowVar, reshapeSources.rowWhich );
-			}
-			prior = reshapeSourceMap.get(reshapeSources.colVar);
-			if (prior != null) {
-				reshapeSources.colVar = prior.colVar;
-				reshapeSources.colWhich = prior.colWhich;
-				cols = String.format("%s.%s", reshapeSources.colVar, reshapeSources.colWhich );
-			}
-			reshapeSourceMap.put(var, reshapeSources);
-		}
-		String decl = String.format("DMatrixRMaj %s = new DMatrixRMaj(%s,%s);", var, rows, cols );
-		return decl;
-	}
+//		public String target;
+//		public String rowVar;
+//		public String rowWhich;
+//		public String colVar;
+//		public String colWhich;
+//		
+////		public String toString() {
+////			return String.format("%s %s.%s, %s.%s", target, rowVar, rowWhich, colVar, colWhich);
+////		}
+//	}
+//	
+//	private static HashMap<String, ReshapeSources> reshapeSourceMap = new HashMap<>();
+//	
+//	private static String generateReshape( Matcher reshapeMatcher ) {
+//		String var = reshapeMatcher.group(1);
+//		String rows = reshapeMatcher.group(2);
+//		String cols = reshapeMatcher.group(3);
+//		
+//		ReshapeSources reshapeSources = new ReshapeSources(var);
+//		Matcher sourceMatcher = reshapeReferencePattern.matcher(rows);
+//		if (sourceMatcher.find()) {
+//			reshapeSources.rowVar = sourceMatcher.group(1);
+//			reshapeSources.rowWhich = "num" + sourceMatcher.group(2);
+//		}
+//		sourceMatcher = reshapeReferencePattern.matcher(cols);
+//		if (sourceMatcher.find()) {
+//			reshapeSources.colVar = sourceMatcher.group(1);
+//			reshapeSources.colWhich = "num" + sourceMatcher.group(2);
+//		}
+//		if (reshapeSources.rowVar != null && reshapeSources.colVar != null) {
+//			ReshapeSources prior = reshapeSourceMap.get(reshapeSources.rowVar);
+//			if (prior != null) {
+//				reshapeSources.rowVar = prior.rowVar;
+//				reshapeSources.rowWhich = prior.rowWhich;
+//				rows = String.format("%s.%s", reshapeSources.rowVar, reshapeSources.rowWhich );
+//			}
+//			prior = reshapeSourceMap.get(reshapeSources.colVar);
+//			if (prior != null) {
+//				reshapeSources.colVar = prior.colVar;
+//				reshapeSources.colWhich = prior.colWhich;
+//				cols = String.format("%s.%s", reshapeSources.colVar, reshapeSources.colWhich );
+//			}
+//			reshapeSourceMap.put(var, reshapeSources);
+//		}
+//		String decl = String.format("DMatrixRMaj %s = new DMatrixRMaj(%s,%s);", var, rows, cols );
+//		return decl;
+//	}
+//	
+//	public static List<String> generateEquationCode(Equation eq, IEmitOperation coder, Set<String> parameters, List<String> matrices, TreeSet<String> declaredTemps, StringBuilder header, String equationText ) {
+//		StringBuilder body = new StringBuilder();
+//		Sequence sequence = eq.compile(equationText);//, true, true);//); //
+//		CompileCodeOperations generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
+//		generator.optimize();
+//		for (Info info : sequence.getInfos()) {
+//    		coder.emitOperation( body, info );
+//    	}	
+//		for (Usage usage : generator.integerUsages) {
+//			Variable variable = usage.variable;
+//			if (! declaredTemps.contains(variable.getOperand())) {
+//				declaredTemps.add(variable.getOperand() );
+//				if (! variable.getName().endsWith("}"))
+//					coder.declare( header, "", variable );
+//			}
+//		}
+//		for (Usage usage : generator.doubleUsages) {
+//			Variable variable = usage.variable;
+//			if (! declaredTemps.contains(variable.getOperand())) {
+//				declaredTemps.add(variable.getOperand() );
+//				if (! variable.getName().endsWith("}"))
+//					coder.declare( header, "", variable );
+//			}
+//		}
+//
+//		// replace first reshape with declaration of matrix variables and temporaries
+//		List<String> codeLines = Arrays.asList(body.toString().split("\n"));
+//		for (Usage usage : generator.matrixUsages) {
+//			Variable variable = usage.variable;
+//			if (! declaredTemps.contains(variable.getOperand())) {
+//				declaredTemps.add(variable.getOperand() );
+//				//GenerateEquationCoders.declareTemporary( header, "", variable );
+//				for (int i = 0; i < codeLines.size(); i++) {
+//					Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
+//					if (matcher.find()) {
+//						if (matcher.group(1).equals(variable.getName())) {
+//							//System.out.printf("%s in %s\n", variable.getName(), matcher.group(0));
+//							String decl = generateReshape( matcher );
+//							codeLines.set(i, decl);
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//		for (String v : matrices ) {
+//			if (! parameters.contains(v)) {
+//				for (int i = 0; i < codeLines.size(); i++) {
+//					Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
+//					if (matcher.find()) {
+//						if (matcher.group(1).equals(v)) {
+//							//System.out.printf("%s in %s [%s, %s]\n", v, matcher.group(0), matcher.group(2), matcher.group(3));
+//							String decl = generateReshape( matcher );
+//							codeLines.set(i, decl);
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//		return codeLines;
+//	}
 
 	public void finishMethod(List<String> equations) {
 		if (returnType == null)
@@ -162,6 +226,10 @@ public class CodeEquationMain {
 		OperationCodeFactory factory = new OperationCodeFactory();
 		ManagerFunctions mf = new ManagerFunctions(factory);
 		eq.setManagerFunctions(mf);
+		
+		IEmitOperation coder = new EmitJavaOperation(eq.getFunctions());		
+		TreeSet<String> declaredTemps = new TreeSet<>();
+		GenerateEquationCode codeGenerator = new GenerateEquationCode(eq, coder, parameters, matrices, declaredTemps);
 		
 		StringBuilder body = new StringBuilder();
 		StringBuilder header = new StringBuilder();
@@ -182,74 +250,12 @@ public class CodeEquationMain {
 			eq.alias(new DMatrixRMaj(1,1), v);
 		}
 
-		TreeSet<String> declaredTemps = new TreeSet<>();
-		IEmitOperation coder = new EmitJavaOperation();
-		
 		for (String equationText : equations) {
-			body.append(String.format("// %s\n",  equationText));
-			Sequence sequence = eq.compile(equationText);//, true, true);//); //
-			CompileCodeOperations generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
-			generator.optimize();
-			for (Info info : sequence.getInfos()) {
-	    		coder.emitOperation( body, info );
-	    	}	
-			for (Usage usage : generator.integerUsages) {
-				Variable variable = usage.variable;
-				if (! declaredTemps.contains(variable.getOperand())) {
-					declaredTemps.add(variable.getOperand() );
-					if (! variable.getName().endsWith("}"))
-						coder.declare( header, "", variable );
-				}
-			}
-			for (Usage usage : generator.doubleUsages) {
-				Variable variable = usage.variable;
-				if (! declaredTemps.contains(variable.getOperand())) {
-					declaredTemps.add(variable.getOperand() );
-					if (! variable.getName().endsWith("}"))
-						coder.declare( header, "", variable );
-				}
-			}
-
-			// replace first reshape with declaration of matrix variables and temporaries
-			List<String> codeLines = Arrays.asList(body.toString().split("\n"));
-			for (Usage usage : generator.matrixUsages) {
-				Variable variable = usage.variable;
-				if (! declaredTemps.contains(variable.getOperand())) {
-					declaredTemps.add(variable.getOperand() );
-					//GenerateEquationCoders.declareTemporary( header, "", variable );
-					for (int i = 0; i < codeLines.size(); i++) {
-						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
-						if (matcher.find()) {
-							if (matcher.group(1).equals(variable.getName())) {
-								//System.out.printf("%s in %s\n", variable.getName(), matcher.group(0));
-								String decl = generateReshape( matcher );
-								codeLines.set(i, decl);
-								break;
-							}
-						}
-					}
-				}
-			}
-			for (String v : matrices ) {
-				if (! parameters.contains(v)) {
-					for (int i = 0; i < codeLines.size(); i++) {
-						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
-						if (matcher.find()) {
-							if (matcher.group(1).equals(v)) {
-								//System.out.printf("%s in %s [%s, %s]\n", v, matcher.group(0), matcher.group(2), matcher.group(3));
-								String decl = generateReshape( matcher );
-								codeLines.set(i, decl);
-								break;
-							}
-						}
-					}
-				}
-			}
-			
-			body = new StringBuilder();
-			body.append((String.join("\n", codeLines)));
-			generator.releaseTemporaries(eq);
+			codeGenerator.generate(equationText);
 		}
+		List<String> codeLines = codeGenerator.getCode();
+		body.append((String.join("\n", codeLines)));
+		header.append( codeGenerator.getHeader() );
     	block.append(header);
     	block.append(body);
     	if (returnStatement != null) {

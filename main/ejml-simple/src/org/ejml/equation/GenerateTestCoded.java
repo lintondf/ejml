@@ -45,7 +45,7 @@ import org.ejml.simple.SimpleMatrix;
 
 public class GenerateTestCoded {
 	
-	IEmitOperation coder = new EmitJavaOperation();
+	IEmitOperation coder = new EmitJavaOperation(new ManagerFunctions());
 	
 	private static class GeneratorCompileCodeOperations extends CompileCodeOperations {
 	    

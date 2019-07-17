@@ -1362,13 +1362,16 @@ public class Equation {
      */
     protected TokenList.Token createFunction( TokenList.Token name , List<TokenList.Token> inputs , TokenList tokens , Sequence sequence )
     {
-        Info info;
-        if( inputs.size() == 1 )
+        Info info = null;
+        if ( inputs.size() == 1 && inputs.get(0) != null ) {
             info = managerFunctions.create(name.getFunction().getName(),inputs.get(0).getVariable());
-        else {
+        }
+        if (info == null) {
             List<Variable> vars = new ArrayList<Variable>();
             for (int i = 0; i < inputs.size(); i++) {
-                vars.add(inputs.get(i).getVariable());
+            	if (inputs.get(i) != null) {
+            		vars.add(inputs.get(i).getVariable());
+            	}
             }
             info = managerFunctions.create(name.getFunction().getName(), vars );
         }

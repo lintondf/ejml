@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  */
 public class TestExtents {
 	
-	EmitJavaOperation coder = new EmitJavaOperation();
+	EmitJavaOperation coder = new EmitJavaOperation(new ManagerFunctions());
 	
 	//Extent
 	@Test
