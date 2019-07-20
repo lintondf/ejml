@@ -427,9 +427,26 @@ public class Equation {
                     (variable.getClass().getSimpleName())+" for variable "+name);
         }
     }
+    
+    public void autoDeclare( String equation ) {
+        TokenList tokens = extractTokens(equation,managerTemp);
+        insertFunctionsAndVariables(tokens);
+        
+        TokenList.Token t0 = tokens.getFirst();
+        if (t0 != null && t0.next != null) {
+        	while (t0 != null) {
+        		if (t0.getType() == Type.WORD) {
+                    t0.variable = new VariableInteger(0, t0.word);
+                    alias( 0, t0.word);
+                    t0.word = null;        			
+        		}
+        		t0 = t0.next;
+        	}
+        }
+    }
 
     public Sequence compile( String equation ) {
-        return compile(equation,true,false);
+        return compile(equation,true,false, true);
     }
 
     /**
@@ -439,7 +456,7 @@ public class Equation {
      * @param debug if true it will print out debugging information
      * @return Sequence of operations on the variables
      */
-    public Sequence compile( String equation , boolean assignment, boolean debug ) {
+    public Sequence compile( String equation , boolean assignment, boolean debug, boolean releaseTemps ) {
     	equationText = equation;
     	
         managerFunctions.setManagerTemp(managerTemp);
@@ -488,7 +505,8 @@ public class Equation {
                 }
             }
         }
-        this.managerTemp.clear();  // allow reuse of temporary names between equations
+        if (releaseTemps)
+        	this.managerTemp.clear();  // allow reuse of temporary names between equations
         return sequence;
     }
 
@@ -1710,7 +1728,7 @@ public class Equation {
      * @param equation String in simple equation format
      */
     public Equation process( String equation , boolean debug ) {
-        compile(equation,true,debug).perform();
+        compile(equation,true,debug, true).perform();
         return this;
     }
 
@@ -1721,7 +1739,7 @@ public class Equation {
         // first assume it's just a variable
         Variable v = lookupVariable(equation);
         if( v == null ) {
-            Sequence sequence = compile(equation,false,false);
+            Sequence sequence = compile(equation,false,false, true);
             sequence.perform();
             v = sequence.output;
         }

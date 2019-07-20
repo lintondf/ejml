@@ -622,7 +622,7 @@ public class EmitJavaOperation implements IEmitOperation {
         String source = codeOp.input.get(0).getName();
         String[] lastRowsCols = { target+".numRows", target+".numCols"};
         if (codeOp.input.get(0).getType() != VariableType.MATRIX) {
-        	source = String.format("new DMatrixRMaj(%s, %s, %s)", 
+        	source = String.format("new DMatrixRMaj(%s, %s, %s) ", 
         			codeExtents.codeNumRows(lastRowsCols), 
         			codeExtents.codeNumCols(lastRowsCols), 
         			codeOp.input.get(0).getOperand());

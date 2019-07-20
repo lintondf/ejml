@@ -222,7 +222,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	String codeSimpleRows(String[] lastRowsCols) {
-		return String.format("(%s - %s)", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow());
+		return String.format("((%s) - (%s))", codeSimpleEndRow(lastRowsCols), codeSimpleStartRow());
 	}
 
 	/** Code for the number of columns of a simple block
@@ -231,7 +231,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	String codeSimpleCols(String[] lastRowsCols) {
-		return String.format("(%s - %s)", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol());
+		return String.format("((%s) - (%s))", codeSimpleEndCol(lastRowsCols), codeSimpleStartCol());
 	}
 
 	/** Code for a stepping range
@@ -453,7 +453,9 @@ public class CodeExtents {
 	public static String simplify( String expr ) {
 		Equation eq = new Equation();
 		try {
-			eq.compile("out = " + expr ).perform();
+			String text = "out = " + expr;
+			eq.autoDeclare(text);
+			eq.compile(text, true, false, false ).perform();
 			Variable v = eq.lookupVariable("out");
 			if (v instanceof VariableScalar) {
 				VariableScalar vs = (VariableScalar) v;
@@ -472,7 +474,6 @@ public class CodeExtents {
 	
 	
 	public static void main(String[] args) {
-		System.out.println( simplify("1+3*4"));
-		System.out.println( simplify("1+3*4*a"));
+		System.out.println( simplify("(i + 1+1 - i + 1)"));
 	}
 }

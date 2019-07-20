@@ -94,11 +94,15 @@ public class GenerateEquationCode {
 	}
 	
 	public boolean generate(String equationText ) {
+		return generate(equationText, true);
+	}
+	
+	public boolean generate(String equationText, boolean releaseTemps ) {
 		StringBuilder body = new StringBuilder();
 		body.append(String.format("// %s\n",  equationText));
 		Sequence sequence = null;
 		try {
-			sequence = eq.compile(equationText, true, true);//); //);//
+			sequence = eq.compile(equationText, true, false, releaseTemps);
 		} catch (Exception x) {
 			return false;
 		}
@@ -166,7 +170,8 @@ public class GenerateEquationCode {
 		} else {
 			code.addAll( codeLines );
 		}
-		generator.releaseTemporaries(eq);
+		if (releaseTemps)
+			generator.releaseTemporaries(eq);
 		return true;
 	}
 

@@ -666,7 +666,7 @@ public class TestPlumbing {
         eq.setManagerFunctions(mgr);
         DMatrixRMaj I = new DMatrixRMaj();
         eq.alias(I, "I");
-        Sequence seq = eq.compile("I = identity(3)", true, true); //
+        Sequence seq = eq.compile("I = identity(3)", true, true, true); //
         EmitJavaOperation coder = new EmitJavaOperation( mgr );
 		CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, eq.getTemporariesManager() );
 		compiler.optimize();
