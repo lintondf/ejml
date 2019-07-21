@@ -97,6 +97,8 @@ public class GenerateEquationCode {
 		return generate(equationText, true);
 	}
 	
+	CompileCodeOperations generator;
+	
 	public boolean generate(String equationText, boolean releaseTemps ) {
 		StringBuilder body = new StringBuilder();
 		body.append(String.format("// %s\n",  equationText));
@@ -106,7 +108,7 @@ public class GenerateEquationCode {
 		} catch (Exception x) {
 			return false;
 		}
-		CompileCodeOperations generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
+		generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
 		generator.optimize();
 		for (Info info : sequence.getInfos()) {
     		coder.emitOperation( body, info );
@@ -189,4 +191,7 @@ public class GenerateEquationCode {
 		return code;
 	}
 
+	public String toString() {
+		return generator.toString();
+	}
 }

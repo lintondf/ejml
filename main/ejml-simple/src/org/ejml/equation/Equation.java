@@ -268,7 +268,21 @@ public class Equation {
 
 	ManagerTempVariables managerTemp;
 
-    public Equation() {
+    /**
+	 * @return the managerTemp
+	 */
+	public ManagerTempVariables getManagerTemp() {
+		return managerTemp;
+	}
+
+	/**
+	 * @param managerTemp the managerTemp to set
+	 */
+	public void setManagerTemp(ManagerTempVariables managerTemp) {
+		this.managerTemp = managerTemp;
+	}
+
+	public Equation() {
     	managerFunctions = new ManagerFunctions();
     	managerTemp = new ManagerTempVariables();
         alias(Math.PI,"pi");
