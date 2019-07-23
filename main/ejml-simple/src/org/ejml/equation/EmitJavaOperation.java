@@ -693,6 +693,8 @@ public class EmitJavaOperation implements IEmitOperation {
 		}
 		if (code != null) {		
 			body.append(code);
+		} else {
+			throw new RuntimeException("Unknown code operation: " + codeOp.toString());
 		}
 	}
 	

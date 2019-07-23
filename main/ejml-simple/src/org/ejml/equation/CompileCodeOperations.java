@@ -262,8 +262,9 @@ public class CompileCodeOperations {
 				Usage first = usages.get(0);
 				for (int j = i+1; j < usages.size(); j++) {
 					Usage next = usages.get(j);
-					if (first.uses.getLast() <= next.uses.getFirst()) { // can replace next with first
-//						System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
+					if (first.uses.getLast() < next.uses.getFirst() && 
+							next.variable.getName().equals(first.variable.getName())) { // can replace next with first
+						//System.out.println("  Replacing " + next.variable.getName() + " with " + first.variable.getName());
 						for (Integer k : next.uses) {
 							infos.get(k).replace(next.variable, first.variable);
 							first.uses.addLast(k);
@@ -509,6 +510,7 @@ public class CompileCodeOperations {
 		if (i < 0)
 			return null;
 		ret.value = value.substring(i+3).replace(";\n", "");
+		//System.out.println(ret.value);
 		info.output.setPrecedence( thisPrecedence );
 		return ret;
 	}

@@ -16,12 +16,12 @@ import java.util.HashMap;
 		public Precedence() {
 			this.put("add-ii", 10);
 			this.put("add-ss", 10);
-			this.put("subtract-ii", 10);
-			this.put("subtract-ss", 10);
+			this.put("subtract-ii", 15);
+			this.put("subtract-ss", 15);
 			this.put("multiply-ii", 20);
 			this.put("multiply-ss", 20);
-			this.put("divide-ii", 20);
-			this.put("divide-ss", 20);
+			this.put("divide-ii", 25);
+			this.put("divide-ss", 25);
 			this.put("pow-ii", 30);
 			this.put("pow-ss", 30);
 			this.put("neg-i", 40);

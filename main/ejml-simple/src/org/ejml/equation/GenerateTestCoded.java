@@ -703,7 +703,7 @@ public class GenerateTestCoded {
 							nSkipped++;
 							continue;
 						}
-//						if (!matcher.group(1).equals("compile_assign_submatrix_scalar1"))
+//						if (!matcher.group(1).equals("extract_two_case4"))
 //							continue;
 						if (copyTest(code, it, matcher.group(1), line)) {
 							nCoded++;

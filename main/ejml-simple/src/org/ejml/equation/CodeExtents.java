@@ -18,6 +18,8 @@
 
 package org.ejml.equation;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.List;
 
 /** Handles array extents when generating code;
@@ -26,6 +28,8 @@ import java.util.List;
  * @author D. F. Linton, Blue Lightning Development, LLC 2019.
  */
 public class CodeExtents {
+	
+	static Simplifier simplifier = null;
 
 	protected Variable startRow;
 	protected Variable stepRow;
@@ -76,6 +80,9 @@ public class CodeExtents {
 	 * @param iFirst - skip iFirst elements of extents, then cols if one element; rows, then cols if two elements
 	 */
 	public CodeExtents(IEmitOperation coder, List<Variable> extents, int iFirst) {
+		if (simplifier == null) {
+			simplifier = new Simplifier();
+		}
 		this.extents = extents;
 		isBlock = false;
 		is1D = false;
@@ -164,6 +171,10 @@ public class CodeExtents {
 				endCol = colVar;
 			}
 		}
+	}
+	
+	String simplify( String expr ) {
+		return simplifier.simplify(expr);
 	}
 
 	/** Code for staring row of a simple block
@@ -362,7 +373,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	public String codeComplexRowIndices(String[] lastRowsCols) {
-		return simplify(codeComplexExtent(rowSequence, lastRowsCols[0]));
+		return (codeComplexExtent(rowSequence, lastRowsCols[0]));
 	}
 
 	/** Code for the column indices of a complex (non-contiguous) block
@@ -371,7 +382,7 @@ public class CodeExtents {
 	 * @return java code string
 	 */
 	public String codeComplexColIndices(String[] lastRowsCols) {
-		return simplify(codeComplexExtent(colSequence, lastRowsCols[1]));
+		return (codeComplexExtent(colSequence, lastRowsCols[1]));
 	}
 
 	/** Code for the number of rows of a complex (non-contiguous) block
@@ -450,30 +461,4 @@ public class CodeExtents {
 		return sb.toString();
 	}
 
-	public static String simplify( String expr ) {
-		Equation eq = new Equation();
-		try {
-			String text = "out = " + expr;
-			eq.autoDeclare(text);
-			eq.compile(text, true, false, false ).perform();
-			Variable v = eq.lookupVariable("out");
-			if (v instanceof VariableScalar) {
-				VariableScalar vs = (VariableScalar) v;
-				if (vs.getScalarType() == VariableScalar.Type.INTEGER) {
-					VariableInteger vi = (VariableInteger) vs;
-					return Integer.toString( vi.getValue() );
-				} else {
-					return Double.toString( vs.getDouble() );
-				}
-			}
-			return expr;
-		} catch (Exception x) {
-			return expr;
-		}
-	}
-	
-	
-	public static void main(String[] args) {
-		System.out.println( simplify("(i + 1+1 - i + 1)"));
-	}
 }

@@ -666,18 +666,18 @@ public class TestPlumbing {
         eq.setManagerFunctions(mgr);
         DMatrixRMaj I = new DMatrixRMaj();
         eq.alias(I, "I");
-        Sequence seq = eq.compile("I = identity(3)", true, true, true); //
+        Sequence seq = eq.compile("I = identity(3)", true, false, true); //
         EmitJavaOperation coder = new EmitJavaOperation( mgr );
 		CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, eq.getTemporariesManager() );
 		compiler.optimize();
-		System.out.println(compiler.toString());
+		//System.out.println(compiler.toString());
 		StringBuilder body = new StringBuilder();
 		for (Info info : seq.infos) {
 			coder.emitOperation(body, info);
 		}
-        System.out.println(body.toString());
+        //System.out.println(body.toString());
         seq.perform();
-        I.print();
+//        I.print();
     }
 
     @Test
