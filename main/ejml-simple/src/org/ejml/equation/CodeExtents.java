@@ -18,8 +18,6 @@
 
 package org.ejml.equation;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.List;
 
 /** Handles array extents when generating code;

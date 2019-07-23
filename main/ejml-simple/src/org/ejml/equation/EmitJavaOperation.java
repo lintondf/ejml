@@ -503,9 +503,8 @@ public class EmitJavaOperation implements IEmitOperation {
 		StringBuilder sb = new StringBuilder();
 		switch (op) {
 		case "diag": // Info diag( final Variable A , ManagerTempVariables manager)
-			sb.append(String.format("if (MatrixFeatures_DDRM.isVector(%s)) { //;\n", A.getOperand() ));
-			sb.append("\t");
 			emitReshape(sb, output, A);
+			sb.append(String.format("if (MatrixFeatures_DDRM.isVector(%s)) { //;\n", A.getOperand() ));
 			sb.append("\t");
 			sb.append(String.format("CommonOps_DDRM.diag(%s, %s.numRows, %s.data);\n", output.getOperand(), A.getOperand(), A.getOperand()) );
 			sb.append("} else { //;\n");
