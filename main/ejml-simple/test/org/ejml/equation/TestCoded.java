@@ -2714,7 +2714,7 @@ public class TestCoded {
         // c=b(i1:i2,j1:j2)
         DMatrixRMaj	c = new DMatrixRMaj(1,1);
 
-        c.reshape( ((i2+1) - i1), ((j2+1) - j1) );
+        c.reshape( (i2 - i1 + 1), (j2 - j1 + 1) );
         CommonOps_DDRM.extract( b, i1, i2+1, j1, j2+1, c );
 
         return c;
@@ -3747,8 +3747,8 @@ public class TestCoded {
         // A=diag(B)
         DMatrixRMaj	A = new DMatrixRMaj(1,1);
 
+        A.reshape( B.numRows, B.numRows );
         if (MatrixFeatures_DDRM.isVector(B)) { //;
-        	A.reshape( B.numRows, B.numRows );
         	CommonOps_DDRM.diag(A, B.numRows, B.data);
         } else { //;
         	A.reshape( B.numRows, 1 );
@@ -3786,8 +3786,8 @@ public class TestCoded {
         // B=diag(A)
         DMatrixRMaj	B = new DMatrixRMaj(1,1);
 
+        B.reshape( A.numRows, A.numRows );
         if (MatrixFeatures_DDRM.isVector(A)) { //;
-        	B.reshape( A.numRows, A.numRows );
         	CommonOps_DDRM.diag(B, A.numRows, A.data);
         } else { //;
         	B.reshape( A.numRows, 1 );

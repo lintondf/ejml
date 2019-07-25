@@ -19,6 +19,38 @@ public class Simplifier {
 	}
 	
 	ArrayList<Rewriter> rewriters = new ArrayList<>();
+
+	final String variable = "\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b";
+	final String integer = "\\b[0-9]+\\b";
+	final String word = "\\b[_$a-zA-Z0-9]+\\b";
+	final String V = variable;
+	final String gV = "(" + V + ")";
+	final String W = word;
+	final String gW = "(" + W + ")";
+	final String I = integer;
+	final String gI = "(" + I + ")";
+	final String S = "\\s*";
+	final String O = "\\(";
+	final String C = "\\)";
+	final String plus = S+"\\+"+S;
+	final String minus = S+"\\-"+S;
+	final String times = S+"\\*"+S;
+	final String divide = S+"\\/"+S;
+	final String modulus = S+"\\%"+S;
+	final String gPM = "(" + plus + "|" + minus + ")";
+	final String gOP = "(" + plus + "|" + minus + "|" + times + "|" + divide + "|" + modulus + ")";
+	
+	final Pattern iXi = Pattern.compile(gI+gOP+gI); // --> eval(I1 ? I2)
+	final Pattern vXv = Pattern.compile(gV+gOP+gV); // --> if I1==I2 +:2*D,-:0,*:D**2,/:1
+	final Pattern iXv = Pattern.compile(gI+gOP+gV);
+	final Pattern vXi = Pattern.compile(gV+gOP+gI);
+	final Pattern twoXtwo = Pattern.compile(O+gW+gPM+gW+C+gPM+O+gW+gPM+gW+C);
+	final Pattern oneXtwo = Pattern.compile(gW+gPM+O+gW+gPM+gW+C);
+	final Pattern twoXone = Pattern.compile(O+gW+gPM+gW+C+gPM+gW);
+	final Pattern doubleParen = Pattern.compile(O + O + "([^\\)]*)" + C + C);
+	
+	final Pattern oWc = Pattern.compile(O+gW+C); // --> W
+	final Pattern omWc = Pattern.compile(O+"\\-"+gW+C); // --> W
 	
 	public Simplifier() {
 		rewriters.add( new Rewriter() {
@@ -184,6 +216,55 @@ public class Simplifier {
 			}
 		});
 		rewriters.add( new Rewriter() {
+			//   a  b
+			// (1+2)+3 --> 1+3+2 [b,a]
+			// (1+2)-3 --> 1-3+2 [b,a]
+			// (1-2)+3 --> 1+3-2 [b,a]
+			// (1-2)-3 --> 1-3-2 [b,a]
+			@Override
+			public String rewrite(String expr) {
+				Matcher matcher = twoXone.matcher(expr);
+				if (matcher.find()) {
+					String w1 = matcher.group(1);
+					String w2 = matcher.group(3);
+					String w3 = matcher.group(5);
+					String a = matcher.group(2).trim();
+					String b = matcher.group(4).trim();
+					String replacement = String.format("(%s %s %s %s %s)", w1, b, w3, a, w2);
+					expr = matcher.replaceFirst(replacement);
+				}
+				return expr;
+			}			
+		});
+		rewriters.add( new Rewriter() {
+			//  a  b       
+			// 1+(2+3) -> 1+2+3 [a,b]
+			// 1+(2-3) -> 1+2-3 [a,b]
+			// 1-(2+3) -> 1-2-3 [a,^b]
+			// 1-(2-3) -> 1-2+3 [a,^b]
+			@Override
+			public String rewrite(String expr) {
+				Matcher matcher = oneXtwo.matcher(expr);
+				if (matcher.find()) {
+					String w1 = matcher.group(1);
+					String w2 = matcher.group(3);
+					String w3 = matcher.group(5);
+					String a = matcher.group(2).trim();
+					String b = matcher.group(4).trim();
+					if (a.equals("-")) {
+						if (b.equals("+")) {
+							b = "-";
+						} else {
+							b = "+";
+						}
+					}
+					String replacement = String.format("(%s %s %s %s %s)", w1, a, w2, b, w3);
+					expr = matcher.replaceFirst(replacement);
+				}
+				return expr;
+			}			
+		});
+		rewriters.add( new Rewriter() {
 			@Override
 			public String rewrite(String expr) {
 				Matcher matcher = doubleParen.matcher(expr);
@@ -205,35 +286,18 @@ public class Simplifier {
 				return expr;
 			}
 		});
+		rewriters.add( new Rewriter() {
+			@Override
+			public String rewrite(String expr) {
+				Matcher matcher = omWc.matcher(expr);
+				if (matcher.find()) {
+					String w = matcher.group(1);
+					expr = matcher.replaceFirst("-" + w);
+				}
+				return expr;
+			}
+		});
 	}
-	
-	final String variable = "\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b";
-	final String integer = "\\b[0-9]+\\b";
-	final String word = "\\b[_$a-zA-Z0-9]+\\b";
-	final String V = variable;
-	final String gV = "(" + V + ")";
-	final String W = word;
-	final String gW = "(" + W + ")";
-	final String I = integer;
-	final String gI = "(" + I + ")";
-	final String S = "\\s*";
-	final String O = "\\(";
-	final String C = "\\)";
-	final String plus = S+"\\+"+S;
-	final String minus = S+"\\-"+S;
-	final String times = S+"\\*"+S;
-	final String divide = S+"\\/"+S;
-	final String modulus = S+"\\%"+S;
-	final String gOP = "(" + plus + "|" + minus + "|" + times + "|" + divide + "|" + modulus + ")";
-	
-	final Pattern iXi = Pattern.compile(gI+gOP+gI); // --> eval(I1 ? I2)
-	final Pattern vXv = Pattern.compile(gV+gOP+gV); // --> if I1==I2 +:2*D,-:0,*:D**2,/:1
-	final Pattern iXv = Pattern.compile(gI+gOP+gV);
-	final Pattern vXi = Pattern.compile(gV+gOP+gI);
-	final Pattern twoXtwo = Pattern.compile(O+gW+gOP+gW+C+gOP+O+gW+gOP+gW+C);
-	final Pattern doubleParen = Pattern.compile(O + O + "([^\\)]*)" + C + C);
-	
-	final Pattern oWc = Pattern.compile(O+gW+C); // --> W
 	
 	public String simplify( String expr ) {
 		Stack<String> priors = new Stack<>();
@@ -277,7 +341,7 @@ public class Simplifier {
 		Simplifier simplifier = new Simplifier();
 		String expr = simplifier.simplify("((i + 1 + 1) - (i + 1))");
 		System.out.println(expr);
-		expr = simplifier.simplify("((i + 1 - 1) + (i + 1))");
+		expr = simplifier.simplify("(m - (m+1))");
 		System.out.println(expr);
 	}
 
