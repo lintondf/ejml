@@ -80,6 +80,16 @@ public abstract class VariableScalar extends Variable {
     	return false;
     }
 
+	@Override
+	public boolean isSimple() {
+    	Matcher matcher = expression.matcher( this.getName() );
+    	if (matcher.find()) {
+    		return isConstant();
+    	} else {
+    		return true;
+    	}
+	}
+
     @Override
 	public String getOperand() {
 		if (this.getName().endsWith("}")) {

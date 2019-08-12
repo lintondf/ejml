@@ -83,5 +83,7 @@ public class Variable {
 		return false;
 	}
 
-	
+	public boolean isSimple() {
+		return false;
+	}
 }

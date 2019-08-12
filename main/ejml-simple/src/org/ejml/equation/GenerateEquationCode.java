@@ -98,14 +98,24 @@ public class GenerateEquationCode {
 	}
 	
 	CompileCodeOperations generator;
+	Exception lastError;
 	
+	/**
+	 * @return the lastError
+	 */
+	public Exception getLastError() {
+		return lastError;
+	}
+
 	public boolean generate(String equationText, boolean releaseTemps ) {
 		StringBuilder body = new StringBuilder();
 		body.append(String.format("// %s\n",  equationText));
 		Sequence sequence = null;
+		lastError = null;
 		try {
 			sequence = eq.compile(equationText, true, false, releaseTemps);
 		} catch (Exception x) {
+			lastError = x;
 			return false;
 		}
 		generator = new CompileCodeOperations(coder, sequence, eq.getTemporariesManager());
@@ -113,25 +123,55 @@ public class GenerateEquationCode {
 		for (Info info : sequence.getInfos()) {
     		coder.emitOperation( body, info );
     	}	
+
+		List<String> codeLines = Arrays.asList(body.toString().split("\n"));
+
 		for (Usage usage : generator.integerUsages) {
 			Variable variable = usage.variable;
 			if (! declaredTemps.contains(variable.getOperand())) {
 				declaredTemps.add(variable.getOperand() );
-				if (! variable.getName().endsWith("}"))
-					coder.declare( header, "", variable );
+				if (! variable.getName().endsWith("}")) {
+					StringBuilder decl = new StringBuilder();
+					coder.declare( decl, "", variable );
+					for (int i = 0; i < codeLines.size(); i++) {
+						if (codeLines.get(i).startsWith(variable.getName() + " = ")) {
+							decl.delete(decl.length()-2, decl.length());
+							String line = codeLines.get(i).replace(variable.getName(), decl.toString());
+							codeLines.set(i, line);
+							decl = new StringBuilder();
+							break;
+						}
+					}
+					if (decl.length() > 0) {
+						header.append(decl);
+					}
+				}
 			}
 		}
 		for (Usage usage : generator.doubleUsages) {
 			Variable variable = usage.variable;
 			if (! declaredTemps.contains(variable.getOperand())) {
 				declaredTemps.add(variable.getOperand() );
-				if (! variable.getName().endsWith("}"))
-					coder.declare( header, "", variable );
+				if (! variable.getName().endsWith("}")) {
+					StringBuilder decl = new StringBuilder();
+					coder.declare( decl, "", variable );
+					for (int i = 0; i < codeLines.size(); i++) {
+						if (codeLines.get(i).startsWith(variable.getName() + " = ")) {
+							decl.delete(decl.length()-2, decl.length());
+							String line = codeLines.get(i).replace(variable.getName(), decl.toString());
+							codeLines.set(i, line);
+							decl = new StringBuilder();
+							break;
+						}
+					}
+					if (decl.length() > 0) {
+						header.append(decl);
+					}
+				}
 			}
 		}
 
 		// replace first reshape with declaration of matrix variables and temporaries
-		List<String> codeLines = Arrays.asList(body.toString().split("\n"));
 		for (Usage usage : generator.matrixUsages) {
 			Variable variable = usage.variable;
 			if (! declaredTemps.contains(variable.getOperand())) {

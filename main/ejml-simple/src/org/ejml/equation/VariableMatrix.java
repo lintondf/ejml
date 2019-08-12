@@ -26,7 +26,7 @@ import org.ejml.data.DMatrixRMaj;
  * @author Peter Abeles
  */
 public class VariableMatrix extends Variable {
-    public DMatrixRMaj matrix;
+	public DMatrixRMaj matrix;
 
     /**
      * Initializes the matrix variable.  If null then the variable will be a reference one.  If not null then
@@ -43,4 +43,15 @@ public class VariableMatrix extends Variable {
         ret.setTemp(true);
         return ret;
     }
+    
+    @Override
+	public boolean isConstant() {
+		return false;
+	}
+
+	@Override
+	public boolean isSimple() {
+		return true;
+	}
+
 }

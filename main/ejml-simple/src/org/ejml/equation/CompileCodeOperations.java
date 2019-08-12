@@ -318,7 +318,7 @@ public class CompileCodeOperations {
 			Variable fromVariable = info.input.get(0);
     		switch (info.op.name()) {
     		case "copy-mm":
-    			if (fromVariable.isTemp()) {
+    			if (fromVariable.isTemp() && fromVariable.isSimple()) {
     				Usage fromUsage = locateUsage(matrixUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
 						infos.get(k).replace(fromVariable, assignmentTarget);  
@@ -330,7 +330,7 @@ public class CompileCodeOperations {
     			}
     			break;
     		case "copy-ss":
-    			if (fromVariable.isTemp()) {
+    			if (fromVariable.isTemp() && fromVariable.isSimple()) {
     				Usage fromUsage = locateUsage(doubleUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
 						infos.get(k).replace(fromVariable, assignmentTarget);  
@@ -342,7 +342,7 @@ public class CompileCodeOperations {
     			}
     			break;
     		case "copy-ii":
-    			if (fromVariable.isTemp()) {
+    			if (fromVariable.isTemp() && fromVariable.isSimple()) {
     				Usage fromUsage = locateUsage(integerUsages, fromVariable);
     				for (Integer k : fromUsage.uses) {
 						infos.get(k).replace(fromVariable, assignmentTarget);  
