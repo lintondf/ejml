@@ -1282,7 +1282,7 @@ public class CommonOps_DDRM {
             throw new MatrixDimensionException("src must be a vector");
         
         for (int i = 0; i < length; i++) {
-            src.data[i] = dst.data[indexes[i]];
+            dst.data[i] = src.data[indexes[i]];
         }
     }
 
