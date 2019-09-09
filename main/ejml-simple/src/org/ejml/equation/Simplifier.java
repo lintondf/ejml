@@ -40,6 +40,8 @@ public class Simplifier {
 	final String gPM = "(" + plus + "|" + minus + ")";
 	final String gOP = "(" + plus + "|" + minus + "|" + times + "|" + divide + "|" + modulus + ")";
 	
+	final Pattern vpzero = Pattern.compile(gV + "(" + plus + "|" + minus + ")" + "0");
+	final Pattern mipi = Pattern.compile(minus+gI+plus+gI); // --> +eval(I2-I1) 
 	final Pattern iXi = Pattern.compile(gI+gOP+gI); // --> eval(I1 ? I2)
 	final Pattern vXv = Pattern.compile(gV+gOP+gV); // --> if I1==I2 +:2*D,-:0,*:D**2,/:1
 	final Pattern iXv = Pattern.compile(gI+gOP+gV);
@@ -53,6 +55,28 @@ public class Simplifier {
 	final Pattern omWc = Pattern.compile(O+"\\-"+gW+C); // --> W
 	
 	public Simplifier() {
+		rewriters.add( new Rewriter() {
+			@Override
+			public String rewrite(String expr) {
+				Matcher matcher = vpzero.matcher(expr);
+				if (matcher.find()) {
+					expr = matcher.replaceFirst(matcher.group(1));
+				}
+				return expr;
+			}
+		});
+		rewriters.add( new Rewriter() {
+			@Override
+			public String rewrite(String expr) {
+				Matcher matcher = mipi.matcher(expr);
+				if (matcher.find()) {
+					int n1 = Integer.parseInt(matcher.group(1));
+					int n2 = Integer.parseInt(matcher.group(2));
+					expr = matcher.replaceFirst( String.format("+%d", n2 - n1) );
+				}
+				return expr;
+			}
+		} );
 		rewriters.add( new Rewriter() {
 			@Override
 			public String rewrite(String expr) {
@@ -300,6 +324,7 @@ public class Simplifier {
 	}
 	
 	public String simplify( String expr ) {
+		expr = expr.replace(" ", "");
 		Stack<String> priors = new Stack<>();
 		while (! expr.isEmpty()) {
 			if (priors.contains(expr))

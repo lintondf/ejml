@@ -325,6 +325,39 @@ public class TestRegression {
 					codeGenerator.getCode().toString());
     }
     
+    @Test
+    public void testVectorAssignment() {
+    	Sequence seq = new Sequence();
+    	Info info = new Info();
+    	info.output = VariableInteger.factory(1);
+    	info.range = Arrays.asList(new Variable[] {info.output} );
+    	ManagerTempVariables tempManager;
+    	IEmitOperation coder;
+		tempManager = new ManagerTempVariables();
+		coder = new EmitJavaOperation( new ManagerFunctions());
+		CompileCodeOperations compiler = new CompileCodeOperations(coder, seq, tempManager );
+		compiler.optimize();
+		//System.out.println(compiler.toString());
+		
+        Equation eq = new Equation();
+        DMatrixRMaj Z = new DMatrixRMaj(3,1, 5.0);
+        DMatrixRMaj V = new DMatrixRMaj(3,1, 2.0);
+
+        int  m = 1;
+        
+        eq.alias(m, "m", Z, "Z", V, "V");
+        
+        seq = eq.compile("Z(0:m) = V(0:m)");
+        compiler = new CompileCodeOperations(coder, seq, tempManager );
+		compiler.optimize();
+    	
+		for (Info inf : seq.getInfos()) {
+    		StringBuilder block = new StringBuilder();
+    		coder.emitOperation( block, inf );
+    		System.out.println( block.toString() );
+		}
+    }
+    
 	@Test
 	public void testSingleIndexSet() {
     	Sequence seq = new Sequence();

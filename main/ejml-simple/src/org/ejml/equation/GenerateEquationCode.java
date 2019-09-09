@@ -109,7 +109,7 @@ public class GenerateEquationCode {
 
 	public boolean generate(String equationText, boolean releaseTemps ) {
 		StringBuilder body = new StringBuilder();
-		body.append(String.format("// %s\n",  equationText));
+		body.append(String.format("//  %s\n",  equationText));
 		Sequence sequence = null;
 		lastError = null;
 		try {
