@@ -563,6 +563,7 @@ public class CompileCodeOperations {
     	stats.output.integerTemps = integerTemps.size();
     	stats.output.doubleTemps = doubleTemps.size();
     	stats.output.matrixTemps = matrixTemps.size();
+		mapVariableUsage();
 	}
 	
 	void printUsage( StringBuilder out, Usage usage ) {

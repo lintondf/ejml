@@ -192,7 +192,7 @@ public class GenerateEquationCode {
 		}
 		if (matrices != null) {
 			for (String v : matrices ) {
-				if (! parameters.contains(v)) {
+				if (! parameters.contains(v) && ! declaredTemps.contains(v)) {
 					for (int i = 0; i < codeLines.size(); i++) {
 						Matcher matcher = reshapePattern.matcher( codeLines.get(i) );
 						if (matcher.find()) {
