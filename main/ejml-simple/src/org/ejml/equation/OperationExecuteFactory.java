@@ -240,8 +240,19 @@ public class OperationExecuteFactory implements IOperationFactory {
                     ret.outputDouble().value = Math.pow(a, b);
                 }
             };
+        } else if (A instanceof VariableMatrix && B instanceof VariableScalar ) {
+        	
+            ret.op = ret.new Operation("pow-ms") {
+                @Override
+                public void process() {
+                    VariableMatrix A = ((VariableMatrix)ret.A());
+                    double b = ((VariableScalar)ret.B()).getDouble();
+
+                    CommonOps_DDRM.elementPower(A.matrix, b, ret.outputMatrix().matrix);
+                }
+            };
         } else {
-            throw new RuntimeException("Only scalar to scalar power supported");
+            throw new RuntimeException("Only scalar-scalar and matrix-scalar power supported");
         }
 
         return ret;
@@ -256,7 +267,20 @@ public class OperationExecuteFactory implements IOperationFactory {
         ret.output = manager.createDouble();
         
 
-        if( A instanceof VariableScalar && B instanceof VariableScalar ) {
+        if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
+            ret.output = manager.createMatrix();
+            
+            ret.op = ret.new Operation("atan2-mm") {
+                @Override
+                public void process() {
+                    VariableMatrix mA = (VariableMatrix)ret.A();
+                    VariableMatrix mB = (VariableMatrix)ret.B();
+
+                    manager.resize((VariableMatrix) ret.output, mA.matrix.numRows, mA.matrix.numCols);
+                    CommonOps_DDRM.elementAtan2(mA.matrix, mB.matrix, ret.outputMatrix().matrix);
+                }
+            };
+        } else if( A instanceof VariableScalar && B instanceof VariableScalar ) {
 
             ret.op = ret.new Operation("atan2-ss") {
                 @Override
@@ -280,10 +304,21 @@ public class OperationExecuteFactory implements IOperationFactory {
     @Override
 	public Info sqrt(final Variable A, ManagerTempVariables manager) {
         Info ret = new Info(A);
-        ret.output = manager.createDouble();
         
+        if( A instanceof VariableMatrix  ) {
+            ret.output = manager.createMatrix();
+            
+            ret.op = ret.new Operation("sqrt-m") {
+                @Override
+                public void process() {
+                    VariableMatrix mA = (VariableMatrix)ret.A();
 
-        if( A instanceof VariableScalar  ) {
+                    manager.resize((VariableMatrix) ret.output, mA.matrix.numRows, mA.matrix.numCols);
+                    CommonOps_DDRM.elementSqrt(mA.matrix, ret.outputMatrix().matrix);
+                }
+            };
+        } else if( A instanceof VariableScalar  ) {
+            ret.output = manager.createDouble();
 
             ret.op = ret.new Operation("sqrt-s") {
                 @Override
@@ -309,7 +344,19 @@ public class OperationExecuteFactory implements IOperationFactory {
         ret.output = manager.createDouble();
         
 
-        if( A instanceof VariableScalar  ) {
+        if( A instanceof VariableMatrix  ) {
+            ret.output = manager.createMatrix();
+            
+            ret.op = ret.new Operation("sin-m") {
+                @Override
+                public void process() {
+                    VariableMatrix mA = (VariableMatrix)ret.A();
+
+                    manager.resize((VariableMatrix) ret.output, mA.matrix.numRows, mA.matrix.numCols);
+                    CommonOps_DDRM.elementSin(mA.matrix, ret.outputMatrix().matrix);
+                }
+            };
+        } else if( A instanceof VariableScalar  ) {
 
             ret.op = ret.new Operation("sin-s") {
                 @Override
@@ -333,7 +380,19 @@ public class OperationExecuteFactory implements IOperationFactory {
         ret.output = manager.createDouble();
         
 
-        if( A instanceof VariableScalar  ) {
+        if( A instanceof VariableMatrix  ) {
+            ret.output = manager.createMatrix();
+            
+            ret.op = ret.new Operation("cos-m") {
+                @Override
+                public void process() {
+                    VariableMatrix mA = (VariableMatrix)ret.A();
+
+                    manager.resize((VariableMatrix) ret.output, mA.matrix.numRows, mA.matrix.numCols);
+                    CommonOps_DDRM.elementCos(mA.matrix, ret.outputMatrix().matrix);
+                }
+            };
+        } else if( A instanceof VariableScalar  ) {
 
             ret.op = ret.new Operation("cos-s") {
                 @Override
@@ -357,7 +416,20 @@ public class OperationExecuteFactory implements IOperationFactory {
         ret.output = manager.createDouble();
         
 
-        if( A instanceof VariableScalar  ) {
+        if( A instanceof VariableMatrix  ) {
+            ret.output = manager.createMatrix();
+            
+            ret.op = ret.new Operation("atan-m") {
+                @Override
+                public void process() {
+                    VariableMatrix mA = (VariableMatrix)ret.A();
+                    VariableMatrix mB = (VariableMatrix)ret.B();
+
+                    manager.resize((VariableMatrix) ret.output, mA.matrix.numRows, mA.matrix.numCols);
+                    CommonOps_DDRM.elementAtan(mA.matrix, ret.outputMatrix().matrix);
+                }
+            };
+        } else if( A instanceof VariableScalar  ) {
 
             ret.op = ret.new Operation("atan-s") {
                 @Override

@@ -1777,6 +1777,66 @@ public class CommonOps_DDRM {
         }
     }
 
+    public static void elementAtan(DMatrixD1 A , DMatrixD1 C ) {
+
+        if( A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.atan(A.data[i]);
+        }
+    }
+
+    public static void elementCos(DMatrixD1 A , DMatrixD1 C ) {
+
+        if( A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.cos(A.data[i]);
+        }
+    }
+
+    public static void elementSin(DMatrixD1 A , DMatrixD1 C ) {
+
+        if( A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.sin(A.data[i]);
+        }
+    }
+
+    public static void elementAtan2(DMatrixD1 A, DMatrixD1 B, DMatrixD1 C ) {
+
+        if( A.numCols != B.numCols || A.numRows != B.numRows || A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.atan2(A.data[i], B.data[i]);
+        }
+    }
+
+    public static void elementSqrt(DMatrixD1 A , DMatrixD1 C ) {
+
+        if( A.numCols != C.numCols || A.numRows != C.numRows ) {
+            throw new MatrixDimensionException("All matrices must be the same shape");
+        }
+
+        int size = A.getNumElements();
+        for( int i = 0; i < size; i++ ) {
+            C.data[i] = Math.sqrt(A.data[i]);
+        }
+    }
+
     /**
      * Multiplies every element in row i by value[i].
      *

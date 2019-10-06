@@ -121,6 +121,11 @@ public class EmitJavaOperation implements IEmitOperation {
 			//CommonOps_DDRM.elementPower(a, b, output.matrix);
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getName(), B.getName(), output.getName()) );
 			return sb.toString();
+		case "elementAtan2": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.elementAtan2(a, b, output.matrix);
+			sb.append( String.format(formatCommonOps3, "elementAtan2", A.getName(), B.getName(), output.getName()) );
+			return sb.toString();
 		}
 		return null;
 	}
@@ -418,7 +423,7 @@ public class EmitJavaOperation implements IEmitOperation {
 			return sb.toString();
 		case "elementPow": // Info elementPow(final Variable A, final Variable B, ManagerTempVariables manager)
 			emitReshape(sb, output, A, A);
-			//CommonOps_DDRM.elementPower(a, b, output.matrix);
+			//CommonOps_DDRM.elementPower(A, b, output.matrix);
 			sb.append( String.format(formatCommonOps3, "elementPower", A.getOperand(), B.getOperand(), output.getName()) );
 			return sb.toString();
 		}
@@ -578,6 +583,26 @@ public class EmitJavaOperation implements IEmitOperation {
 			emitReshape(sb, output, A, A);
 			//CommonOps_DDRM.elementExp(a, out);
 			sb.append( String.format(formatCommonOps2, "elementExp", A.getName(), output.getName()) );
+			return sb.toString();
+		case "elementAtan": // Info exp(final Variable A, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.elementAtan(a, out);
+			sb.append( String.format(formatCommonOps2, "elementAtan", A.getName(), output.getName()) );
+			return sb.toString();
+		case "elementCos": // Info exp(final Variable A, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.elementCos(a, out);
+			sb.append( String.format(formatCommonOps2, "elementCos", A.getName(), output.getName()) );
+			return sb.toString();
+		case "elementSin": // Info exp(final Variable A, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.elementSin(a, out);
+			sb.append( String.format(formatCommonOps2, "elementSin", A.getName(), output.getName()) );
+			return sb.toString();
+		case "elementSqrt": // Info exp(final Variable A, ManagerTempVariables manager)
+			emitReshape(sb, output, A, A);
+			//CommonOps_DDRM.elementSqrt(a, out);
+			sb.append( String.format(formatCommonOps2, "elementSqrt", A.getName(), output.getName()) );
 			return sb.toString();
 		}
 		return null;

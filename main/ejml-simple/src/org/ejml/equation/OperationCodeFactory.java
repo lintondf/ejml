@@ -184,14 +184,17 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info pow(final Variable A, final Variable B, ManagerTempVariables manager) {
         Info ret = new Info(A, B);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
         if( A instanceof VariableScalar && B instanceof VariableScalar ) {
-
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("pow-ss", ret);
+        } else if (A instanceof VariableMatrix && B instanceof VariableScalar) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.output = output;
+        	ret.op = new CodeOperation("elementPow-ms", ret);
         } else {
-            throw new RuntimeException("Only scalar to scalar power supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-scalar power supported");
         }
 
         return ret;
@@ -203,14 +206,19 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info atan2(final Variable A, final Variable B, ManagerTempVariables manager) {
         Info ret = new Info(A, B);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
-        if( A instanceof VariableScalar && B instanceof VariableScalar ) {
-
+        if( A instanceof VariableMatrix && B instanceof VariableMatrix ) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.addDimension(DimensionSources.LHS_ROWS);
+            ret.addDimension(DimensionSources.RHS_COLS);
+            ret.output = output;
+            ret.op = new CodeOperation("elementAtan2-mm", ret);
+        } else if( A instanceof VariableScalar && B instanceof VariableScalar ) {
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("atan2-ss", ret);
         } else {
-            throw new RuntimeException("Only scalar to scalar atan2 supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-matrix atan2 supported");
         }
 
         return ret;
@@ -222,14 +230,19 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info sqrt(final Variable A, ManagerTempVariables manager) {
         Info ret = new Info(A);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
-        if( A instanceof VariableScalar  ) {
-
+        if( A instanceof VariableMatrix ) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.addDimension(DimensionSources.LHS_ROWS);
+            ret.addDimension(DimensionSources.RHS_COLS);
+            ret.output = output;
+            ret.op = new CodeOperation("elementSqrt-m", ret);
+        } else if( A instanceof VariableScalar  ) {
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("sqrt-s", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-matrix are supported");
         }
 
         return ret;
@@ -241,14 +254,19 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info sin(final Variable A, ManagerTempVariables manager) {
         Info ret = new Info(A);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
-        if( A instanceof VariableScalar  ) {
-
+        if( A instanceof VariableMatrix ) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.addDimension(DimensionSources.LHS_ROWS);
+            ret.addDimension(DimensionSources.RHS_COLS);
+            ret.output = output;
+            ret.op = new CodeOperation("elementSin-m", ret);
+        } else if( A instanceof VariableScalar  ) {
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("sin-s", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-matrix are supported");
         }
 
         return ret;
@@ -260,14 +278,19 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info cos(final Variable A, ManagerTempVariables manager) {
         Info ret = new Info(A);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
-        if( A instanceof VariableScalar  ) {
-
+        if( A instanceof VariableMatrix ) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.addDimension(DimensionSources.LHS_ROWS);
+            ret.addDimension(DimensionSources.RHS_COLS);
+            ret.output = output;
+            ret.op = new CodeOperation("elementCos-m", ret);
+        } else if( A instanceof VariableScalar  ) {
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("cos-s", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-matrix is supported");
         }
 
         return ret;
@@ -279,14 +302,19 @@ public class OperationCodeFactory implements IOperationFactory {
     @Override
 	public Info atan(final Variable A, ManagerTempVariables manager) {
         Info ret = new Info(A);
-        final VariableDouble output = manager.createDouble();
-        ret.output = output;
 
-        if( A instanceof VariableScalar  ) {
-
+        if( A instanceof VariableMatrix ) {
+            final VariableMatrix output = manager.createMatrix();
+            ret.addDimension(DimensionSources.LHS_ROWS);
+            ret.addDimension(DimensionSources.RHS_COLS);
+            ret.output = output;
+            ret.op = new CodeOperation("elementAtan-m", ret);
+        } else if( A instanceof VariableScalar  ) {
+            final VariableDouble output = manager.createDouble();
+            ret.output = output;
             ret.op = new CodeOperation("atan-s", ret);
         } else {
-            throw new RuntimeException("Only scalars are supported");
+            throw new RuntimeException("Only scalar-scalar or matrix-matrix are supported");
         }
 
         return ret;
