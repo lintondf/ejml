@@ -894,8 +894,9 @@ public class Equation {
     private void addSubMatrixVariables(List<TokenList.Token> inputs, List<Variable> variables) {
         for (int i = 0; i < inputs.size(); i++) {
             TokenList.Token t = inputs.get(i);
-            if( t.getType() != Type.VARIABLE )
-                throw new ParseError("Expected variables only in sub-matrix input, not "+t.getType());
+            if( t == null || t.getType() != Type.VARIABLE )
+                throw new ParseError("Expected variables only in sub-matrix input, not "+ 
+                		((t == null) ? "null" : t.getType()) );
             Variable v = t.getVariable();
             if( v.getType() == VariableType.INTEGER_SEQUENCE || isVariableInteger(t) ) {
                 variables.add(v);
